@@ -7,6 +7,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+// Debe estar definido
+extern t_log *logger;
+
 typedef enum { MENSAJE, PAQUETE } op_code;
 
 typedef struct {

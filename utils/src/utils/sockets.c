@@ -36,8 +36,7 @@ int crear_conexion(char *ip, char *puerto)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(ip, puerto, &hints, &server_info) != 0) {
-        // FIXME: Arreglar logging
-        /* log_error(logger, "No se pudo crear server_info"); */
+        log_error(logger, "No se pudo crear server_info");
         exit(1);
     }
 
@@ -50,8 +49,7 @@ int crear_conexion(char *ip, char *puerto)
     if (connect(socket_cliente,
                 server_info->ai_addr,
                 server_info->ai_addrlen) != 0) {
-        // FIXME: Arreglar logging
-        /* log_error(logger, "No se pudo conectar al servidor"); */
+        log_error(logger, "No se pudo conectar al servidor");
         exit(1);
     }
 
@@ -139,7 +137,7 @@ void liberar_conexion(int socket_cliente)
 
 int iniciar_servidor(char *puerto)
 {
-    struct addrinfo hints, *servinfo, *p;
+    struct addrinfo hints, *servinfo;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
@@ -147,8 +145,7 @@ int iniciar_servidor(char *puerto)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(NULL, puerto, &hints, &servinfo) != 0) {
-        // FIXME: Arreglar logging
-        /* log_error(logger, "No se pudo crear servinfo"); */
+        log_error(logger, "No se pudo crear servinfo");
         exit(1);
     }
 
@@ -158,8 +155,7 @@ int iniciar_servidor(char *puerto)
 
     // Asociamos el socket a un puerto
     if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) != 0) {
-        // FIXME: Arreglar logging
-        /* log_error(logger, "No se pudo bindear el socket."); */
+        log_error(logger, "No se pudo bindear el socket.");
         exit(1);
     }
 
@@ -167,8 +163,67 @@ int iniciar_servidor(char *puerto)
     listen(socket_servidor, SOMAXCONN);
 
     freeaddrinfo(servinfo);
-    // FIXME: Arreglar logging
-    /* log_trace(logger, "Listo para escuchar a mi cliente"); */
+    log_trace(logger, "Listo para escuchar a mi cliente");
 
     return socket_servidor;
+}
+
+int esperar_cliente(int socket_servidor)
+{
+    // Aceptamos un nuevo cliente
+    int socket_cliente = accept(socket_servidor, NULL, NULL);
+    log_info(logger, "Se conecto un cliente!");
+
+    return socket_cliente;
+}
+
+int recibir_operacion(int socket_cliente)
+{
+    int cod_op;
+    if (recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
+        return cod_op;
+    else {
+        close(socket_cliente);
+        return -1;
+    }
+}
+
+void *recibir_buffer(int *size, int socket_cliente)
+{
+    void *buffer;
+
+    recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+    buffer = malloc(*size);
+    recv(socket_cliente, buffer, *size, MSG_WAITALL);
+
+    return buffer;
+}
+
+void recibir_mensaje(int socket_cliente)
+{
+    int size;
+    char *buffer = recibir_buffer(&size, socket_cliente);
+    log_info(logger, "Me llego el mensaje %s", buffer);
+    free(buffer);
+}
+
+t_list *recibir_paquete(int socket_cliente)
+{
+    int size;
+    int desplazamiento = 0;
+    void *buffer;
+    t_list *valores = list_create();
+    int tamanio;
+
+    buffer = recibir_buffer(&size, socket_cliente);
+    while (desplazamiento < size) {
+        memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
+        desplazamiento += sizeof(int);
+        char *valor = malloc(tamanio);
+        memcpy(valor, buffer + desplazamiento, tamanio);
+        desplazamiento += tamanio;
+        list_add(valores, valor);
+    }
+    free(buffer);
+    return valores;
 }
