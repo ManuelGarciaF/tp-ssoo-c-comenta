@@ -150,7 +150,8 @@ int iniciar_servidor(char *puerto)
     }
 
     // Creamos el socket de escucha del servidor
-    int socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype,
+    int socket_servidor = socket(servinfo->ai_family,
+                                 servinfo->ai_socktype,
                                  servinfo->ai_protocol);
 
     // Asociamos el socket a un puerto
@@ -198,12 +199,11 @@ void *recibir_buffer(int *size, int socket_cliente)
     return buffer;
 }
 
-void recibir_mensaje(int socket_cliente)
+char *recibir_mensaje(int socket_cliente)
 {
     int size;
     char *buffer = recibir_buffer(&size, socket_cliente);
-    log_info(debug_logger, "Me llego el mensaje %s", buffer);
-    free(buffer);
+    return buffer;
 }
 
 t_list *recibir_paquete(int socket_cliente)
@@ -225,4 +225,47 @@ t_list *recibir_paquete(int socket_cliente)
     }
     free(buffer);
     return valores;
+}
+
+bool realizar_handshake(int socket_servidor)
+{
+    enviar_mensaje(MENSAJE_HANDSHAKE, socket_servidor);
+
+    // El paquete recibido debe ser un mensaje
+    if (recibir_operacion(socket_servidor) != MENSAJE) {
+        log_error(debug_logger,
+                  "El servidor no respondio al handshake con un mensaje");
+        return false;
+    }
+
+    char *respuesta = recibir_mensaje(socket_servidor);
+    // Verifico que la respuesta sea la correcta
+    if (!strcmp(respuesta, RESPUESTA_HANDSHAKE_OK)) {
+        return false;
+    }
+
+    free(respuesta);
+    return true;
+}
+
+void recibir_handshake(int socket_cliente)
+{
+    // El paquete recibido debe ser un mensaje
+    if (recibir_operacion(socket_cliente) != MENSAJE) {
+        log_error(debug_logger,
+                  "El handshake recibido desde el socket %d no fue un mensaje",
+                  socket_cliente);
+        return;
+    }
+
+    char *mensaje_recibido = recibir_mensaje(socket_cliente);
+
+    // Si el mensaje recibido es correcto
+    if (strcmp(mensaje_recibido, MENSAJE_HANDSHAKE)) {
+        enviar_mensaje(RESPUESTA_HANDSHAKE_OK, socket_cliente);
+    } else {
+        enviar_mensaje(RESPUESTA_HANDSHAKE_ERROR, socket_cliente);
+    }
+
+    free(mensaje_recibido);
 }
