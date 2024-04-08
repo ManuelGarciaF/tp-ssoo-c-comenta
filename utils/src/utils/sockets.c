@@ -36,7 +36,7 @@ int crear_conexion(char *ip, char *puerto)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(ip, puerto, &hints, &server_info) != 0) {
-        log_error(logger, "No se pudo crear server_info");
+        log_error(debug_logger, "No se pudo crear server_info");
         exit(1);
     }
 
@@ -49,7 +49,7 @@ int crear_conexion(char *ip, char *puerto)
     if (connect(socket_cliente,
                 server_info->ai_addr,
                 server_info->ai_addrlen) != 0) {
-        log_error(logger, "No se pudo conectar al servidor");
+        log_error(debug_logger, "No se pudo conectar al servidor");
         exit(1);
     }
 
@@ -145,7 +145,7 @@ int iniciar_servidor(char *puerto)
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(NULL, puerto, &hints, &servinfo) != 0) {
-        log_error(logger, "No se pudo crear servinfo");
+        log_error(debug_logger, "No se pudo crear servinfo");
         exit(1);
     }
 
@@ -155,7 +155,7 @@ int iniciar_servidor(char *puerto)
 
     // Asociamos el socket a un puerto
     if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) != 0) {
-        log_error(logger, "No se pudo bindear el socket.");
+        log_error(debug_logger, "No se pudo bindear el socket.");
         exit(1);
     }
 
@@ -171,7 +171,7 @@ int esperar_cliente(int socket_servidor)
 {
     // Aceptamos un nuevo cliente
     int socket_cliente = accept(socket_servidor, NULL, NULL);
-    log_trace(logger, "Se conecto un cliente");
+    log_trace(debug_logger, "Se conecto un cliente");
 
     return socket_cliente;
 }
@@ -202,7 +202,7 @@ void recibir_mensaje(int socket_cliente)
 {
     int size;
     char *buffer = recibir_buffer(&size, socket_cliente);
-    log_info(logger, "Me llego el mensaje %s", buffer);
+    log_info(debug_logger, "Me llego el mensaje %s", buffer);
     free(buffer);
 }
 

@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 // Debe estar definido
-extern t_log *logger;
+extern t_log *debug_logger;
 
 typedef enum { MENSAJE, PAQUETE } op_code;
 
