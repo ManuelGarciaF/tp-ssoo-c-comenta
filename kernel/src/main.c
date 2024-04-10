@@ -79,17 +79,6 @@ void cargar_config(t_config *config)
         config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
 }
 
-char *config_get_string_or_exit(t_config *config, char *key)
-{
-    if (!config_has_property(config, key)) {
-        log_error(debug_logger,
-                  "La key %s no existe en el archivo de config",
-                  key);
-        exit(1);
-    }
-    return config_get_string_value(config, key);
-}
-
 /* Maneja las conexiones de los dispositivos de I/O */
 void atender_io(int *socket_conexion)
 {

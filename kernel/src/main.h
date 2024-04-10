@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <utils/sockets.h>
+#include <utils/utils.h>
 
 /*
 ** Variables globales
@@ -27,8 +28,6 @@ char *puerto_cpu_interrupt;
 */
 
 void cargar_config(t_config *config);
-
-char *config_get_string_or_exit(t_config *config, char *key);
 
 void atender_io(int *socket_conexion);
 
