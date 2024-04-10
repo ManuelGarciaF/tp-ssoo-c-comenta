@@ -49,9 +49,6 @@ int main(int argc, char *argv[])
         // TODO Cuando romper este loop
     }
 
-    // Esperar que los hilos terminen.
-    pthread_exit(NULL);
-
     // Cerrar sockets
     close(conexion_cpu_dispatch);
     close(conexion_cpu_interrupt);
@@ -61,6 +58,8 @@ int main(int argc, char *argv[])
     log_destroy(debug_logger);
     log_destroy(kernel_logger);
 
+    // No matar los hilos al terminar el programa
+    pthread_exit(NULL);
     return 0;
 }
 
