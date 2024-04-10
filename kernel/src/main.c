@@ -44,7 +44,11 @@ int main(int argc, char *argv[])
 
         // Crear hilo para manejar esta conexion
         pthread_t hilo;
-        pthread_create(&hilo, NULL, (void *)atender_io, conexion_io);
+        int iret = pthread_create(&hilo, NULL, (void *)atender_io, conexion_io);
+        if (iret != 0) {
+            log_error(debug_logger, "No se pudo crear un hilo para atender la interfaz de I/O");
+            exit(1);
+        }
         pthread_detach(hilo);
 
         // TODO Cuando romper este loop
