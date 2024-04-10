@@ -27,7 +27,7 @@ char *puerto_cpu_interrupt;
 ** Definiciones de funciones
 */
 
-void cargar_config(t_config *config);
+void cargar_config(void);
 
 void atender_io(int *socket_conexion);
 

@@ -6,12 +6,7 @@ int main(int argc, char *argv[])
         log_create("kernel_debug.log", "kernel_debug", true, LOG_LEVEL_INFO);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
 
-    t_config *config = config_create("kernel.config");
-    if (config == NULL) {
-        log_error(debug_logger, "No se pudo crear la config");
-        exit(1);
-    }
-    cargar_config(config);
+    cargar_config();
 
     // Conexion con el cpu
     int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
@@ -65,14 +60,19 @@ int main(int argc, char *argv[])
     // Liberar memoria
     log_destroy(debug_logger);
     log_destroy(kernel_logger);
-    config_destroy(config);
 
     return 0;
 }
 
 /* Inicializa las variables globales */
-void cargar_config(t_config *config)
+void cargar_config()
 {
+    t_config *config = config_create("kernel.config");
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo crear la config");
+        exit(1);
+    }
+
     puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
@@ -81,6 +81,8 @@ void cargar_config(t_config *config)
         config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
     puerto_cpu_interrupt =
         config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
+
+    config_destroy(config);
 }
 
 /* Maneja las conexiones de los dispositivos de I/O */
