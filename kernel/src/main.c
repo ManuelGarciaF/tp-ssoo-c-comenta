@@ -89,6 +89,7 @@ void atender_io(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
 
+    close(*socket_conexion);
     free(socket_conexion);
     pthread_exit(NULL);
 }
