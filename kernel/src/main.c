@@ -6,26 +6,33 @@ int main(int argc, char *argv[])
         log_create("kernel_debug.log", "kernel_debug", true, LOG_LEVEL_INFO);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
 
-    cargar_config();
+    t_config *config = config_create("kernel.config");
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo crear la config");
+        exit(1);
+    }
+
+    cargar_config(config);
 
     // Conexion con el cpu
     int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
 
-    if (realizar_handshake(conexion_cpu_dispatch)) {
-        log_info(debug_logger,
-                 "Se pudo realizar un handshake con el CPU (dispatch)");
+    if (!realizar_handshake(conexion_cpu_dispatch)) {
+        log_error(debug_logger,
+                  "No Se pudo realizar un handshake con el CPU (dispatch)");
     }
 
     int conexion_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
-    if (realizar_handshake(conexion_cpu_interrupt)) {
-        log_info(debug_logger,
-                 "Se pudo realizar un handshake con el CPU (interrupt)");
+    if (!realizar_handshake(conexion_cpu_interrupt)) {
+        log_error(debug_logger,
+                  "No se pudo realizar un handshake con el CPU (interrupt)");
     }
 
     // Conexion con la memoria
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
-    if (realizar_handshake(conexion_memoria)) {
-        log_info(debug_logger, "Se pudo realizar un handshake con la memoria");
+    if (!realizar_handshake(conexion_memoria)) {
+        log_error(debug_logger,
+                  "No se pudo realizar un handshake con la memoria");
     }
 
     // TODO iniciar hilo para la consola del kernel
@@ -41,7 +48,9 @@ int main(int argc, char *argv[])
         pthread_t hilo;
         int iret = pthread_create(&hilo, NULL, (void *)atender_io, conexion_io);
         if (iret != 0) {
-            log_error(debug_logger, "No se pudo crear un hilo para atender la interfaz de I/O");
+            log_error(
+                debug_logger,
+                "No se pudo crear un hilo para atender la interfaz de I/O");
             exit(1);
         }
         pthread_detach(hilo);
@@ -58,20 +67,16 @@ int main(int argc, char *argv[])
     log_destroy(debug_logger);
     log_destroy(kernel_logger);
 
+    config_destroy(config);
+
     // No matar los hilos al terminar el programa
     pthread_exit(NULL);
     return 0;
 }
 
 /* Inicializa las variables globales */
-void cargar_config()
+void cargar_config(t_config *config)
 {
-    t_config *config = config_create("kernel.config");
-    if (config == NULL) {
-        log_error(debug_logger, "No se pudo crear la config");
-        exit(1);
-    }
-
     puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
@@ -80,8 +85,6 @@ void cargar_config()
         config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
     puerto_cpu_interrupt =
         config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
-
-    config_destroy(config);
 }
 
 /* Maneja las conexiones de los dispositivos de I/O */

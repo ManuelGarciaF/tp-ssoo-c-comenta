@@ -6,7 +6,12 @@ int main(int argc, char *argv[])
         log_create("cpu_debug.log", "cpu_debug", true, LOG_LEVEL_INFO);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
 
-    cargar_config();
+    t_config *config = config_create("cpu.config");
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo crear la config");
+        exit(1);
+    }
+    cargar_config(config);
 
     int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
     int socket_escucha_interrupt = iniciar_servidor(puerto_escucha_interrupt);
@@ -35,9 +40,8 @@ int main(int argc, char *argv[])
     // Conectar con la memoria
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
 
-    if (realizar_handshake(conexion_memoria)) {
-        log_info(debug_logger,
-                 "Se pudo realizar un handshake con memoria");
+    if (!realizar_handshake(conexion_memoria)) {
+        log_error(debug_logger, "Se pudo realizar un handshake con memoria");
     }
 
     // Esperar que los hilos terminen
@@ -45,49 +49,48 @@ int main(int argc, char *argv[])
     pthread_join(hilo_interrupt, NULL);
 
     // Cerrar sockets
-    close(conexion_memoria);
+    /* liberar_conexion(conexion_memoria); */
 
     // Liberar memoria
     log_destroy(debug_logger);
     log_destroy(cpu_logger);
+    config_destroy(config);
 
     // Esperar
     return 0;
 }
 
 /* Inicializa las variables globales */
-void cargar_config(void)
+void cargar_config(t_config *config)
 {
-    t_config *config = config_create("cpu.config");
-    if (config == NULL) {
-        log_error(debug_logger, "No se pudo crear la config");
-        exit(1);
-    }
-
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
     puerto_escucha_dispatch =
         config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt =
         config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
-
-    config_destroy(config);
 }
 
-void *servidor_dispatch(int *socket_escucha) {
-    esperar_cliente(*socket_escucha);
-    recibir_handshake(*socket_escucha);
+void *servidor_dispatch(int *socket_escucha)
+{
+    int socket_conexion = esperar_cliente(*socket_escucha);
+    if (recibir_handshake(socket_conexion)) {
+        log_info(debug_logger,
+                 "Se realizo el handshake correctamente (dispatch)");
+    }
 
     close(*socket_escucha);
-    free(socket_escucha);
     return NULL;
 }
 
-void *servidor_interrupt(int *socket_escucha) {
-    esperar_cliente(*socket_escucha);
-    recibir_handshake(*socket_escucha);
+void *servidor_interrupt(int *socket_escucha)
+{
+    int socket_conexion = esperar_cliente(*socket_escucha);
+    if (recibir_handshake(socket_conexion)) {
+        log_info(debug_logger,
+                 "Se realizo el handshake correctamente (interrupt)");
+    }
 
     close(*socket_escucha);
-    free(socket_escucha);
     return NULL;
 }

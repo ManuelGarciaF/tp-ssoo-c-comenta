@@ -23,7 +23,7 @@ char *puerto_escucha_interrupt;
 /*
 ** Definiciones de funciones
 */
-void cargar_config(void);
+void cargar_config(t_config *config);
 
 void *servidor_dispatch(int *socket_escucha);
 void *servidor_interrupt(int *socket_escucha);
