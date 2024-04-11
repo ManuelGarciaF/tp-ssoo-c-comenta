@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     pthread_join(hilo_interrupt, NULL);
 
     // Cerrar sockets
-    /* liberar_conexion(conexion_memoria); */
+    liberar_conexion(conexion_memoria);
 
     // Liberar memoria
     log_destroy(debug_logger);
