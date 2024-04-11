@@ -41,12 +41,12 @@ int crear_conexion(char *ip, char *puerto)
     }
 
     // Ahora vamos a crear el socket.
-    int socket_cliente = socket(server_info->ai_family,
-                                server_info->ai_socktype,
-                                server_info->ai_protocol);
+    int socket_conexion = socket(server_info->ai_family,
+                                 server_info->ai_socktype,
+                                 server_info->ai_protocol);
 
     // Ahora que tenemos el socket, vamos a conectarlo
-    if (connect(socket_cliente,
+    if (connect(socket_conexion,
                 server_info->ai_addr,
                 server_info->ai_addrlen) != 0) {
         log_error(debug_logger, "No se pudo conectar al servidor");
@@ -55,10 +55,10 @@ int crear_conexion(char *ip, char *puerto)
 
     freeaddrinfo(server_info);
 
-    return socket_cliente;
+    return socket_conexion;
 }
 
-void enviar_mensaje(char *mensaje, int socket_cliente)
+void enviar_mensaje(char *mensaje, int socket_conexion)
 {
     t_paquete *paquete = malloc(sizeof(t_paquete));
 
@@ -72,7 +72,7 @@ void enviar_mensaje(char *mensaje, int socket_cliente)
 
     void *a_enviar = serializar_paquete(paquete, bytes);
 
-    send(socket_cliente, a_enviar, bytes, 0);
+    send(socket_conexion, a_enviar, bytes, 0);
 
     free(a_enviar);
     eliminar_paquete(paquete);
@@ -109,12 +109,12 @@ void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
     paquete->buffer->size += tamanio + sizeof(int);
 }
 
-void enviar_paquete(t_paquete *paquete, int socket_cliente)
+void enviar_paquete(t_paquete *paquete, int socket_conexion)
 {
     int bytes = paquete->buffer->size + 2 * sizeof(int);
     void *a_enviar = serializar_paquete(paquete, bytes);
 
-    send(socket_cliente, a_enviar, bytes, 0);
+    send(socket_conexion, a_enviar, bytes, 0);
 
     free(a_enviar);
 }
@@ -126,9 +126,9 @@ void eliminar_paquete(t_paquete *paquete)
     free(paquete);
 }
 
-void liberar_conexion(int socket_cliente)
+void liberar_conexion(int socket_conexion)
 {
-    close(socket_cliente);
+    close(socket_conexion);
 }
 
 /*
@@ -140,7 +140,7 @@ int iniciar_servidor(char *puerto)
     struct addrinfo hints, *servinfo;
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
@@ -150,63 +150,67 @@ int iniciar_servidor(char *puerto)
     }
 
     // Creamos el socket de escucha del servidor
-    int socket_servidor = socket(servinfo->ai_family,
-                                 servinfo->ai_socktype,
-                                 servinfo->ai_protocol);
+    int socket_escucha = socket(servinfo->ai_family,
+                                servinfo->ai_socktype,
+                                servinfo->ai_protocol);
 
     // Asociamos el socket a un puerto
-    if (bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen) != 0) {
+    if (bind(socket_escucha, servinfo->ai_addr, servinfo->ai_addrlen) != 0) {
         log_error(debug_logger, "No se pudo bindear el socket.");
         exit(1);
     }
 
     // Escuchamos las conexiones entrantes
-    listen(socket_servidor, SOMAXCONN);
+    listen(socket_escucha, SOMAXCONN);
 
     freeaddrinfo(servinfo);
 
-    return socket_servidor;
+    return socket_escucha;
 }
 
-int esperar_cliente(int socket_servidor)
+int esperar_cliente(int socket_escucha)
 {
     // Aceptamos un nuevo cliente
-    int socket_cliente = accept(socket_servidor, NULL, NULL);
+    int socket_conexion = accept(socket_escucha, NULL, NULL);
+    if (socket_conexion < 0) {
+        log_error(debug_logger, "Hubo un error aceptando la conexión");
+        exit(1);
+    }
     log_trace(debug_logger, "Se conecto un cliente");
 
-    return socket_cliente;
+    return socket_conexion;
 }
 
-int recibir_operacion(int socket_cliente)
+int recibir_operacion(int socket_conexion)
 {
     int cod_op;
-    if (recv(socket_cliente, &cod_op, sizeof(int), MSG_WAITALL) > 0)
+    if (recv(socket_conexion, &cod_op, sizeof(int), MSG_WAITALL) > 0)
         return cod_op;
     else {
-        close(socket_cliente);
+        close(socket_conexion);
         return -1;
     }
 }
 
-void *recibir_buffer(int *size, int socket_cliente)
+void *recibir_buffer(int *size, int socket_conexion)
 {
     void *buffer;
 
-    recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+    recv(socket_conexion, size, sizeof(int), MSG_WAITALL);
     buffer = malloc(*size);
-    recv(socket_cliente, buffer, *size, MSG_WAITALL);
+    recv(socket_conexion, buffer, *size, MSG_WAITALL);
 
     return buffer;
 }
 
-char *recibir_mensaje(int socket_cliente)
+char *recibir_mensaje(int socket_conexion)
 {
     int size;
-    char *buffer = recibir_buffer(&size, socket_cliente);
+    char *buffer = recibir_buffer(&size, socket_conexion);
     return buffer;
 }
 
-t_list *recibir_paquete(int socket_cliente)
+t_list *recibir_paquete(int socket_conexion)
 {
     int size;
     int desplazamiento = 0;
@@ -214,7 +218,7 @@ t_list *recibir_paquete(int socket_cliente)
     t_list *valores = list_create();
     int tamanio;
 
-    buffer = recibir_buffer(&size, socket_cliente);
+    buffer = recibir_buffer(&size, socket_conexion);
     while (desplazamiento < size) {
         memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
         desplazamiento += sizeof(int);
@@ -227,45 +231,42 @@ t_list *recibir_paquete(int socket_cliente)
     return valores;
 }
 
-bool realizar_handshake(int socket_servidor)
+bool realizar_handshake(int socket_conexion)
 {
-    enviar_mensaje(MENSAJE_HANDSHAKE, socket_servidor);
+    size_t bytes;
 
-    // El paquete recibido debe ser un mensaje
-    if (recibir_operacion(socket_servidor) != MENSAJE) {
-        log_error(debug_logger,
-                  "El servidor no respondio al handshake con un mensaje");
-        return false;
+    // Enviar handshake
+    uint32_t msg = MENSAJE_HANDSHAKE;
+    bytes = send(socket_conexion, &msg, sizeof(uint32_t), 0);
+    if (bytes <= 0) {
+        log_error(debug_logger, "No se pudo enviar el handshake");
+        exit(1);
     }
+    uint32_t respuesta;
+    recv(socket_conexion, &respuesta, sizeof(uint32_t), MSG_WAITALL);
 
-    char *respuesta = recibir_mensaje(socket_servidor);
     // Verifico que la respuesta sea la correcta
-    if (!strcmp(respuesta, RESPUESTA_HANDSHAKE_OK)) {
-        return false;
-    }
-
-    free(respuesta);
-    return true;
+    return respuesta == RESPUESTA_HANDSHAKE_OK;
 }
 
-void recibir_handshake(int socket_cliente)
+bool recibir_handshake(int socket_conexion)
 {
-    // El paquete recibido debe ser un mensaje
-    if (recibir_operacion(socket_cliente) != MENSAJE) {
-        log_error(debug_logger,
-                  "El handshake recibido desde el socket %d no fue un mensaje",
-                  socket_cliente);
-        return;
+    uint32_t mensaje_recibido;
+    ssize_t bytes =
+        recv(socket_conexion, &mensaje_recibido, sizeof(uint32_t), MSG_WAITALL);
+    if (bytes <= 0) {
+        log_error(debug_logger, "Hubo un error recibiendo el handshake");
+        exit(1);
     }
-
-    char *mensaje_recibido = recibir_mensaje(socket_cliente);
 
     // Si el mensaje recibido es correcto
-    if (strcmp(mensaje_recibido, MENSAJE_HANDSHAKE)) {
-        enviar_mensaje(RESPUESTA_HANDSHAKE_OK, socket_cliente);
-    } else {
-        enviar_mensaje(RESPUESTA_HANDSHAKE_ERROR, socket_cliente);
+    uint32_t msg = (mensaje_recibido == MENSAJE_HANDSHAKE)
+                       ? RESPUESTA_HANDSHAKE_OK
+                       : RESPUESTA_HANDSHAKE_ERROR;
+    bytes = send(socket_conexion, &msg, sizeof(uint32_t), 0);
+    if (bytes <= 0) {
+        log_error(debug_logger, "No se pudo enviar la respuesta al handshake");
+        exit(1);
     }
-
-    free(mensaje_recibido);
+    return mensaje_recibido == MENSAJE_HANDSHAKE;
 }

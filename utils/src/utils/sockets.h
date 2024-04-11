@@ -8,9 +8,9 @@
 #include <unistd.h>
 
 // Definiciones
-#define MENSAJE_HANDSHAKE "42"
-#define RESPUESTA_HANDSHAKE_OK "OK"
-#define RESPUESTA_HANDSHAKE_ERROR "NO OK"
+#define MENSAJE_HANDSHAKE 42
+#define RESPUESTA_HANDSHAKE_OK 1
+#define RESPUESTA_HANDSHAKE_ERROR 0
 
 // Debe estar definido
 extern t_log *debug_logger;
@@ -32,10 +32,10 @@ typedef struct {
 
 /* Devuelve un socket a la ip y puerto proveidos */
 int crear_conexion(char *ip, char *puerto);
-void liberar_conexion(int socket_cliente);
+void liberar_conexion(int conexion_cliente);
 
 /* Envia un string */
-void enviar_mensaje(char *mensaje, int socket_cliente);
+void enviar_mensaje(char *mensaje, int socket_conexion);
 
 /* Devuelve un paquete vacio */
 t_paquete *crear_paquete(void);
@@ -45,32 +45,32 @@ void eliminar_paquete(t_paquete *paquete);
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
 
 /* Envia paquete */
-void enviar_paquete(t_paquete *paquete, int socket_cliente);
+void enviar_paquete(t_paquete *paquete, int socket_conexion);
 
 /* Inicia un socket como servidor en un puerto dado y lo devuelve */
 int iniciar_servidor(char *puerto);
 
 /* Bloqueante, espera un cliente y devuelve su socket */
-int esperar_cliente(int socket_servidor);
+int esperar_cliente(int socket_escucha);
 
 /* Devuelve el codigo de operacion al inicio de un paquete
  * Debe ser llamado antes de recibir_paquete o recibir_mensaje */
-int recibir_operacion(int socket_cliente);
+int recibir_operacion(int socket_conexion);
 
 /* Lee size bytes del socket */
-void *recibir_buffer(int *size, int socket_cliente);
+void *recibir_buffer(int *size, int socket_conexion);
 
 /* Recibe el buffer de un paquete y devuelve una lista con sus elementos */
-t_list *recibir_paquete(int socket_cliente);
+t_list *recibir_paquete(int socket_conexion);
 
 /* Recibe un mensaje simple y lo devuelve */
-char *recibir_mensaje(int socket_cliente);
+char *recibir_mensaje(int socket_conexion);
 
 /* Realiza un handshake con el servidor y devuelve true si el servidor devuelve
- * "OK" */
-bool realizar_handshake(int socket_servidor);
+ * 1 */
+bool realizar_handshake(int socket_conexion);
 
-/* Devuelve un mensaje de "OK" al cliente si este envio un handshake valido */
-void recibir_handshake(int socket_cliente);
+/* Retorna true y envia 1 al cliente si este envio un handshake valido */
+bool recibir_handshake(int socket_conexion);
 
 #endif // SOCKETS_H_
