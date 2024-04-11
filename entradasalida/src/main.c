@@ -1,5 +1,6 @@
 #include "./main.h"
 
+
 int main(int argc, char *argv[])
 {
     if (argc != 3) {
@@ -26,9 +27,29 @@ int main(int argc, char *argv[])
 
     cargar_config(config);
 
-    // Liberar memoria
-    config_destroy(config);
+    // Conexion con el kernel
+    int conexion_kernel = crear_conexion(ip_kernel, puerto_kernel);
 
+    if (!realizar_handshake(conexion_kernel)) {
+        log_error(debug_logger,
+                  "No se pudo realizar un handshake con el Kernel");
+    }
+
+    // Conexion con la memoria
+    if (tipo_interfaz != GENERICA ) {
+        int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+        if (!realizar_handshake(conexion_memoria)) {
+            log_error(debug_logger,
+                    "No se pudo realizar un handshake con la memoria");
+        }
+
+        enviar_mensaje(MENSAJE_A_MEMORIA_IO, conexion_memoria);
+    }
+
+    // Liberar memoria
+    log_destroy(debug_logger);
+    log_destroy(entradasalida_logger);
+    config_destroy(config);
     return 0;
 }
 
@@ -50,18 +71,15 @@ void cargar_config(t_config *config)
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case STDOUT:
-        tiempo_unidad_trabajo =
-            config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        tiempo_unidad_trabajo = config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case DIALFS:
-        tiempo_unidad_trabajo =
-            config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        tiempo_unidad_trabajo = config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-        path_base_dialfs =
-            config_get_string_or_exit(config, "PATH_BASE_DIALFS");
+        path_base_dialfs = config_get_string_or_exit(config, "PATH_BASE_DIALFS");
         block_size = config_get_string_or_exit(config, "BLOCK_SIZE");
         block_count = config_get_string_or_exit(config, "BLOCK_COUNT");
     }

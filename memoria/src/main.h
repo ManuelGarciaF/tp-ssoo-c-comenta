@@ -8,13 +8,11 @@
 #include <utils/sockets.h>
 #include <utils/utils.h>
 #include <string.h>
+#include <utils/mensajes.h>
 
 /*
 ** Variables globales
 */
-#define MENSAJE_CPU "cpu"
-#define MENSAJE_KERNEL "kernel"
-#define MENSAJE_IO "io"
 
 t_log *debug_logger;
 t_log *memoria_logger;

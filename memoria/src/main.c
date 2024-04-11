@@ -55,14 +55,14 @@ void atender_conexion(int *socket_conexion)
 
     char* modulo = recibir_mensaje(*socket_conexion);
 
-    if (strcmp(modulo, MENSAJE_KERNEL) == 0){
+    if (strcmp(modulo, MENSAJE_A_MEMORIA_KERNEL) == 0){
         atender_kernel(*socket_conexion);
     }
-    else if (strcmp(modulo, MENSAJE_CPU) == 0)
+    else if (strcmp(modulo, MENSAJE_A_MEMORIA_CPU) == 0)
     {
         atender_cpu(*socket_conexion);
     }
-    else if (strcmp(modulo, MENSAJE_IO) == 0)
+    else if (strcmp(modulo, MENSAJE_A_MEMORIA_IO) == 0)
     {
         atender_io(*socket_conexion);
     }

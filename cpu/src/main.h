@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
+#include <utils/mensajes.h>
 
 /*
 ** Variables globales

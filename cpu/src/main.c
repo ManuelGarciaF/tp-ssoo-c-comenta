@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con memoria");
     }
-    enviar_mensaje("cpu", conexion_memoria);
+    enviar_mensaje(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
 
     // Esperar que los hilos terminen
