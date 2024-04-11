@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
 
@@ -37,6 +38,7 @@ char *block_count;
 ** Definiciones de funciones
 */
 
-void cargar_config(char* ruta);
+void cargar_config(t_config *config);
+t_tipo_interfaz parsear_a_t_tipo_interfaz(char* str);
 
 #endif // MAIN_H_
