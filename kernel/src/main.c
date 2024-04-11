@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
         log_error(debug_logger,
                   "No se pudo realizar un handshake con la memoria");
     }
+    enviar_mensaje("kernel", conexion_memoria);
 
     // TODO iniciar hilo para la consola del kernel
 

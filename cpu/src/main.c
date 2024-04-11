@@ -41,8 +41,10 @@ int main(int argc, char *argv[])
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
 
     if (!realizar_handshake(conexion_memoria)) {
-        log_error(debug_logger, "Se pudo realizar un handshake con memoria");
+        log_error(debug_logger, "No se pudo realizar un handshake con memoria");
     }
+    enviar_mensaje("cpu", conexion_memoria);
+
 
     // Esperar que los hilos terminen
     pthread_join(hilo_dispatch, NULL);

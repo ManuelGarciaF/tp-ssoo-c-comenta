@@ -1,8 +1,95 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <utils/hello.h>
+#include "./main.h"
 
 int main(int argc, char* argv[]) {
-    decir_hola("Memoria");
+
+    //logs
+    debug_logger = log_create("memoria_debug.log", "memoria_debug", true, LOG_LEVEL_INFO);
+    memoria_logger = log_create("memoria.log", "memoria", true, LOG_LEVEL_INFO);
+
+    //config
+    t_config *config = config_create("memoria.config");
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo crear la config");
+        exit(1);
+    }
+
+    cargar_config(config);
+
+    // Esperar conexiones
+    int socket_escucha = iniciar_servidor(puerto_escucha);
+    while (true) {
+        // Guardo el socket en el heap para no perderlo
+        int *conexion = malloc(sizeof(int));
+        *conexion = esperar_cliente(socket_escucha);
+
+        // Crear hilo para manejar esta conexion
+        pthread_t hilo;
+        int iret = pthread_create(&hilo, NULL, (void *)atender_conexion, conexion);
+        if (iret != 0) {
+            log_error(
+                debug_logger, "No se pudo crear un hilo para atender la conexion");
+            exit(1);
+        }
+        pthread_detach(hilo);
+    }
+
     return 0;
+}
+
+/* Inicializa las variables globales */
+void cargar_config(t_config *config)
+{
+    puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+}
+
+
+void atender_conexion(int *socket_conexion)
+{
+    recibir_handshake(*socket_conexion);
+
+    if (recibir_operacion(*socket_conexion) != MENSAJE){
+        log_error(
+                debug_logger, "El cliente no envio un mensaje.");
+            pthread_exit(NULL);
+    }
+
+    char* modulo = recibir_mensaje(*socket_conexion);
+
+    if (strcmp(modulo, MENSAJE_KERNEL) == 0){
+        atender_kernel(*socket_conexion);
+    }
+    else if (strcmp(modulo, MENSAJE_CPU) == 0)
+    {
+        atender_cpu(*socket_conexion);
+    }
+    else if (strcmp(modulo, MENSAJE_IO) == 0)
+    {
+        atender_io(*socket_conexion);
+    }
+    else
+    {
+        log_error(
+                debug_logger, "El cliente no informo su identidad.");
+            pthread_exit(NULL);
+    }
+    
+    
+    close(*socket_conexion);
+    free(socket_conexion);
+    pthread_exit(NULL);
+}
+
+void atender_cpu(int socket_conexion)
+{
+    log_info(debug_logger, "Se conecto correctamente (cpu)");
+}
+
+void atender_kernel(int socket_conexion)
+{
+    log_info(debug_logger, "Se conecto correctamente (kernel)");
+}
+
+void atender_io(int socket_conexion)
+{
+    log_info(debug_logger, "Se Se conecto correctamente (io)");
 }
