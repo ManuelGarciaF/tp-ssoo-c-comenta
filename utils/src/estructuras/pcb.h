@@ -18,7 +18,7 @@ typedef struct {
 } t_registros;
 
 typedef struct {
-    uint32_t pcb;
+    uint32_t pid;
     uint32_t programCounter;
     uint32_t quantum;
     t_registros registros;
