@@ -9,6 +9,16 @@
 #include <utils/utils.h>
 #include <string.h>
 #include <utils/mensajes.h>
+#include <commons/collections/list.h>
+
+/*
+** Estructuras
+*/
+
+typedef struct {
+    uint32_t pid;
+    t_list* lineas;
+} t_proceso; 
 
 /*
 ** Variables globales
@@ -29,5 +39,7 @@ void atender_conexion(int *socket_conexion);
 void atender_io(int socket_conexion);
 void atender_kernel(int socket_conexion);
 void atender_cpu(int socket_conexion);
+void recibir_crear_proceso(int socket_conexion);
+void recibir_liberar_proceso(int socket_conexion);
 
 #endif // MAIN_H_

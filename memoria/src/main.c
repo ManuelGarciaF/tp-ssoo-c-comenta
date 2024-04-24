@@ -87,9 +87,33 @@ void atender_cpu(int socket_conexion)
 void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
+    while (true) {
+        if (recibir_operacion(socket_conexion) != MENSAJE){
+            log_error(debug_logger, "el kernel no envio mensaje como se esperaba");
+        }
+        char* mensaje = recibir_mensaje(socket_conexion);
+        if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
+            recibir_crear_proceso(socket_conexion);
+        }
+        else if (strcmp(mensaje, MENSAJE_FIN_PROCESO) == 0) {
+            recibir_liberar_proceso(socket_conexion);
+        }
+
+        free(mensaje);
+    }
 }
 
 void atender_io(int socket_conexion)
 {
     log_info(debug_logger, "Se Se conecto correctamente (io)");
+}
+
+void recibir_crear_proceso(int socket_conexion)
+{
+
+}
+
+void recibir_liberar_proceso(int socket_conexion)
+{
+
 }
