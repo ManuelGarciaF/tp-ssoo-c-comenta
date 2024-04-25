@@ -1,5 +1,19 @@
 #include "./main.h"
 
+/*
+** Variables Globales
+*/
+t_log *debug_logger;
+t_log *kernel_logger;
+
+// Variables de config
+char *puerto_escucha;
+char *ip_memoria;
+char *puerto_memoria;
+char *ip_cpu;
+char *puerto_cpu_dispatch;
+char *puerto_cpu_interrupt;
+
 int main(int argc, char *argv[])
 {
     debug_logger =
@@ -37,8 +51,44 @@ int main(int argc, char *argv[])
     // Avisar quien es a la memoria
     enviar_mensaje(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
 
-    // TODO iniciar hilo para la consola del kernel
+    pthread_t hilo_esperar_conexiones;
+    int iret = pthread_create(&hilo_esperar_conexiones, NULL, (void*)esperar_conexiones_io, NULL);
+    if (iret != 0) {
+        log_error(debug_logger,
+                "No se pudo crear un hilo para esperar conexiones");
+    }
 
+    correr_consola();
+    // Cuando vuelve esta función, el programa debe terminar.
+
+    // Cerrar sockets
+    close(conexion_cpu_dispatch);
+    close(conexion_cpu_interrupt);
+    close(conexion_memoria);
+
+    // Liberar memoria
+    log_destroy(debug_logger);
+    log_destroy(kernel_logger);
+
+    config_destroy(config);
+
+    pthread_exit(NULL);
+}
+
+/* Inicializa las variables globales */
+void cargar_config(t_config *config)
+{
+    puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+    ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
+    puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+    ip_cpu = config_get_string_or_exit(config, "IP_CPU");
+    puerto_cpu_dispatch =
+        config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
+    puerto_cpu_interrupt =
+        config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
+}
+
+void esperar_conexiones_io(void) {
     // Conexiones con I/O
     int socket_escucha = iniciar_servidor(puerto_escucha);
     while (true) {
@@ -56,43 +106,14 @@ int main(int argc, char *argv[])
             exit(1);
         }
         pthread_detach(hilo);
-
-        // TODO Cuando romper este loop
     }
-
-    // Cerrar sockets
-    close(conexion_cpu_dispatch);
-    close(conexion_cpu_interrupt);
-    close(conexion_memoria);
-
-    // Liberar memoria
-    log_destroy(debug_logger);
-    log_destroy(kernel_logger);
-
-    config_destroy(config);
-
-    // No matar los hilos al terminar el programa
-    pthread_exit(NULL);
-    return 0;
-}
-
-/* Inicializa las variables globales */
-void cargar_config(t_config *config)
-{
-    puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
-    ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-    puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-    ip_cpu = config_get_string_or_exit(config, "IP_CPU");
-    puerto_cpu_dispatch =
-        config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
-    puerto_cpu_interrupt =
-        config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
 }
 
 /* Maneja las conexiones de los dispositivos de I/O */
 void atender_io(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
+    printf("Se recibio el handshake de entradaSalida");
 
     close(*socket_conexion);
     free(socket_conexion);
