@@ -20,7 +20,7 @@ typedef struct {
 
 typedef struct {
     uint32_t pid;
-    uint32_t programCounter;
+    uint32_t program_counter;
     uint32_t quantum; // No se usa todavia
     t_registros registros;
 } t_pcb;
