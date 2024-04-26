@@ -41,7 +41,7 @@ void correr_consola(void);
 
 void atender_io(int *socket_conexion);
 
-// Funciones de consol
+// Funciones de consola
 
 void iniciar_proceso(char *path);
 void finalizar_proceso(char *pid);
