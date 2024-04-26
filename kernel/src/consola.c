@@ -33,9 +33,13 @@ void correr_consola(void) {
 
 void iniciar_proceso(char *path) {
     // Crear un nuevo pcb
-    t_pcb *pcb = pcb_create(ultimo_pid++);
+    t_pcb *pcb = pcb_create(ultimo_pid);
+    log_info(kernel_logger, "Se crea el proceso %d en NEW", ultimo_pid);
+    ultimo_pid++;
 
     // Agregarlo a la lista de new
+    squeue_push(cola_new, pcb);
+    // Ahora depende del planificador a largo plazo.
 }
 
 void finalizar_proceso(char *pid) {

@@ -10,7 +10,7 @@ t_pcb *pcb_create(uint32_t pid)
         return NULL;
     }
     pcb->pid = pid;
-    pcb->program_counter = 1;
+    pcb->program_counter = 0;
     pcb->quantum = 0;
     pcb->registros = registros;
 
