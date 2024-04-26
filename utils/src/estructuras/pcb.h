@@ -6,7 +6,6 @@
 #include <utils/sockets.h>
 
 typedef struct {
-    uint32_t pc;
     uint8_t ax;
     uint8_t bx;
     uint8_t cx;
@@ -21,6 +20,7 @@ typedef struct {
 
 typedef struct {
     uint32_t pid;
+    uint32_t programCounter;
     uint32_t quantum; // No se usa todavia
     t_registros registros;
 } t_pcb;

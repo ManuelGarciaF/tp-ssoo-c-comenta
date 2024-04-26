@@ -6,6 +6,7 @@ t_pcb *pcb_create(uint32_t pid)
 
     t_pcb *pcb = malloc(sizeof(t_pcb));
     pcb->pid = pid;
+    pcb->programCounter = 1;
     pcb->quantum = 0;
     pcb->registros = registros;
 
