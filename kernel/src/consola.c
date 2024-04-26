@@ -1,5 +1,7 @@
 #include "main.h"
 
+int ultimo_pid = 0;
+
 void correr_consola(void) {
     char *input;
     while (true) {
@@ -30,7 +32,10 @@ void correr_consola(void) {
 }
 
 void iniciar_proceso(char *path) {
-    // TODO
+    // Crear un nuevo pcb
+    t_pcb *pcb = pcb_create(ultimo_pid++);
+
+    // Agregarlo a la lista de new
 }
 
 void finalizar_proceso(char *pid) {

@@ -32,7 +32,7 @@ typedef struct {
 t_pcb *pcb_create(uint32_t pid);
 void pcb_destroy(t_pcb *);
 
-void enviar_pcb(t_pcb *, int socket_conexion);
-t_pcb *recibir_pcb(int socket_conexion);
+void pcb_send(t_pcb *, int socket_conexion);
+t_pcb *pcb_receive(int socket_conexion);
 
 #endif // PCB_H_

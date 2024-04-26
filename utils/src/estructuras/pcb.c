@@ -17,7 +17,7 @@ void pcb_destroy(t_pcb *pcb)
     free(pcb);
 }
 
-void enviar_pcb(t_pcb *pcb, int socket_conexion)
+void pcb_send(t_pcb *pcb, int socket_conexion)
 {
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, pcb, sizeof(t_pcb));
@@ -25,4 +25,12 @@ void enviar_pcb(t_pcb *pcb, int socket_conexion)
     enviar_paquete(paquete, socket_conexion);
 
     eliminar_paquete(paquete);
+}
+
+t_pcb *pcb_receive(int socket_conexion)
+{
+    t_list *contenido = recibir_paquete(socket_conexion);
+    t_pcb *pcb = list_get(contenido, 0);
+    list_destroy(contenido);
+    return pcb;
 }
