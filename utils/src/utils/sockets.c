@@ -62,7 +62,7 @@ void enviar_mensaje(char *mensaje, int socket_conexion)
 {
     t_paquete *paquete = malloc(sizeof(t_paquete));
 
-    paquete->codigo_operacion = MENSAJE;
+    paquete->codigo_operacion = OP_MENSAJE;
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = strlen(mensaje) + 1;
     paquete->buffer->stream = malloc(paquete->buffer->size);
@@ -88,7 +88,7 @@ void crear_buffer(t_paquete *paquete)
 t_paquete *crear_paquete(void)
 {
     t_paquete *paquete = malloc(sizeof(t_paquete));
-    paquete->codigo_operacion = PAQUETE;
+    paquete->codigo_operacion = OP_PAQUETE;
     crear_buffer(paquete);
     return paquete;
 }
@@ -205,6 +205,12 @@ void *recibir_buffer(int *size, int socket_conexion)
 
 char *recibir_mensaje(int socket_conexion)
 {
+    // Verificar que se envió un mensaje
+    if (recibir_operacion(socket_conexion) != OP_MENSAJE) {
+        log_error(debug_logger, "El paquete recibido no es un mensaje");
+        exit(1);
+    }
+
     int size;
     char *buffer = recibir_buffer(&size, socket_conexion);
     return buffer;
@@ -212,6 +218,12 @@ char *recibir_mensaje(int socket_conexion)
 
 t_list *recibir_paquete(int socket_conexion)
 {
+    // Verificar que se envió un paquete
+    if (recibir_operacion(socket_conexion) != OP_PAQUETE) {
+        log_error(debug_logger, "El paquete recibido no es un mensaje");
+        exit(1);
+    }
+
     int size;
     int desplazamiento = 0;
     void *buffer;

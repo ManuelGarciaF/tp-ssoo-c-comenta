@@ -16,8 +16,8 @@
 extern t_log *debug_logger;
 
 typedef enum {
-    MENSAJE, // String simple
-    PAQUETE, // Paquete compuesto de varios campos
+    OP_MENSAJE, // String simple
+    OP_PAQUETE, // Paquete compuesto de varios campos
 } op_code;
 
 typedef struct {
@@ -53,8 +53,7 @@ int iniciar_servidor(char *puerto);
 /* Bloqueante, espera un cliente y devuelve su socket */
 int esperar_cliente(int socket_escucha);
 
-/* Devuelve el codigo de operacion al inicio de un paquete
- * Debe ser llamado antes de recibir_paquete o recibir_mensaje */
+/* Recibe el codigo de operacion al inicio de un paquete */
 int recibir_operacion(int socket_conexion);
 
 /* Lee size bytes del socket */
