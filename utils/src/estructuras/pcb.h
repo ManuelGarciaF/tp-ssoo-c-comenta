@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <utils/sockets.h>
+#include <commons/log.h>
+
+// Debe estar definido
+extern t_log *debug_logger;
 
 typedef struct {
     uint8_t ax;

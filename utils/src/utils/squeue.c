@@ -3,6 +3,10 @@
 t_squeue *squeue_create()
 {
     t_squeue *sq = malloc(sizeof(t_squeue));
+    if (sq == NULL) {
+        log_error(debug_logger, "Error al alojar memoria para squeue");
+        return NULL;
+    }
     sq->queue = queue_create();
     pthread_mutex_init(sq->mutex, NULL);
 

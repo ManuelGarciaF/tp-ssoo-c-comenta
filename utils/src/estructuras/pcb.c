@@ -5,6 +5,10 @@ t_pcb *pcb_create(uint32_t pid)
     t_registros registros = {0};
 
     t_pcb *pcb = malloc(sizeof(t_pcb));
+    if (pcb == NULL) {
+        log_error(debug_logger, "Error al alojar memoria para PCB");
+        return NULL;
+    }
     pcb->pid = pid;
     pcb->program_counter = 1;
     pcb->quantum = 0;

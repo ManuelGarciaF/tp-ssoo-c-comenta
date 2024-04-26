@@ -4,6 +4,10 @@
 #include <commons/collections/queue.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <commons/log.h>
+
+// Debe estar definido
+extern t_log *debug_logger;
 
 // Safe Queue, incluye un mutex
 typedef struct {
