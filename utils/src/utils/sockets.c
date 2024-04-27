@@ -207,7 +207,7 @@ char *recibir_mensaje(int socket_conexion)
 {
     // Verificar que se envió un mensaje
     if (recibir_operacion(socket_conexion) != OP_MENSAJE) {
-        log_error(debug_logger, "El paquete recibido no es un mensaje");
+        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje");
         exit(1);
     }
 
@@ -220,7 +220,7 @@ t_list *recibir_paquete(int socket_conexion)
 {
     // Verificar que se envió un paquete
     if (recibir_operacion(socket_conexion) != OP_PAQUETE) {
-        log_error(debug_logger, "El paquete recibido no es un mensaje");
+        log_error(debug_logger, "recibir_paquete: No se recibio un paquete");
         exit(1);
     }
 
