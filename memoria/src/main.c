@@ -47,12 +47,6 @@ void atender_conexion(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
 
-    if (recibir_operacion(*socket_conexion) != MENSAJE){
-        log_error(
-                debug_logger, "El cliente no envio un mensaje.");
-            pthread_exit(NULL);
-    }
-
     char* modulo = recibir_mensaje(*socket_conexion);
 
     if (strcmp(modulo, MENSAJE_A_MEMORIA_KERNEL) == 0){
@@ -107,6 +101,7 @@ void atender_io(int socket_conexion)
 {
     log_info(debug_logger, "Se Se conecto correctamente (io)");
 }
+<<<<<<< HEAD
 
 void recibir_crear_proceso(int socket_conexion)
 {
@@ -117,3 +112,5 @@ void recibir_liberar_proceso(int socket_conexion)
 {
 
 }
+=======
+>>>>>>> main
