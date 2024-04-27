@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     pthread_t hilo_planificador_largo_plazo;
     iret = pthread_create(&hilo_planificador_largo_plazo,
                           NULL,
-                          (void *)hilo_planificador_largo_plazo,
+                          (void *)planificador_largo_plazo,
                           &conexion_memoria);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
