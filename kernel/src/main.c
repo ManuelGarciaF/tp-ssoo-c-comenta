@@ -14,10 +14,14 @@ char *puerto_memoria;
 char *ip_cpu;
 char *puerto_cpu_dispatch;
 char *puerto_cpu_interrupt;
+int grado_multiprogramacion;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
 t_dictionary *colas_blocked;
+
+// Semaforos
+sem_t sem_multiprogramacion;
 
 int main(int argc, char *argv[])
 {
@@ -27,37 +31,39 @@ int main(int argc, char *argv[])
     int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
 
     if (!realizar_handshake(conexion_cpu_dispatch)) {
-        log_error(debug_logger,
-                  "No Se pudo realizar un handshake con el CPU (dispatch)");
+        log_error(debug_logger, "No Se pudo realizar un handshake con el CPU (dispatch)");
     }
 
     int conexion_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
     if (!realizar_handshake(conexion_cpu_interrupt)) {
-        log_error(debug_logger,
-                  "No se pudo realizar un handshake con el CPU (interrupt)");
+        log_error(debug_logger, "No se pudo realizar un handshake con el CPU (interrupt)");
     }
 
     // Conexion con la memoria
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
     if (!realizar_handshake(conexion_memoria)) {
-        log_error(debug_logger,
-                  "No se pudo realizar un handshake con la memoria");
+        log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
     }
     // Avisar quien es a la memoria
     enviar_mensaje(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
 
     // Crear hilo para esperar conexiones de entrada/salida
     pthread_t hilo_esperar_io;
-    int iret = pthread_create(&hilo_esperar_io,
-                              NULL,
-                              (void *)esperar_conexiones_io,
-                              NULL);
+    int iret = pthread_create(&hilo_esperar_io, NULL, (void *)esperar_conexiones_io, NULL);
     if (iret != 0) {
-        log_error(debug_logger,
-                  "No se pudo crear un hilo para esperar conexiones");
+        log_error(debug_logger, "No se pudo crear un hilo para esperar conexiones");
     }
 
-    // TODO Iniciar planificadores
+    pthread_t hilo_planificador_largo_plazo;
+    iret = pthread_create(&hilo_planificador_largo_plazo,
+                          NULL,
+                          (void *)hilo_planificador_largo_plazo,
+                          &conexion_memoria);
+    if (iret != 0) {
+        log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
+    }
+
+    // TODO Iniciar planificador corto plazo
 
     correr_consola();
     // Cuando vuelve esta función, el programa debe terminar.
@@ -74,8 +80,7 @@ int main(int argc, char *argv[])
 
 void inicializar_globales(void)
 {
-    debug_logger =
-        log_create("kernel_debug.log", "kernel_debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("kernel_debug.log", "kernel_debug", true, LOG_LEVEL_INFO);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
 
     config = config_create("kernel.config");
@@ -88,10 +93,13 @@ void inicializar_globales(void)
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
     ip_cpu = config_get_string_or_exit(config, "IP_CPU");
-    puerto_cpu_dispatch =
-        config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
-    puerto_cpu_interrupt =
-        config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
+    puerto_cpu_dispatch = config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
+    puerto_cpu_interrupt = config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
+    grado_multiprogramacion = config_get_int_or_exit(config, "GRADO_MULTIPROGRAMACION");
+
+    // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
+    // comienza en el grado de multiprogramacion.
+    sem_init(&sem_multiprogramacion, 0, grado_multiprogramacion);
 
     cola_new = squeue_create();
     cola_ready = squeue_create();
@@ -109,6 +117,8 @@ void liberar_globales(void)
     squeue_destroy(cola_new);
     squeue_destroy(cola_ready);
     // TODO liberar colas_blocked cuando este implementada.
+
+    sem_destroy(&sem_multiprogramacion);
 }
 
 void esperar_conexiones_io(void)
@@ -135,7 +145,6 @@ void esperar_conexiones_io(void)
 void atender_io(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
-    printf("Se recibio el handshake de entradaSalida");
 
     close(*socket_conexion);
     free(socket_conexion);

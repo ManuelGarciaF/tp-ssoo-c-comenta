@@ -1,6 +1,6 @@
 #include "main.h"
 
-int ultimo_pid = 0;
+uint32_t ultimo_pid = 0;
 
 void correr_consola(void) {
     char *input;
@@ -32,13 +32,18 @@ void correr_consola(void) {
 }
 
 void iniciar_proceso(char *path) {
-    // Crear un nuevo pcb
-    t_pcb *pcb = pcb_create(ultimo_pid);
-    log_info(kernel_logger, "Se crea el proceso %d en NEW", ultimo_pid);
-    ultimo_pid++;
+    // Guardar tanto el pid como el path, para enviar a memoria
+    t_proceso_nuevo *proceso_nuevo = malloc(sizeof(t_proceso_nuevo));
+    if (proceso_nuevo == NULL) {
+        log_error(debug_logger, "No se pudo alojar espacio para el proceso nuevo");
+    }
+
+    proceso_nuevo->pid = ultimo_pid++;
+    proceso_nuevo->path = path;
 
     // Agregarlo a la lista de new
-    squeue_push(cola_new, pcb);
+    squeue_push(cola_new, proceso_nuevo);
+
     // Ahora depende del planificador a largo plazo.
 }
 

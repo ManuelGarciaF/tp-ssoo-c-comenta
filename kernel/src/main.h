@@ -16,10 +16,16 @@
 #include <commons/collections/list.h>
 #include <estructuras/pcb.h>
 #include <assert.h>
+#include <semaphore.h>
 
 /*
 ** Estructuras
 */
+
+typedef struct {
+    uint32_t pid;
+    char *path;
+} t_proceso_nuevo;
 
 /*
 ** Variables globales
@@ -35,11 +41,15 @@ extern char *puerto_memoria;
 extern char *ip_cpu;
 extern char *puerto_cpu_dispatch;
 extern char *puerto_cpu_interrupt;
+extern int grado_multiprogramacion;
 
 // Colas de procesos
-extern t_squeue *cola_new;
-extern t_squeue *cola_ready;
-extern t_dictionary *colas_blocked;
+extern t_squeue *cola_new; // Contiene t_proceso_nuevo
+extern t_squeue *cola_ready; // Contiene t_pcb
+extern t_dictionary *colas_blocked; // Contienen t_pcb
+
+// Semaforo de espacio restante de multiprogamacion
+extern sem_t sem_multiprogramacion;
 
 /*
 ** Definiciones de funciones
@@ -54,6 +64,8 @@ void esperar_conexiones_io(void);
 void correr_consola(void);
 
 void atender_io(int *socket_conexion);
+
+void planificador_largo_plazo(int *conexion_memoria);
 
 // Funciones de consola
 
