@@ -2,7 +2,8 @@
 
 uint32_t ultimo_pid = 0;
 
-void correr_consola(void) {
+void correr_consola(void)
+{
     char *input;
     while (true) {
         input = readline("kernel> ");
@@ -19,10 +20,21 @@ void correr_consola(void) {
         if (!strcmp(comando, "EJECUTAR_SCRIPT")) {
             assert(0 && "No implementado"); // TODO
         } else if (!strcmp(comando, "INICIAR_PROCESO")) {
-            char *path = strtok(NULL, " ");
+            char *path_substr = strtok(NULL, " ");
+
+            // Hay que copiar el path, porque strtok devuelve un puntero a la cadena original
+            char *path = malloc(strlen(path_substr) + 1);
+            strcpy(path, path_substr);
+
             iniciar_proceso(path);
+
         } else if (!strcmp(comando, "FINALIZAR_PROCESO")) {
-            char *pid = strtok(NULL, " ");
+            char *pid_substr = strtok(NULL, " ");
+
+            // Hay que copiar el pid, porque strtok devuelve un puntero a la cadena original
+            char *pid = malloc(strlen(pid_substr) + 1);
+            strcpy(pid, pid_substr);
+
             finalizar_proceso(pid);
         }
 
@@ -31,7 +43,8 @@ void correr_consola(void) {
     }
 }
 
-void iniciar_proceso(char *path) {
+void iniciar_proceso(char *path)
+{
     // Guardar tanto el pid como el path, para enviar a memoria
     t_proceso_nuevo *proceso_nuevo = malloc(sizeof(t_proceso_nuevo));
     if (proceso_nuevo == NULL) {
@@ -44,9 +57,11 @@ void iniciar_proceso(char *path) {
     // Agregarlo a la lista de new
     squeue_push(cola_new, proceso_nuevo);
 
+    log_info(kernel_logger, "Proceso %d agregado a la cola de new", proceso_nuevo->pid);
     // Ahora depende del planificador a largo plazo.
 }
 
-void finalizar_proceso(char *pid) {
+void finalizar_proceso(char *pid)
+{
     // TODO
 }

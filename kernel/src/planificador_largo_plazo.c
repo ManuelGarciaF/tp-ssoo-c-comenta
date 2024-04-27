@@ -6,7 +6,7 @@ void planificador_largo_plazo(int *conexion_memoria)
     while (true) {
         // Si no hay elementos en NEW, esperar.
         while (squeue_is_empty(cola_new))
-            ;
+            usleep(50000); // Esperar 50ms idk
 
         // Esperar que haya espacio disponible para agregar un proceso
         sem_wait(&sem_multiprogramacion);
