@@ -48,8 +48,9 @@ extern t_squeue *cola_new; // Contiene t_proceso_nuevo
 extern t_squeue *cola_ready; // Contiene t_pcb
 extern t_dictionary *colas_blocked; // Contienen t_pcb
 
-// Semaforo de espacio restante de multiprogamacion
-extern sem_t sem_multiprogramacion;
+// Semaforos
+extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
+extern sem_t sem_elementos_en_new;
 
 /*
 ** Definiciones de funciones
@@ -66,11 +67,5 @@ void correr_consola(void);
 void atender_io(int *socket_conexion);
 
 void planificador_largo_plazo(int *conexion_memoria);
-
-// Funciones de consola
-
-void iniciar_proceso(char *path);
-void finalizar_proceso(char *pid);
-
 
 #endif // MAIN_H_

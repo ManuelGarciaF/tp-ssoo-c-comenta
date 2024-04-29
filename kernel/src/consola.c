@@ -1,4 +1,4 @@
-#include "main.h"
+#include "consola.h"
 
 uint32_t ultimo_pid = 0;
 
@@ -56,6 +56,7 @@ void iniciar_proceso(char *path)
 
     // Agregarlo a la lista de new
     squeue_push(cola_new, proceso_nuevo);
+    sem_post(&sem_elementos_en_new); // Avisamos que hay 1 elemento mas en NEW
 
     log_info(kernel_logger, "Proceso %d agregado a la cola de new", proceso_nuevo->pid);
     // Ahora depende del planificador a largo plazo.

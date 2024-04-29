@@ -22,6 +22,7 @@ t_dictionary *colas_blocked;
 
 // Semaforos
 sem_t sem_multiprogramacion;
+sem_t sem_elementos_en_new;
 
 int main(int argc, char *argv[])
 {
@@ -100,6 +101,9 @@ void inicializar_globales(void)
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
     sem_init(&sem_multiprogramacion, 0, grado_multiprogramacion);
+    // sem_elementos_en_new permite bloquear el plp hasta que se lo necesita,
+    // contiene el numero de elementos en cola_new.
+    sem_init(&sem_elementos_en_new, 0, 0);
 
     cola_new = squeue_create();
     cola_ready = squeue_create();
@@ -119,6 +123,7 @@ void liberar_globales(void)
     // TODO liberar colas_blocked cuando este implementada.
 
     sem_destroy(&sem_multiprogramacion);
+    sem_destroy(&sem_elementos_en_new);
 }
 
 void esperar_conexiones_io(void)
