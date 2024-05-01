@@ -4,28 +4,28 @@ void decode(char *instruccion) {
     char **instruccion_parametrizada = string_n_split(instruccion, 2, " ");
 
     if (!strcmp(instruccion_parametrizada[0], "SET")){
-       parsear_set(instruccion_parametrizada[1]);
+       return parsear_set(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "MOV_IN")) {
-        //ENTREGA 3
+        return parsear_mov_in(instruccion_parametrizada[1]);
     }
     else if (!strcmp(instruccion_parametrizada[0], "MOV_OUT")) {
-        //ENTREGA 3
+        return parsear_mov_out(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "SUM")) {
-        parsear_sum(instruccion_parametrizada[1]);
+        return parsear_sum(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "SUB")) {
-        parsear_sub(instruccion_parametrizada[1]);
+        return parsear_sub(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "JNZ")) {
-        parsear_jnz(instruccion_parametrizada[1]);
+        return parsear_jnz(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "RESIZE")) {
-        //ENTREGA 3
+        return parsear_resize(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "COPY_STRING")) {
-        //ENTREGA 3
+        return parsear_copy_string(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "WAIT")) {
         //SI
@@ -65,7 +65,7 @@ void decode(char *instruccion) {
     string_array_destroy(instruccion_parametrizada);
 }
 
-t_instruccion parsear_set(char **argumentos)
+t_instruccion parsear_set(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
@@ -76,9 +76,11 @@ t_instruccion parsear_set(char **argumentos)
     instruccion.parametros[0].registro = registro;
     instruccion.parametros[1].valor_numerico = valor;
 
+    string_array_destroy(argumentos_separados);
+    return instruccion;
 }
 
-t_instruccion parsear_sum(char **argumentos)
+t_instruccion parsear_sum(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
@@ -89,9 +91,12 @@ t_instruccion parsear_sum(char **argumentos)
     instruccion.parametros[0].registro = destino;
     instruccion.parametros[1].registro = origen;
 
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+
 }
 
-t_instruccion parsear_sub(char **argumentos)
+t_instruccion parsear_sub(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
@@ -102,33 +107,119 @@ t_instruccion parsear_sub(char **argumentos)
     instruccion.parametros[0].registro = destino;
     instruccion.parametros[1].registro = origen;
 
+    string_array_destroy(argumentos_separados);
+    return instruccion;
 }
 
-t_instruccion parsear_jnz(char **argumentos)
+t_instruccion parsear_jnz(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
     t_registro registro = parsear_a_t_registro(argumentos_separados[0]);
-    int numero_instruccion = parsear_a_t_registro(argumentos_separados[1]);
+    int numero_instruccion = atoi(argumentos_separados[1]);
 
     instruccion.opcode = JNZ;
     instruccion.parametros[0].registro = registro;
     instruccion.parametros[1].valor_numerico = numero_instruccion;
 
+    string_array_destroy(argumentos_separados);
+    return instruccion;
 }
 
-t_instruccion parsear_io_gen_sleep(char **argumentos)
+t_instruccion parsear_io_gen_sleep(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
-    char interfaz[255] = parsear_a_t_registro(argumentos_separados[0]);
-    int unidades_de_trabajo = parsear_a_t_registro(argumentos_separados[0]);
+    int unidades_de_trabajo = atoi(argumentos_separados[1]);
 
     instruccion.opcode = SET;
-    strcpy(instruccion.parametros[0].str, interfaz);
+    strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
     instruccion.parametros[1].valor_numerico = unidades_de_trabajo;
-
+    
+    string_array_destroy(argumentos_separados);
+    return instruccion;
 }
+
+t_instruccion parsear_mov_in(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    t_registro datos = parsear_a_t_registro(argumentos_separados[0]);
+    t_registro direccion = parsear_a_t_registro(argumentos_separados[1]);
+
+    instruccion.opcode = MOV_IN;
+    instruccion.parametros[0].registro = datos;
+    instruccion.parametros[1].registro = direccion;
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
+t_instruccion parsear_mov_out(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    t_registro direccion = parsear_a_t_registro(argumentos_separados[0]);
+    t_registro datos = parsear_a_t_registro(argumentos_separados[1]);
+
+    instruccion.opcode = MOV_IN;
+    instruccion.parametros[0].registro = direccion;
+    instruccion.parametros[1].registro = datos;
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
+t_instruccion parsear_resize(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    int tamanio = atoi(argumentos_separados[0]);
+    
+    instruccion.opcode = RESIZE;
+    instruccion.parametros[0].valor_numerico = tamanio;
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
+t_instruccion parsear_copy_string(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    int tamanio = atoi(argumentos_separados[0]);
+    
+    instruccion.opcode = COPY_STRING;
+    instruccion.parametros[0].valor_numerico = tamanio;
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
+t_instruccion parsear_wait(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    
+    instruccion.opcode = COPY_STRING;
+    strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
+t_instruccion parsear_signal(char *argumentos)
+{
+    t_instruccion instruccion = {0};
+    char **argumentos_separados = string_n_split(argumentos, 2, " ");
+    
+    instruccion.opcode = COPY_STRING;
+    strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
+
+    string_array_destroy(argumentos_separados);
+    return instruccion;
+}
+
 
 
 t_registro parsear_a_t_registro(char *str)
