@@ -1,6 +1,7 @@
 #ifndef CONSOLA_H_
 #define CONSOLA_H_
 
+#include <commons/string.h>
 #include "main.h"
 
 // Funciones

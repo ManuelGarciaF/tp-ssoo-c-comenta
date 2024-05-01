@@ -14,31 +14,28 @@ void correr_consola(void)
             break;
         }
 
-        // Parsear comando
-        char *comando = strtok(input, " ");
+        // Dividir input en comando y parametro
+        char **comando = string_n_split(input, 2, " ");
 
-        if (!strcmp(comando, "EJECUTAR_SCRIPT")) {
+        if (!strcmp(comando[0], "EJECUTAR_SCRIPT")) {
             assert(0 && "No implementado"); // TODO
-        } else if (!strcmp(comando, "INICIAR_PROCESO")) {
-            char *path_substr = strtok(NULL, " ");
 
-            // Hay que copiar el path, porque strtok devuelve un puntero a la cadena original
-            char *path = malloc(strlen(path_substr) + 1);
-            strcpy(path, path_substr);
+        } else if (!strcmp(comando[0], "INICIAR_PROCESO")) {
+            if (comando[1] != NULL) {
+                iniciar_proceso(comando[1]);
+            } else {
+                printf("error: El comando necesita un parametro.\n");
+            }
 
-            iniciar_proceso(path);
-
-        } else if (!strcmp(comando, "FINALIZAR_PROCESO")) {
-            char *pid_substr = strtok(NULL, " ");
-
-            // Hay que copiar el pid, porque strtok devuelve un puntero a la cadena original
-            char *pid = malloc(strlen(pid_substr) + 1);
-            strcpy(pid, pid_substr);
-
-            finalizar_proceso(pid);
+        } else if (!strcmp(comando[0], "FINALIZAR_PROCESO")) {
+            if (comando[1] != NULL) {
+                finalizar_proceso(comando[1]);
+            } else {
+                printf("error: El comando necesita un parametro.\n");
+            }
         }
-
         // TODO
+
         free(input);
     }
 }

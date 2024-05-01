@@ -15,6 +15,8 @@ void planificador_largo_plazo(int *conexion_memoria)
         t_proceso_nuevo *proceso = squeue_pop(cola_new);
         enviar_proceso_nuevo_a_memoria(proceso, *conexion_memoria);
 
+        log_info(debug_logger, "Se envió el proceso %d con path: %s a memoria", proceso->pid, proceso->path);
+
         // Crear el PCB y agregarlo a READY
         // TODO capaz hay que esperar que memoria nos avise que ya cargo el archivo
         t_pcb *pcb = pcb_create(proceso->pid);
