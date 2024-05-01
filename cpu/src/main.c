@@ -16,17 +16,7 @@ int main(int argc, char *argv[])
     int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
     int socket_escucha_interrupt = iniciar_servidor(puerto_escucha_interrupt);
 
-    pthread_t hilo_dispatch, hilo_interrupt;
-    // Crear hilo para dispatch
-    if (pthread_create(&hilo_dispatch,
-                       NULL,
-                       (void *)servidor_dispatch,
-                       &socket_escucha_dispatch) != 0) {
-        log_error(debug_logger,
-                  "No se pudo crear un hilo para el servidor de dispatch");
-        exit(1);
-    }
-
+    pthread_t hilo_interrupt;
     // Crear hilo para interrupt
     if (pthread_create(&hilo_interrupt,
                        NULL,
@@ -45,13 +35,25 @@ int main(int argc, char *argv[])
     }
     enviar_mensaje(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
+    // Espera a que se conecte con el kernel y devuelve la conexion
+    int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
+
+    while(true) {
+        // Recibe PCB
+        log_info(debug_logger, "Esperando PCB");
+        pcb = pcb_receive(conexion_dispatch);
+        log_info(debug_logger, "Recibido PCB exitosamente");
+
+        // Fetch
+        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);        
+    }
 
     // Esperar que los hilos terminen
-    pthread_join(hilo_dispatch, NULL);
     pthread_join(hilo_interrupt, NULL);
 
     // Cerrar sockets
-    liberar_conexion(conexion_memoria);
+    close(conexion_memoria);
+    close(socket_escucha_dispatch);
 
     // Liberar memoria
     log_destroy(debug_logger);
@@ -73,7 +75,7 @@ void cargar_config(t_config *config)
         config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
 }
 
-void *servidor_dispatch(int *socket_escucha)
+int aceptar_conexion_kernel(int *socket_escucha)
 {
     int socket_conexion = esperar_cliente(*socket_escucha);
     if (!recibir_handshake(socket_conexion)) {
@@ -81,15 +83,6 @@ void *servidor_dispatch(int *socket_escucha)
                  "Hubo un error al intentar hacer el handshake");
         return NULL;
     }
-    
-    while(true) {
-        log_info(debug_logger, "Esperando PCB");
-        t_pcb *pcb = pcb_receive(socket_conexion);
-        log_info(debug_logger, "Recibido PCB exitosamente");
-    }
-
-    close(*socket_escucha);
-    return NULL;
 }
 
 void *servidor_interrupt(int *socket_escucha)
@@ -104,3 +97,18 @@ void *servidor_interrupt(int *socket_escucha)
     return NULL;
 }
 
+
+char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
+{
+    enviar_mensaje(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
+    // Solcitiar instruccion
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
+    agregar_a_paquete(paquete, &program_counter, sizeof(uint32_t));
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete);
+    log_info(debug_logger, "Solicitada instruccion %d de proceso %d ", program_counter, pid);
+
+    // Recibir instruccion
+    return recibir_mensaje(conexion_memoria);
+}

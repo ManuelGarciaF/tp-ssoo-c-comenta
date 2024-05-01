@@ -15,7 +15,7 @@
 */
 t_log *debug_logger;
 t_log *cpu_logger;
-
+t_pcb *pcb;
 
 // Variables de config
 char *ip_memoria;
