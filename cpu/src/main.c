@@ -1,5 +1,19 @@
 #include "./main.h"
 
+/*
+** Variables globales
+*/
+t_log *debug_logger;
+t_log *cpu_logger;
+t_pcb *pcb;
+
+// Variables de config
+char *ip_memoria;
+char *puerto_memoria;
+char *puerto_escucha_dispatch;
+char *puerto_escucha_interrupt;
+
+
 int main(int argc, char *argv[])
 {
     debug_logger =
@@ -45,7 +59,10 @@ int main(int argc, char *argv[])
         log_info(debug_logger, "Recibido PCB exitosamente");
 
         // Fetch
-        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);        
+        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
+
+        // Decode
+        decode(instruccion);
     }
 
     // Esperar que los hilos terminen
@@ -75,14 +92,15 @@ void cargar_config(t_config *config)
         config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
 }
 
-int aceptar_conexion_kernel(int *socket_escucha)
+int aceptar_conexion_kernel(int socket_escucha)
 {
-    int socket_conexion = esperar_cliente(*socket_escucha);
+    int socket_conexion = esperar_cliente(socket_escucha);
     if (!recibir_handshake(socket_conexion)) {
         log_info(debug_logger,
                  "Hubo un error al intentar hacer el handshake");
-        return NULL;
+        return -1;
     }
+    return socket_conexion;
 }
 
 void *servidor_interrupt(int *socket_escucha)

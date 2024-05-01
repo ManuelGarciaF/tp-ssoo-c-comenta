@@ -13,15 +13,15 @@
 /*
 ** Variables globales
 */
-t_log *debug_logger;
-t_log *cpu_logger;
-t_pcb *pcb;
+extern t_log *debug_logger;
+extern t_log *cpu_logger;
+extern t_pcb *pcb;
 
 // Variables de config
-char *ip_memoria;
-char *puerto_memoria;
-char *puerto_escucha_dispatch;
-char *puerto_escucha_interrupt;
+extern char *ip_memoria;
+extern char *puerto_memoria;
+extern char *puerto_escucha_dispatch;
+extern char *puerto_escucha_interrupt;
 
 /*
 ** Definiciones de funciones
@@ -30,5 +30,8 @@ void cargar_config(t_config *config);
 
 void *servidor_dispatch(int *socket_escucha);
 void *servidor_interrupt(int *socket_escucha);
+void decode(char *instruccion);
+int aceptar_conexion_kernel(int socket_escucha);
+char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 
 #endif // MAIN_H_
