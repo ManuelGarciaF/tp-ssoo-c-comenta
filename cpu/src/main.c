@@ -76,9 +76,16 @@ void cargar_config(t_config *config)
 void *servidor_dispatch(int *socket_escucha)
 {
     int socket_conexion = esperar_cliente(*socket_escucha);
-    if (recibir_handshake(socket_conexion)) {
+    if (!recibir_handshake(socket_conexion)) {
         log_info(debug_logger,
-                 "Se realizo el handshake correctamente (dispatch)");
+                 "Hubo un error al intentar hacer el handshake");
+        return NULL;
+    }
+    
+    while(true) {
+        log_info(debug_logger, "Esperando PCB");
+        t_pcb *pcb = pcb_receive(socket_conexion);
+        log_info(debug_logger, "Recibido PCB exitosamente");
     }
 
     close(*socket_escucha);
@@ -96,3 +103,4 @@ void *servidor_interrupt(int *socket_escucha)
     close(*socket_escucha);
     return NULL;
 }
+

@@ -8,12 +8,14 @@
 #include <utils/sockets.h>
 #include <utils/utils.h>
 #include <utils/mensajes.h>
+#include <estructuras/pcb.h>
 
 /*
 ** Variables globales
 */
 t_log *debug_logger;
 t_log *cpu_logger;
+
 
 // Variables de config
 char *ip_memoria;
