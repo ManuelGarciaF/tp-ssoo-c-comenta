@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 
         // Decode
         decode(instruccion);
+        free(instruccion);
     }
 
     // Esperar que los hilos terminen
