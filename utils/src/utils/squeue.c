@@ -27,8 +27,7 @@ void squeue_destroy(t_squeue *sq)
     free(sq);
 }
 
-void squeue_destroy_and_destroy_elements(t_squeue *sq,
-                                         void (*element_destroyer)(void *))
+void squeue_destroy_and_destroy_elements(t_squeue *sq, void (*element_destroyer)(void *))
 {
     queue_destroy_and_destroy_elements(sq->queue, (void *)(*element_destroyer));
     pthread_mutex_destroy(sq->mutex);
@@ -49,4 +48,14 @@ void *squeue_pop(t_squeue *sq)
     pthread_mutex_unlock(sq->mutex);
 
     return elem;
+}
+
+bool squeue_is_empty(t_squeue *sq)
+{
+    return queue_is_empty(sq->queue);
+}
+
+int squeue_size(t_squeue *sq)
+{
+    return queue_size(sq->queue);
 }
