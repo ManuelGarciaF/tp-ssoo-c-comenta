@@ -1,4 +1,6 @@
 #include "./main.h"
+#include "utils/mensajes.h"
+
 
 int main(int argc, char* argv[]) {
 
@@ -12,6 +14,10 @@ int main(int argc, char* argv[]) {
         log_error(debug_logger, "No se pudo crear la config");
         exit(1);
     }
+
+    //diccionario con pseudocodigo de procesos
+    codigo_procesos = dictionary_create();
+
 
     cargar_config(config);
 
@@ -81,9 +87,67 @@ void atender_cpu(int socket_conexion)
 void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
+    while (true) {
+
+        char* mensaje = recibir_mensaje(socket_conexion);
+        if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
+            recibir_crear_proceso(socket_conexion);
+        }
+        else if (strcmp(mensaje, MENSAJE_FIN_PROCESO) == 0) {
+            recibir_liberar_proceso(socket_conexion);
+        }
+
+        free(mensaje);
+    }
 }
 
 void atender_io(int socket_conexion)
 {
     log_info(debug_logger, "Se Se conecto correctamente (io)");
+}
+
+void recibir_crear_proceso(int socket_conexion)
+{
+    t_list *paquete = recibir_paquete(socket_conexion);
+    uint32_t *pid = list_get(paquete, 0);
+    char *pid_str = string_itoa(*pid);
+    char *path = list_get(paquete, 1);
+    t_list *lineas = devolver_lineas(path);
+    dictionary_put(codigo_procesos, pid_str, lineas);
+}
+
+void recibir_liberar_proceso(int socket_conexion)
+{
+    t_list *paquete = recibir_paquete(socket_conexion);
+    uint32_t *pid = list_get(paquete, 0);
+    char *pid_str = string_itoa(*pid);
+    dictionary_remove_and_destroy(codigo_procesos, pid_str, (void*) eliminar_data);
+}
+
+t_list *devolver_lineas(char *path)
+{
+    FILE *archivo = fopen(path, "r");
+    char *linea;
+    t_list *lineas = list_create();
+
+    // Verifica si el archivo se abrió correctamente
+    if (archivo == NULL) {
+        log_error(debug_logger, "El archivo no se pudo abrir correctamente.");
+    }
+
+    // Lee y muestra cada línea del archivo
+    do {
+        linea = malloc(TAMANIO_LINEA_INSTRUCCION);
+        fgets(linea, TAMANIO_LINEA_INSTRUCCION, archivo);
+        list_add(lineas, linea);
+    } while (fgets(linea, sizeof(linea), archivo) != NULL);
+
+    fclose(archivo);
+
+    return lineas;
+}
+
+void eliminar_data(t_list *data)
+{
+    list_destroy_and_destroy_elements(data, free);
 }
