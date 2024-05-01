@@ -22,14 +22,16 @@ void correr_consola(void)
 
         } else if (!strcmp(comando[0], "INICIAR_PROCESO")) {
             if (comando[1] != NULL) {
-                iniciar_proceso(comando[1]);
+                char *path_copy = string_duplicate(comando[1]);
+                iniciar_proceso(path_copy);
             } else {
                 printf("error: El comando necesita un parametro.\n");
             }
 
         } else if (!strcmp(comando[0], "FINALIZAR_PROCESO")) {
             if (comando[1] != NULL) {
-                finalizar_proceso(comando[1]);
+                char *pid_copy = string_duplicate(comando[1]);
+                finalizar_proceso(pid_copy);
             } else {
                 printf("error: El comando necesita un parametro.\n");
             }
@@ -63,4 +65,5 @@ void iniciar_proceso(char *path)
 void finalizar_proceso(char *pid)
 {
     // TODO
+    // free(pid)
 }

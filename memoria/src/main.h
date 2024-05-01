@@ -12,7 +12,7 @@
 #include <utils/mensajes.h>
 #include <commons/collections/list.h>
 
-#define TAMANIO_LINEA_INSTRUCCION (sizeof(char) * 255)
+#define LIMITE_LINEA_INSTRUCCION (sizeof(char) * 255)
 
 /*
 ** Estructuras

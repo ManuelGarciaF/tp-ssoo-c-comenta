@@ -88,7 +88,6 @@ void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
-
         char* mensaje = recibir_mensaje(socket_conexion);
         if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
             recibir_crear_proceso(socket_conexion);
@@ -112,6 +111,7 @@ void recibir_crear_proceso(int socket_conexion)
     uint32_t *pid = list_get(paquete, 0);
     char *pid_str = string_itoa(*pid);
     char *path = list_get(paquete, 1);
+
     t_list *lineas = devolver_lineas(path);
     dictionary_put(codigo_procesos, pid_str, lineas);
 }
@@ -133,17 +133,19 @@ t_list *devolver_lineas(char *path)
     // Verifica si el archivo se abrió correctamente
     if (archivo == NULL) {
         log_error(debug_logger, "El archivo no se pudo abrir correctamente.");
+        return NULL;
     }
 
     // Lee y muestra cada línea del archivo
-    do {
-        linea = malloc(TAMANIO_LINEA_INSTRUCCION);
-        fgets(linea, TAMANIO_LINEA_INSTRUCCION, archivo);
+    // Alocar memoria para la primera linea
+    linea = malloc(LIMITE_LINEA_INSTRUCCION);
+    while (fgets(linea, LIMITE_LINEA_INSTRUCCION, archivo) != NULL) {
         list_add(lineas, linea);
-    } while (fgets(linea, sizeof(linea), archivo) != NULL);
+        // Alocar nueva memoria para la proxima linea
+        linea = malloc(LIMITE_LINEA_INSTRUCCION);
+    }
 
     fclose(archivo);
-
     return lineas;
 }
 
