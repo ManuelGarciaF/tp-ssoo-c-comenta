@@ -21,6 +21,13 @@ void planificador_largo_plazo(int *conexion_memoria)
         // TODO capaz hay que esperar que memoria nos avise que ya cargo el archivo
         t_pcb *pcb = pcb_create(proceso->pid);
         squeue_push(cola_ready, pcb);
+        sem_post(&sem_elementos_en_ready);
+
+        // Logs
+        log_info(kernel_logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY", pcb->pid);
+        char *lista_pids = obtener_lista_pids(cola_ready);
+        log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
+        free(lista_pids);
 
         // Liberar el proceso
         free(proceso->path);
