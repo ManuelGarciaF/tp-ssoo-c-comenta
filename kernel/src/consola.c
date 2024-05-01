@@ -36,6 +36,7 @@ void correr_consola(void)
         }
         // TODO
 
+        string_array_destroy(comando);
         free(input);
     }
 }
