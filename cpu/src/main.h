@@ -9,6 +9,7 @@
 #include <utils/utils.h>
 #include <utils/mensajes.h>
 #include <estructuras/pcb.h>
+#include "decoder.h"
 
 /*
 ** Variables globales
@@ -30,7 +31,6 @@ void cargar_config(t_config *config);
 
 void *servidor_dispatch(int *socket_escucha);
 void *servidor_interrupt(int *socket_escucha);
-void decode(char *instruccion);
 int aceptar_conexion_kernel(int socket_escucha);
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 

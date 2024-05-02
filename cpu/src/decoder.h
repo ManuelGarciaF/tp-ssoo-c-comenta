@@ -5,7 +5,13 @@
 #include "main.h"
 #include <string.h>
 
-typedef enum { SET, SUM, SUB, JNZ, WAIT, SIGNAL, IO_GEN_SLEEP, EXIT, MOV_IN, MOV_OUT, RESIZE, COPY_STRING, WAIT, SIGNAL, IO_STDIN_READ} t_opcode;
+/*
+** Estructuras
+*/
+
+typedef enum { SET, MOV_IN, MOV_OUT, SUM, SUB, JNZ, RESIZE, COPY_STRING, WAIT, SIGNAL, IO_GEN_SLEEP, IO_STDIN_READ, IO_STDOUT_WRITE, IO_FS_CREATE, IO_FS_DELETE, IO_FS_TRUNCATE, IO_FS_WRITE, IO_FS_READ, EXIT} t_opcode;
+
+typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
 
 typedef struct {
     t_opcode opcode;
@@ -16,11 +22,10 @@ typedef struct {
     } parametros[5];
 } t_instruccion;
 
-
-typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
 /*
 ** Definiciones de funciones
 */
+t_instruccion decode(char *instruccion);
 t_instruccion parsear_set(char *argumentos);
 t_instruccion parsear_mov_in(char *argumentos);
 t_instruccion parsear_mov_out(char *argumentos);
@@ -33,6 +38,13 @@ t_instruccion parsear_wait(char *argumentos);
 t_instruccion parsear_signal(char *argumentos);
 t_instruccion parsear_io_gen_sleep(char *argumentos);
 t_instruccion parsear_io_stdin_read(char *argumentos);
+t_instruccion parsear_io_stdout_write(char *argumentos);
+t_instruccion parsear_io_fs_create(char *argumentos);
+t_instruccion parsear_io_fs_delete(char *argumentos);
+t_instruccion parsear_io_fs_truncate(char *argumentos);
+t_instruccion parsear_io_fs_write(char *argumentos);
+t_instruccion parsear_io_fs_read(char *argumentos);
+t_instruccion parsear_exit(char *argumentos);
 
 t_registro parsear_a_t_registro(char *str);
 
