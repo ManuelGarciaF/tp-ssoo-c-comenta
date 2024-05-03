@@ -8,7 +8,7 @@ char *obtener_lista_pids(t_squeue *cola_ready) {
     t_list_iterator *iterator = list_iterator_create(pid_strs);
     while (list_iterator_has_next(iterator)) {
         // No agregar la coma antes del primero
-        if (list_iterator_index(iterator) == 0) {
+        if (list_iterator_index(iterator) != -1) {
             string_append(&str, ", ");
         }
 
