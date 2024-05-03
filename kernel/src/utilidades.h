@@ -1,5 +1,5 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef UTILIDADESKERNEL_H_
+#define UTILIDADESKERNEL_H_
 
 #include <commons/collections/list.h>
 #include <utils/squeue.h>
@@ -8,6 +8,6 @@
 
 char *obtener_lista_pids(t_squeue *cola_ready);
 
-char *pcb_to_pidstr(char *seed, t_pcb *pcb);
+char *pcb_to_pidstr(t_pcb *pcb);
 
-#endif // UTILS_H_
+#endif // UTILIDADESKERNEL_H_

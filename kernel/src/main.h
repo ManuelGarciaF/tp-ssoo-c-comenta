@@ -1,7 +1,6 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-#include "utilidades.h"
 #include <assert.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
@@ -17,6 +16,7 @@
 #include <utils/sockets.h>
 #include <utils/squeue.h>
 #include <utils/utils.h>
+#include "utilidades.h"
 
 /*
 ** Estructuras

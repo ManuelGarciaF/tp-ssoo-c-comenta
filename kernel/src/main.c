@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 
     // Conexion con el cpu
     int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
-
     if (!realizar_handshake(conexion_cpu_dispatch)) {
         log_error(debug_logger, "No Se pudo realizar un handshake con el CPU (dispatch)");
     }

@@ -41,7 +41,6 @@ void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *proceso_nuevo, int conexion
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(proceso_nuevo->pid), sizeof(uint32_t));
 
-    printf("%s\n", proceso_nuevo->path);
     agregar_a_paquete(paquete, proceso_nuevo->path, strlen(proceso_nuevo->path) + 1);
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
