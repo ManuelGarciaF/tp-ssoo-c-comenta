@@ -12,6 +12,8 @@
 #define MENSAJE_INICIO_PROCESO "inicio"
 #define MENSAJE_FIN_PROCESO "fin"
 
+#define MENSAJE_SOLICITAR_INSTRUCCION "instruccion"
+
 typedef enum { FIN_QUANTUM, FIN_PROCESO, WAIT_RECURSO, SIGNAL_RECURSO, IO } t_motivo_desalojo;
 
 #endif
