@@ -65,7 +65,8 @@ int main(int argc, char *argv[])
     }
 
     pthread_t hilo_planificador_corto_plazo;
-    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, (void *)planificador_corto_plazo, &conexion_cpu_dispatch);
+    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt};
+    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, (void *)planificador_corto_plazo, &params_pcp);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
     }

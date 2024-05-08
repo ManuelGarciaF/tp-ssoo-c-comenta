@@ -27,6 +27,11 @@ typedef struct {
     char *path;
 } t_proceso_nuevo;
 
+typedef struct {
+    int conexion_cpu_dispatch;
+    int conexion_cpu_interrupt;
+} t_parametros_pcp;
+
 typedef enum { FIFO, RR, VRR } t_algoritmo_planificacion;
 
 /*
@@ -75,6 +80,6 @@ void atender_io(int *socket_conexion);
 t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str);
 
 void planificador_largo_plazo(int *conexion_memoria);
-void planificador_corto_plazo(int *conexion_cpu_dispatch);
+void planificador_corto_plazo(t_parametros_pcp *params);
 
 #endif // MAIN_H_

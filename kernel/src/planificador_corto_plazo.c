@@ -1,7 +1,7 @@
 #include "planificador_corto_plazo.h"
 
 // Pasa procesos de READY a EXEC
-void planificador_corto_plazo(int *conexion_cpu_dispatch)
+void planificador_corto_plazo(t_parametros_pcp *params)
 {
     // Empieza en 0 para bloquear hasta que le digamos.
     sem_init(&sem_comenzar_reloj, 0, 0);
@@ -23,7 +23,8 @@ void planificador_corto_plazo(int *conexion_cpu_dispatch)
 
         // Por FIFO y RR siempre tomamos el primero
         t_pcb *pcb_a_ejecutar = squeue_pop(cola_ready);
-        enviar_pcb_a_cpu(pcb_a_ejecutar, *conexion_cpu_dispatch);
+        // Enviamos el pcb a CPU.
+        pcb_send(pcb_a_ejecutar, params->conexion_cpu_dispatch);
 
         log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
@@ -34,13 +35,11 @@ void planificador_corto_plazo(int *conexion_cpu_dispatch)
             sem_post(&sem_comenzar_reloj);
         }
 
-
-
         // En este punto, se esta ejecutando el proceso, esperamos que interrumpa
         // y nos devuelvan el pcb actualizado y el motivo.
         t_pcb *pcb_actualizado = NULL;
         char *nombre_recurso_interfaz = NULL;
-        t_motivo_desalojo motivo = recibir_pcb(*conexion_cpu_dispatch, pcb_actualizado, nombre_recurso_interfaz);
+        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, pcb_actualizado, nombre_recurso_interfaz);
 
         switch (motivo) {
         case FIN_QUANTUM:
@@ -48,6 +47,7 @@ void planificador_corto_plazo(int *conexion_cpu_dispatch)
             // TODO ver quantum para VRR
             squeue_push(cola_ready, pcb_actualizado);
 
+            // Logs
             log_info(kernel_logger, "PID: %d - Desalojado por fin de Quantum", pcb_actualizado->pid);
             log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: READY", pcb_actualizado->pid);
             char *lista_pids = obtener_lista_pids(cola_ready);
@@ -60,6 +60,7 @@ void planificador_corto_plazo(int *conexion_cpu_dispatch)
             log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_actualizado->pid);
             break;
 
+        // TODO
         case WAIT_RECURSO:
         case SIGNAL_RECURSO:
         case IO:
@@ -70,7 +71,7 @@ void planificador_corto_plazo(int *conexion_cpu_dispatch)
     sem_destroy(&sem_comenzar_reloj);
 }
 
-void reloj_rr(void)
+void reloj_rr(int conexion_cpu_interrupt)
 {
     while (true) {
         sem_wait(&sem_comenzar_reloj);
@@ -78,17 +79,14 @@ void reloj_rr(void)
         usleep(quantum * 1000);
         if (!proceso_desalojo_previamente) {
             // Desalojar por fin de Quantum
-            desalojar_proceso();
+            desalojar_proceso(conexion_cpu_interrupt);
         }
     }
 }
 
-void enviar_pcb_a_cpu(t_pcb *pcb_a_ejecutar, int conexion_cpu_dispatch)
+void desalojar_proceso(int conexion_interrupt)
 {
-}
-
-void desalojar_proceso()
-{
+    // TODO enviar un mensaje al CPU para desalojar
 }
 
 t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb *pcb_actualizado, char *nombre_recurso_interfaz)

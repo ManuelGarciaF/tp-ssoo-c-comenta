@@ -5,16 +5,14 @@
 
 // Variables globales.
 uint32_t pid_en_ejecucion;
-bool proceso_desalojo_previamente;
+bool proceso_desalojo_previamente = false;
 
 sem_t sem_comenzar_reloj;
 
 // Definiciones de funciones.
-void reloj_rr(void);
+void reloj_rr(int conexion_cpu_interrupt);
 
-void enviar_pcb_a_cpu(t_pcb *pcb_a_ejecutar, int conexion_cpu_dispatch) ;
-
-void desalojar_proceso();
+void desalojar_proceso(int conexion_interrupt);
 
 t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb *pcb_actualizado, char *nombre_recurso_interfaz);
 
