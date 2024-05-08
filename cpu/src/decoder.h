@@ -9,23 +9,9 @@
 ** Estructuras
 */
 
-typedef enum { SET, MOV_IN, MOV_OUT, SUM, SUB, JNZ, RESIZE, COPY_STRING, WAIT, SIGNAL, IO_GEN_SLEEP, IO_STDIN_READ, IO_STDOUT_WRITE, IO_FS_CREATE, IO_FS_DELETE, IO_FS_TRUNCATE, IO_FS_WRITE, IO_FS_READ, EXIT} t_opcode;
-
-typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
-
-typedef struct {
-    t_opcode opcode;
-    union {
-        t_registro registro;
-        int valor_numerico;
-        char str[255];
-    } parametros[5];
-} t_instruccion;
-
 /*
 ** Definiciones de funciones
 */
-t_instruccion decode(char *instruccion);
 t_instruccion parsear_set(char *argumentos);
 t_instruccion parsear_mov_in(char *argumentos);
 t_instruccion parsear_mov_out(char *argumentos);

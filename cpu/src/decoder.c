@@ -3,67 +3,70 @@
 t_instruccion decode(char *instruccion)
 {
     char **instruccion_parametrizada = string_n_split(instruccion, 2, " ");
+    t_instruccion ret;
 
     if (!strcmp(instruccion_parametrizada[0], "SET")){
-       return parsear_set(instruccion_parametrizada[1]);
-    } 
+        ret = parsear_set(instruccion_parametrizada[1]);
+    }
     else if (!strcmp(instruccion_parametrizada[0], "MOV_IN")) {
-        return parsear_mov_in(instruccion_parametrizada[1]);
+        ret = parsear_mov_in(instruccion_parametrizada[1]);
     }
     else if (!strcmp(instruccion_parametrizada[0], "MOV_OUT")) {
-        return parsear_mov_out(instruccion_parametrizada[1]);
+        ret = parsear_mov_out(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "SUM")) {
-        return parsear_sum(instruccion_parametrizada[1]);
+        ret = parsear_sum(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "SUB")) {
-        return parsear_sub(instruccion_parametrizada[1]);
+        ret = parsear_sub(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "JNZ")) {
-        return parsear_jnz(instruccion_parametrizada[1]);
+        ret = parsear_jnz(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "RESIZE")) {
-        return parsear_resize(instruccion_parametrizada[1]);
+        ret = parsear_resize(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "COPY_STRING")) {
-        return parsear_copy_string(instruccion_parametrizada[1]);
+        ret = parsear_copy_string(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "WAIT")) {
-        parsear_wait(instruccion_parametrizada[0]);
+        ret = parsear_wait(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "SIGNAL")) {
-        parsear_signal(instruccion_parametrizada[0]);
+        ret = parsear_signal(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_GEN_SLEEP")) {
-        return parsear_io_gen_sleep(instruccion_parametrizada[1]);
+        ret = parsear_io_gen_sleep(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_STDIN_READ")) {
-        return parsear_io_stdin_read(instruccion_parametrizada[0]);
+        ret = parsear_io_stdin_read(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_STDOUT_WRITE")) {
-        return parsear_io_stdout_write(instruccion_parametrizada[0]);
+        ret = parsear_io_stdout_write(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_FS_CREATE")) {
-        return parsear_io_fs_create(instruccion_parametrizada[0]);
+        ret = parsear_io_fs_create(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_FS_DELETE")) {
-        return parsear_io_fs_delete(instruccion_parametrizada[0]);
+        ret = parsear_io_fs_delete(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_FS_TRUNCATE")) {
-        return parsear_io_fs_truncate(instruccion_parametrizada[0]);
+        ret = parsear_io_fs_truncate(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_FS_WRITE")) {
-        return parsear_io_fs_write(instruccion_parametrizada[0]);
+        ret = parsear_io_fs_write(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "IO_FS_READ")) {
-        return parsear_io_fs_read(instruccion_parametrizada[0]);
+        ret = parsear_io_fs_read(instruccion_parametrizada[1]);
     } 
     else if (!strcmp(instruccion_parametrizada[0], "EXIT")) {
-        return parsear_exit(instruccion_parametrizada[0]);
-    } 
+        ret = parsear_exit(instruccion_parametrizada[1]);
+    }
 
     // Liberar memoria
     string_array_destroy(instruccion_parametrizada); // Esto no se ejecuta nunca, hay que arreglarlo
+    
+    return ret;
 }
 
 t_instruccion parsear_set(char *argumentos)

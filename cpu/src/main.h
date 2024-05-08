@@ -9,7 +9,22 @@
 #include <utils/utils.h>
 #include <utils/mensajes.h>
 #include <estructuras/pcb.h>
-#include "decoder.h"
+
+/*
+** Estructuras
+*/
+typedef enum { SET, MOV_IN, MOV_OUT, SUM, SUB, JNZ, RESIZE, COPY_STRING, WAIT, SIGNAL, IO_GEN_SLEEP, IO_STDIN_READ, IO_STDOUT_WRITE, IO_FS_CREATE, IO_FS_DELETE, IO_FS_TRUNCATE, IO_FS_WRITE, IO_FS_READ, EXIT} t_opcode;
+
+typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
+
+typedef struct {
+    t_opcode opcode;
+    union {
+        t_registro registro;
+        int valor_numerico;
+        char str[255];
+    } parametros[5];
+} t_instruccion;
 
 /*
 ** Variables globales
@@ -33,5 +48,6 @@ void *servidor_dispatch(int *socket_escucha);
 void *servidor_interrupt(int *socket_escucha);
 int aceptar_conexion_kernel(int socket_escucha);
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
+t_instruccion decode(char *instruccion);
 
 #endif // MAIN_H_
