@@ -15,6 +15,7 @@
 #include <utils/mensajes.h>
 #include <utils/sockets.h>
 #include <utils/squeue.h>
+#include <utils/sdictionary.h>
 #include <utils/utils.h>
 #include "utilidades.h"
 
@@ -55,13 +56,17 @@ extern int quantum;
 // Colas de procesos
 extern t_squeue *cola_new;          // Contiene t_proceso_nuevo
 extern t_squeue *cola_ready;        // Contiene t_pcb
-extern t_dictionary *colas_blocked; // Contienen t_pcb
+extern t_sdictionary *colas_blocked; // Contienen t_pcb
+
+// Recursos
+extern t_sdictionary *recursos;
 
 // Semaforos
 extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
 extern sem_t sem_elementos_en_new;
 extern sem_t sem_elementos_en_ready;
 extern sem_t sem_proceso_en_ejecucion;
+extern sem_t sem_interrupciones_activadas;
 
 /*
 ** Definiciones de funciones

@@ -56,6 +56,9 @@ void planificador_corto_plazo(t_parametros_pcp *params)
             break;
 
         case FIN_PROCESO:
+            // Habilitar 1 espacio en el grado de multiprogramacion
+            sem_post(&sem_multiprogramacion);
+
             log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_actualizado->pid);
             log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_actualizado->pid);
             break;

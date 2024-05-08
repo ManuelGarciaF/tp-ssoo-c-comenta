@@ -20,13 +20,16 @@ t_algoritmo_planificacion algoritmo_planificacion;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
-t_dictionary *colas_blocked;
+t_sdictionary *colas_blocked;
+
+t_sdictionary *recursos;
 
 // Semaforos
 sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
 sem_t sem_proceso_en_ejecucion;
+sem_t sem_interrupciones_activadas;
 
 int main(int argc, char *argv[])
 {
@@ -106,7 +109,6 @@ void inicializar_globales(void)
         parse_algoritmo_planifiacion(config_get_string_or_exit(config, "ALGORITMO_PLANIFICACION"));
     quantum = config_get_int_or_exit(config, "QUANTUM");
 
-
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
     sem_init(&sem_multiprogramacion, 0, grado_multiprogramacion);
@@ -122,7 +124,19 @@ void inicializar_globales(void)
 
     cola_new = squeue_create();
     cola_ready = squeue_create();
-    colas_blocked = NULL; // TODO ver esto
+    colas_blocked = sdictionary_create();
+
+    // Guardar los recursos disponibles en un diccionario.
+    recursos = sdictionary_create();
+    char **recursos_strs = config_get_array_value(config, "RECURSOS");
+    char **instancias_recursos_strs = config_get_array_value(config, "INSTANCIAS_RECURSOS");
+
+    for (int i = 0; recursos_strs[i] != NULL; i++) {
+        int *instancias = malloc(sizeof(int));
+        *instancias = atoi(instancias_recursos_strs[i]);
+
+        sdictionary_put(recursos, recursos_strs[i], instancias);
+    }
 }
 
 void liberar_globales(void)
@@ -135,7 +149,9 @@ void liberar_globales(void)
 
     squeue_destroy(cola_new);
     squeue_destroy(cola_ready);
-    // TODO liberar colas_blocked cuando este implementada.
+    sdictionary_destroy(colas_blocked);
+
+    sdictionary_destroy(recursos);
 
     sem_destroy(&sem_multiprogramacion);
     sem_destroy(&sem_elementos_en_new);
