@@ -22,12 +22,12 @@
 ** Variables globales
 */
 
-t_log *debug_logger;
-t_log *memoria_logger;
-t_dictionary *codigo_procesos;
+extern t_log *debug_logger;
+extern t_log *memoria_logger;
+extern t_dictionary *codigo_procesos;
 
 // Variables de config
-char *puerto_escucha;
+extern char *puerto_escucha;
 
 
 /*
@@ -39,9 +39,5 @@ void atender_conexion(int *socket_conexion);
 void atender_io(int socket_conexion);
 void atender_kernel(int socket_conexion);
 void atender_cpu(int socket_conexion);
-void recibir_crear_proceso(int socket_conexion);
-void recibir_liberar_proceso(int socket_conexion);
-t_list *devolver_lineas(char *path);
-void eliminar_data(t_list *data);
 
 #endif // MAIN_H_

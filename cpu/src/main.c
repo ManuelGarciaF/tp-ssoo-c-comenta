@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
         log_info(debug_logger, "Recibido PCB exitosamente");
 
         // Fetch
-        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
+        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
 
         // Decode
         decode(instruccion);
