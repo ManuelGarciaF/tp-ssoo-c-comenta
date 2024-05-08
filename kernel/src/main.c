@@ -15,6 +15,8 @@ char *ip_cpu;
 char *puerto_cpu_dispatch;
 char *puerto_cpu_interrupt;
 int grado_multiprogramacion;
+int quantum;
+t_algoritmo_planificacion algoritmo_planificacion;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
@@ -23,6 +25,8 @@ t_dictionary *colas_blocked;
 // Semaforos
 sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
+sem_t sem_elementos_en_ready;
+sem_t sem_proceso_en_ejecucion;
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +34,6 @@ int main(int argc, char *argv[])
 
     // Conexion con el cpu
     int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
-
     if (!realizar_handshake(conexion_cpu_dispatch)) {
         log_error(debug_logger, "No Se pudo realizar un handshake con el CPU (dispatch)");
     }
@@ -56,15 +59,17 @@ int main(int argc, char *argv[])
     }
 
     pthread_t hilo_planificador_largo_plazo;
-    iret = pthread_create(&hilo_planificador_largo_plazo,
-                          NULL,
-                          (void *)planificador_largo_plazo,
-                          &conexion_memoria);
+    iret = pthread_create(&hilo_planificador_largo_plazo, NULL, (void *)planificador_largo_plazo, &conexion_memoria);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
     }
 
-    // TODO Iniciar planificador corto plazo
+    pthread_t hilo_planificador_corto_plazo;
+    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt};
+    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, (void *)planificador_corto_plazo, &params_pcp);
+    if (iret != 0) {
+        log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
+    }
 
     correr_consola();
     // Cuando vuelve esta función, el programa debe terminar.
@@ -97,6 +102,10 @@ void inicializar_globales(void)
     puerto_cpu_dispatch = config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
     puerto_cpu_interrupt = config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
     grado_multiprogramacion = config_get_int_or_exit(config, "GRADO_MULTIPROGRAMACION");
+    algoritmo_planificacion =
+        parse_algoritmo_planifiacion(config_get_string_or_exit(config, "ALGORITMO_PLANIFICACION"));
+    quantum = config_get_int_or_exit(config, "QUANTUM");
+
 
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
@@ -104,6 +113,12 @@ void inicializar_globales(void)
     // sem_elementos_en_new permite bloquear el plp hasta que se lo necesita,
     // contiene el numero de elementos en cola_new.
     sem_init(&sem_elementos_en_new, 0, 0);
+
+    // Contiene el numero de elementos en cola_ready.
+    sem_init(&sem_elementos_en_ready, 0, 0);
+
+    // Inicia en 1, ya que se puede ejecutar un proceso a la vez.
+    sem_init(&sem_proceso_en_ejecucion, 0, 1);
 
     cola_new = squeue_create();
     cola_ready = squeue_create();
@@ -124,6 +139,8 @@ void liberar_globales(void)
 
     sem_destroy(&sem_multiprogramacion);
     sem_destroy(&sem_elementos_en_new);
+    sem_destroy(&sem_elementos_en_ready);
+    sem_destroy(&sem_proceso_en_ejecucion);
 }
 
 void esperar_conexiones_io(void)
@@ -154,4 +171,17 @@ void atender_io(int *socket_conexion)
     close(*socket_conexion);
     free(socket_conexion);
     pthread_exit(NULL);
+}
+
+t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)
+{
+    if (!strcmp(str, "FIFO")) {
+        return FIFO;
+    } else if (!strcmp(str, "RR")) {
+        return RR;
+    } else if (!strcmp(str, "VRR")) {
+        return VRR;
+    }
+    log_error(debug_logger, "El algoritmo de planificacion en el config no es valido");
+    exit(1);
 }
