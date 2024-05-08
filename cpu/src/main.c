@@ -59,11 +59,15 @@ int main(int argc, char *argv[])
         log_info(debug_logger, "Recibido PCB exitosamente");
 
         // Fetch
-        char *instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
+        char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
+        log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
 
         // Decode
-        decode(instruccion);
-        free(instruccion);
+        t_instruccion instruccion = decode(str_instruccion);
+        free(str_instruccion);
+
+        // Excecute
+        excecute(instruccion);        
     }
 
     // Esperar que los hilos terminen

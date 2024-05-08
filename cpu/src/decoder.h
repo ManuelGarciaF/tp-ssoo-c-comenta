@@ -6,10 +6,6 @@
 #include <string.h>
 
 /*
-** Estructuras
-*/
-
-/*
 ** Definiciones de funciones
 */
 t_instruccion parsear_set(char *argumentos);
