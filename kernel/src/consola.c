@@ -6,6 +6,9 @@ void correr_consola(void)
 {
     char *input;
     while (true) {
+        // Esperar unos milisegundos para que no se desordene por los logs
+        // TODO ver si esto es ilegal
+        usleep(50 * 1000);
         input = readline("kernel> ");
         if (input) {
             add_history(input);
