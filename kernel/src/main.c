@@ -137,6 +137,8 @@ void inicializar_globales(void)
 
         sdictionary_put(recursos, recursos_strs[i], instancias);
     }
+    string_array_destroy(recursos_strs);
+    string_array_destroy(instancias_recursos_strs);
 }
 
 void liberar_globales(void)
