@@ -69,4 +69,5 @@ void finalizar_proceso(char *pid)
 {
     // TODO
     // free(pid)
+    assert(false && "No implementado");
 }
