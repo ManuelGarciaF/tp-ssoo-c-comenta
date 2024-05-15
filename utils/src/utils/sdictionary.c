@@ -3,18 +3,11 @@
 t_sdictionary *sdictionary_create()
 {
     t_sdictionary *sd = malloc(sizeof(t_sdictionary));
-    if (sd == NULL) {
-        log_error(debug_logger, "Error al alojar memoria para sdictionary");
-        return NULL;
-    }
+    assert(sd != NULL);
     sd->dict = dictionary_create();
 
     sd->mutex = malloc(sizeof(pthread_mutex_t));
-    if (sd->mutex == NULL) {
-        log_error(debug_logger, "Error al alojar memoria para mutex");
-        free(sd);
-        return NULL;
-    }
+    assert(sd != NULL);
     pthread_mutex_init(sd->mutex, NULL);
 
     return sd;
@@ -50,4 +43,19 @@ void sdictionary_put(t_sdictionary *sd, char *key, void *element)
     pthread_mutex_lock(sd->mutex);
     dictionary_put(sd->dict, key, element);
     pthread_mutex_unlock(sd->mutex);
+}
+
+bool sdictionary_has_key(t_sdictionary *sd, char *key)
+{
+    pthread_mutex_lock(sd->mutex);
+    bool ret = dictionary_has_key(sd->dict, key);
+    pthread_mutex_unlock(sd->mutex);
+
+    return ret;
+}
+
+void sdictionary_destroy_and_destroy_elements(t_sdictionary *sd, void (*element_destroyer)(void *))
+{
+    dictionary_clean_and_destroy_elements(sd->dict, element_destroyer);
+    sdictionary_destroy(sd);
 }
