@@ -44,7 +44,8 @@ void excecute(t_instruccion instruccion_a_ejecutar)
 uint32_t get_registro(t_registro registro)
 {
     switch (registro) {
-
+    case PC:
+        return pcb->program_counter;
     case AX:
         return pcb->registros.ax;
     case BX:
@@ -65,15 +66,15 @@ uint32_t get_registro(t_registro registro)
         return pcb->registros.si;
     case DI:
         return pcb->registros.di;
-    default:
-        exit(1); // Unreachable
     }
 }
 
 void set_registro(t_registro registro, int valor)
 {
     switch (registro) {
-
+    case PC:
+        pcb->program_counter = valor;
+        break;
     case AX:
         pcb->registros.ax = valor;
         break;

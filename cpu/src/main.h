@@ -35,7 +35,7 @@ typedef enum {
     EXIT
 } t_opcode;
 
-typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
+typedef enum { PC, AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
 
 typedef struct {
     t_opcode opcode;
