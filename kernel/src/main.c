@@ -20,13 +20,17 @@ t_algoritmo_planificacion algoritmo_planificacion;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
-t_dictionary *colas_blocked;
+t_sdictionary *colas_blocked_recursos;
+t_sdictionary *colas_blocked_interfaces;
+
+t_sdictionary *instancias_recursos;
+t_sdictionary *asignaciones_recursos;
 
 // Semaforos
 sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
-sem_t sem_proceso_en_ejecucion;
+sem_t sem_interrupciones_activadas;
 
 int main(int argc, char *argv[])
 {
@@ -65,7 +69,7 @@ int main(int argc, char *argv[])
     }
 
     pthread_t hilo_planificador_corto_plazo;
-    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt};
+    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt, conexion_memoria};
     iret = pthread_create(&hilo_planificador_corto_plazo, NULL, (void *)planificador_corto_plazo, &params_pcp);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
@@ -106,7 +110,6 @@ void inicializar_globales(void)
         parse_algoritmo_planifiacion(config_get_string_or_exit(config, "ALGORITMO_PLANIFICACION"));
     quantum = config_get_int_or_exit(config, "QUANTUM");
 
-
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
     sem_init(&sem_multiprogramacion, 0, grado_multiprogramacion);
@@ -117,12 +120,34 @@ void inicializar_globales(void)
     // Contiene el numero de elementos en cola_ready.
     sem_init(&sem_elementos_en_ready, 0, 0);
 
-    // Inicia en 1, ya que se puede ejecutar un proceso a la vez.
-    sem_init(&sem_proceso_en_ejecucion, 0, 1);
-
     cola_new = squeue_create();
     cola_ready = squeue_create();
-    colas_blocked = NULL; // TODO ver esto
+    colas_blocked_recursos = sdictionary_create();
+    colas_blocked_interfaces = sdictionary_create();
+
+    instancias_recursos = sdictionary_create();
+    asignaciones_recursos = sdictionary_create();
+
+    char **recursos_strs = config_get_array_value(config, "RECURSOS");
+    char **instancias_recursos_strs = config_get_array_value(config, "INSTANCIAS_RECURSOS");
+
+    for (int i = 0; recursos_strs[i] != NULL; i++) {
+        // Guardar los recursos disponibles.
+        int *instancias = malloc(sizeof(int));
+        *instancias = atoi(instancias_recursos_strs[i]);
+        sdictionary_put(instancias_recursos, recursos_strs[i], instancias);
+
+        // Inicializar las colas de bloqueados para cada recurso.
+        t_squeue *cola_bloqueados = squeue_create();
+        sdictionary_put(colas_blocked_recursos, recursos_strs[i], cola_bloqueados);
+
+        // Inicializar las listas de asignaciones.
+        t_list *asignaciones = list_create();
+        sdictionary_put(asignaciones_recursos, recursos_strs[i], asignaciones);
+    }
+
+    string_array_destroy(recursos_strs);
+    string_array_destroy(instancias_recursos_strs);
 }
 
 void liberar_globales(void)
@@ -133,14 +158,19 @@ void liberar_globales(void)
 
     config_destroy(config);
 
+    // NOTE todos estos destroy no liberan la memoria de los elementos que contienen,
+    // no es importante ya que el programa termina.
     squeue_destroy(cola_new);
     squeue_destroy(cola_ready);
-    // TODO liberar colas_blocked cuando este implementada.
+    sdictionary_destroy(colas_blocked_recursos);
+    sdictionary_destroy(colas_blocked_interfaces);
+
+    sdictionary_destroy(instancias_recursos);
+    sdictionary_destroy(asignaciones_recursos);
 
     sem_destroy(&sem_multiprogramacion);
     sem_destroy(&sem_elementos_en_new);
     sem_destroy(&sem_elementos_en_ready);
-    sem_destroy(&sem_proceso_en_ejecucion);
 }
 
 void esperar_conexiones_io(void)
@@ -184,4 +214,10 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)
     }
     log_error(debug_logger, "El algoritmo de planificacion en el config no es valido");
     exit(1);
+}
+
+void eliminar_proceso(t_pcb *pcb, int conexion_memoria) {
+    // TODO
+    assert(false && "No implementado");
+    // Hay que liberar los recursos en base a asignaciones_recursos
 }

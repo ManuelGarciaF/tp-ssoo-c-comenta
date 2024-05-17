@@ -3,18 +3,11 @@
 t_squeue *squeue_create()
 {
     t_squeue *sq = malloc(sizeof(t_squeue));
-    if (sq == NULL) {
-        log_error(debug_logger, "Error al alojar memoria para squeue");
-        return NULL;
-    }
+    assert(sq != NULL);
     sq->queue = queue_create();
 
     sq->mutex = malloc(sizeof(pthread_mutex_t));
-    if (sq->mutex == NULL) {
-        log_error(debug_logger, "Error al alojar memoria para mutex");
-        free(sq);
-        return NULL;
-    }
+    assert(sq != NULL);
     pthread_mutex_init(sq->mutex, NULL);
 
     return sq;
