@@ -2,18 +2,38 @@
 #define MAIN_H_
 
 #include <commons/log.h>
+#include <estructuras/pcb.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <utils/mensajes.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
-#include <utils/mensajes.h>
-#include <estructuras/pcb.h>
 
 /*
 ** Estructuras
 */
-typedef enum { SET, MOV_IN, MOV_OUT, SUM, SUB, JNZ, RESIZE, COPY_STRING, WAIT, SIGNAL, IO_GEN_SLEEP, IO_STDIN_READ, IO_STDOUT_WRITE, IO_FS_CREATE, IO_FS_DELETE, IO_FS_TRUNCATE, IO_FS_WRITE, IO_FS_READ, EXIT} t_opcode;
+typedef enum {
+    SET,
+    MOV_IN,
+    MOV_OUT,
+    SUM,
+    SUB,
+    JNZ,
+    RESIZE,
+    COPY_STRING,
+    WAIT,
+    SIGNAL,
+    IO_GEN_SLEEP,
+    IO_STDIN_READ,
+    IO_STDOUT_WRITE,
+    IO_FS_CREATE,
+    IO_FS_DELETE,
+    IO_FS_TRUNCATE,
+    IO_FS_WRITE,
+    IO_FS_READ,
+    EXIT
+} t_opcode;
 
 typedef enum { AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
 
@@ -49,5 +69,6 @@ void *servidor_interrupt(int *socket_escucha);
 int aceptar_conexion_kernel(int socket_escucha);
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 t_instruccion decode(char *instruccion);
+void excecute(t_instruccion instruccion_a_ejecutar);
 
 #endif // MAIN_H_

@@ -5,6 +5,7 @@
 #include <commons/log.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <assert.h>
 
 // Debe estar definido
 extern t_log *debug_logger;
