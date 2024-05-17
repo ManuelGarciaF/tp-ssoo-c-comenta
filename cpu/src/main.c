@@ -53,8 +53,9 @@ int main(int argc, char *argv[])
 
     while (true) {
         // Fetch
-        char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
+        char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
+
 
         // Decode
         t_instruccion instruccion = decode(str_instruccion);
