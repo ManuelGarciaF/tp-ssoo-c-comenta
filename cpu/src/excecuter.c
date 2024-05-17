@@ -1,39 +1,50 @@
 #include "excecuter.h"
 
-void excecute(t_instruccion instruccion_a_ejecutar) {
-    switch(instruccion_a_ejecutar.opcode) {
-    
-    case SET:
-        set_registro(instruccion_a_ejecutar.parametros[0].registro, instruccion_a_ejecutar.parametros[1].valor_numerico);
+void excecute(t_instruccion instruccion_a_ejecutar)
+{
+    switch (instruccion_a_ejecutar.opcode) {
+    case SET: {
+        set_registro(instruccion_a_ejecutar.parametros[0].registro,
+                     instruccion_a_ejecutar.parametros[1].valor_numerico);
         break;
-    case SUM:
+    }
+    case SUM: {
         uint32_t valor_destino_sum = get_registro(instruccion_a_ejecutar.parametros[0].registro);
         uint32_t valor_origen_sum = get_registro(instruccion_a_ejecutar.parametros[1].registro);
         set_registro(instruccion_a_ejecutar.parametros[0].registro, valor_destino_sum + valor_origen_sum);
         break;
-    case SUB:
+    }
+    case SUB: {
         uint32_t valor_destino_sub = get_registro(instruccion_a_ejecutar.parametros[0].registro);
         uint32_t valor_origen_sub = get_registro(instruccion_a_ejecutar.parametros[1].registro);
-        set_registro(instruccion_a_ejecutar.parametros[0].registro, valor_destino_sub - valor_origen_sub);  // TODO: Que pasa si la resta produce un valor negativo
+        set_registro(instruccion_a_ejecutar.parametros[0].registro,
+                     valor_destino_sub - valor_origen_sub); // TODO: Que pasa si la resta produce un valor negativo
         break;
-    case JNZ:
+    }
+    case JNZ: {
         uint32_t valor_registro = get_registro(instruccion_a_ejecutar.parametros[0].registro);
-        if(valor_registro != 0) {
+        if (valor_registro != 0) {
             pcb->program_counter = instruccion_a_ejecutar.parametros[1].valor_numerico;
         }
         break;
-    case IO_GEN_SLEEP:
+    }
+
+    case IO_GEN_SLEEP: {
         // Completar
         break;
-    default:
+    }
+
+    default: {
         log_error(debug_logger, "Funcion no implementada");
         break;
     }
+    }
 }
 
-uint32_t get_registro(t_registro registro) {
-    switch(registro) {
-    
+uint32_t get_registro(t_registro registro)
+{
+    switch (registro) {
+
     case AX:
         return pcb->registros.ax;
     case BX:
@@ -59,9 +70,10 @@ uint32_t get_registro(t_registro registro) {
     }
 }
 
-void set_registro(t_registro registro, int valor) {
-    switch(registro) {
-    
+void set_registro(t_registro registro, int valor)
+{
+    switch (registro) {
+
     case AX:
         pcb->registros.ax = valor;
         break;

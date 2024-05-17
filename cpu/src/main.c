@@ -13,11 +13,9 @@ char *puerto_memoria;
 char *puerto_escucha_dispatch;
 char *puerto_escucha_interrupt;
 
-
 int main(int argc, char *argv[])
 {
-    debug_logger =
-        log_create("cpu_debug.log", "cpu_debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("cpu_debug.log", "cpu_debug", true, LOG_LEVEL_INFO);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create("cpu.config");
@@ -32,12 +30,8 @@ int main(int argc, char *argv[])
 
     pthread_t hilo_interrupt;
     // Crear hilo para interrupt
-    if (pthread_create(&hilo_interrupt,
-                       NULL,
-                       (void *)servidor_interrupt,
-                       &socket_escucha_interrupt) != 0) {
-        log_error(debug_logger,
-                  "No se pudo crear un hilo para el servidor de interrupt");
+    if (pthread_create(&hilo_interrupt, NULL, (void *)servidor_interrupt, &socket_escucha_interrupt) != 0) {
+        log_error(debug_logger, "No se pudo crear un hilo para el servidor de interrupt");
         exit(1);
     }
 
@@ -52,12 +46,12 @@ int main(int argc, char *argv[])
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
 
-    while(true) {
-        // Recibe PCB
-        log_info(debug_logger, "Esperando PCB");
-        pcb = pcb_receive(conexion_dispatch);
-        log_info(debug_logger, "Recibido PCB exitosamente");
+    // Recibe primer PCB
+    log_info(debug_logger, "Esperando PCB");
+    pcb = pcb_receive(conexion_dispatch);
+    log_info(debug_logger, "Recibido PCB exitosamente");
 
+    while (true) {
         // Fetch
         char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_dispatch);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
@@ -67,7 +61,7 @@ int main(int argc, char *argv[])
         free(str_instruccion);
 
         // Excecute
-        excecute(instruccion);        
+        excecute(instruccion);
     }
 
     // Esperar que los hilos terminen
@@ -91,18 +85,15 @@ void cargar_config(t_config *config)
 {
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-    puerto_escucha_dispatch =
-        config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
-    puerto_escucha_interrupt =
-        config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
+    puerto_escucha_dispatch = config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
+    puerto_escucha_interrupt = config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
 }
 
 int aceptar_conexion_kernel(int socket_escucha)
 {
     int socket_conexion = esperar_cliente(socket_escucha);
     if (!recibir_handshake(socket_conexion)) {
-        log_info(debug_logger,
-                 "Hubo un error al intentar hacer el handshake");
+        log_info(debug_logger, "Hubo un error al intentar hacer el handshake");
         return -1;
     }
     return socket_conexion;
@@ -112,14 +103,12 @@ void *servidor_interrupt(int *socket_escucha)
 {
     int socket_conexion = esperar_cliente(*socket_escucha);
     if (recibir_handshake(socket_conexion)) {
-        log_info(debug_logger,
-                 "Se realizo el handshake correctamente (interrupt)");
+        log_info(debug_logger, "Se realizo el handshake correctamente (interrupt)");
     }
 
     close(*socket_escucha);
     return NULL;
 }
-
 
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
 {
