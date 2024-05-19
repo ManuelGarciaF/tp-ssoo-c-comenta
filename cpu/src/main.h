@@ -1,6 +1,7 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#include <assert.h>
 #include <commons/log.h>
 #include <estructuras/pcb.h>
 #include <pthread.h>
@@ -51,6 +52,7 @@ typedef struct {
 */
 extern t_log *debug_logger;
 extern t_log *cpu_logger;
+
 extern t_pcb *pcb;
 
 // Variables de config
@@ -67,8 +69,11 @@ void cargar_config(t_config *config);
 void *servidor_dispatch(int *socket_escucha);
 void *servidor_interrupt(int *socket_escucha);
 int aceptar_conexion_kernel(int socket_escucha);
+
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 t_instruccion decode(char *instruccion);
-void excecute(t_instruccion instruccion_a_ejecutar);
+void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch);
+
+void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch);
 
 #endif // MAIN_H_

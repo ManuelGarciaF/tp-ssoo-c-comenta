@@ -51,7 +51,13 @@ t_list *devolver_lineas(char *path)
     t_list *lineas = list_create();
     char *linea = malloc(LIMITE_LINEA_INSTRUCCION);
     while (fgets(linea, LIMITE_LINEA_INSTRUCCION, archivo) != NULL) {
+        // Quitar el \n final leido por fgets
+        if (linea[strlen(linea) - 1] == '\n') {
+            linea[strlen(linea) - 1] = '\0';
+        }
+
         list_add(lineas, linea);
+
         // Allojar espacio para nuevas lineas
         linea = malloc(LIMITE_LINEA_INSTRUCCION);
     }

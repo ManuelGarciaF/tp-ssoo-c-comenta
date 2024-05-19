@@ -1,6 +1,6 @@
-#include "excecuter.h"
+#include "executer.h"
 
-void excecute(t_instruccion instruccion_a_ejecutar)
+void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch)
 {
     switch (instruccion_a_ejecutar.opcode) {
     case SET: {
@@ -24,18 +24,23 @@ void excecute(t_instruccion instruccion_a_ejecutar)
     case JNZ: {
         uint32_t valor_registro = get_registro(instruccion_a_ejecutar.parametros[0].registro);
         if (valor_registro != 0) {
-            pcb->program_counter = instruccion_a_ejecutar.parametros[1].valor_numerico;
+            set_registro(PC, (uint32_t)instruccion_a_ejecutar.parametros[1].valor_numerico);
+            *incrementar_pc = false; // Luego de un JNZ no se incrementa el pc automáticamente.
         }
         break;
     }
-
     case IO_GEN_SLEEP: {
-        // Completar
+        // TODO Completar
+        assert(false && "No Implementado");
         break;
     }
-
+    case EXIT: {
+        devolver_pcb(FIN_PROCESO, conexion_dispatch);
+        break;
+    }
     default: {
         log_error(debug_logger, "Funcion no implementada");
+        exit(1);
         break;
     }
     }
@@ -66,6 +71,8 @@ uint32_t get_registro(t_registro registro)
         return pcb->registros.si;
     case DI:
         return pcb->registros.di;
+    default:
+        assert(false && "Registro invalido");
     }
 }
 

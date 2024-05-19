@@ -5,8 +5,11 @@
 */
 t_log *debug_logger;
 t_log *memoria_logger;
-t_dictionary *codigo_procesos;
+
 char *puerto_escucha;
+int retardo_respuesta;
+
+t_dictionary *codigo_procesos;
 
 
 int main(int argc, char *argv[])
@@ -23,7 +26,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // diccionario con pseudocodigo de procesos
+    // Diccionario con pseudocodigo de procesos
     codigo_procesos = dictionary_create();
 
     cargar_config(config);
@@ -52,6 +55,7 @@ int main(int argc, char *argv[])
 void cargar_config(t_config *config)
 {
     puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+    retardo_respuesta = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
 }
 
 /*

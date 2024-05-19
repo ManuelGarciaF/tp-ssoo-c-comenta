@@ -24,11 +24,12 @@
 
 extern t_log *debug_logger;
 extern t_log *memoria_logger;
-extern t_dictionary *codigo_procesos;
 
 // Variables de config
 extern char *puerto_escucha;
+extern int retardo_respuesta;
 
+extern t_dictionary *codigo_procesos;
 
 /*
 ** Definiciones de funciones

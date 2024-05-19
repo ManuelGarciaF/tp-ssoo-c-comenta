@@ -14,7 +14,7 @@ void reloj_rr(int conexion_cpu_interrupt);
 
 void desalojar_proceso(int conexion_interrupt);
 
-t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb *pcb_actualizado);
+t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado);
 
 // Motivos de devolucion de pcb
 void manejar_fin_quantum(t_pcb *pcb_recibido);

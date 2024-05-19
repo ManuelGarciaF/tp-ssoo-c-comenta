@@ -45,7 +45,10 @@ void planificador_corto_plazo(t_parametros_pcp *params)
         // nos devuelvan el pcb actualizado y el motivo.
 
         t_pcb *pcb_recibido = NULL;
-        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, pcb_recibido);
+        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido);
+
+        log_info(debug_logger, "Se recibio el pcb:");
+        pcb_debug_print(pcb_recibido);
 
         // Por defecto, enviar un nuevo proceso en la proxima iteracion.
         planificar_nuevo_proceso = true;
@@ -92,10 +95,10 @@ void desalojar_proceso(int conexion_interrupt)
     assert(false && "No implementado");
 }
 
-t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb *pcb_actualizado)
+t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado)
 {
     t_list *elementos = recibir_paquete(conexion_cpu_dispatch);
-    pcb_actualizado = list_get(elementos, 0);
+    *pcb_actualizado = list_get(elementos, 0);
     t_motivo_desalojo *motivo = list_get(elementos, 1);
 
     list_destroy(elementos);
@@ -120,6 +123,8 @@ void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria)
 {
     // Habilitar 1 espacio en el grado de multiprogramacion
     sem_post(&sem_multiprogramacion);
+
+    pcb_debug_print(pcb_recibido);
 
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_recibido->pid);

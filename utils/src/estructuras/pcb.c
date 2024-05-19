@@ -39,3 +39,23 @@ t_pcb *pcb_receive(int socket_conexion)
     list_destroy(contenido);
     return pcb;
 }
+
+void pcb_debug_print(t_pcb *pcb)
+{
+    log_info(debug_logger,
+             "PCB: {PID: %d, PC %d, Q: %d, registros:\n\t{AX:%ud, BX:%ud, CX:%ud, DX:%ud, EAX:%ud, EBX:%ud, ECX:%ud, "
+             "EDX:%ud, SI:%ud, DI:%ud}\n}",
+             pcb->pid,
+             pcb->program_counter,
+             pcb->quantum,
+             pcb->registros.ax,
+             pcb->registros.bx,
+             pcb->registros.cx,
+             pcb->registros.dx,
+             pcb->registros.eax,
+             pcb->registros.ebx,
+             pcb->registros.ecx,
+             pcb->registros.edx,
+             pcb->registros.si,
+             pcb->registros.di);
+}

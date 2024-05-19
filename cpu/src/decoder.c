@@ -391,5 +391,6 @@ t_registro parsear_a_t_registro(char *str)
         return DI;
     }
 
+    printf("--------------------------------------------------x\n%s\n", str);
     exit(1);
 }

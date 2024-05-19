@@ -39,4 +39,6 @@ void pcb_destroy(t_pcb *);
 void pcb_send(t_pcb *, int socket_conexion);
 t_pcb *pcb_receive(int socket_conexion);
 
+void pcb_debug_print(t_pcb *);
+
 #endif // PCB_H_

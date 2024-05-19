@@ -5,6 +5,6 @@
 /*
 ** Definiciones de funciones
 */
-void enviar_instrucciones(t_list *info_fetch, int socket_conexion);
+void enviar_instruccion(t_list *info_fetch, int socket_conexion);
 
 #endif // ATENDER_CPU_H_

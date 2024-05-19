@@ -5,7 +5,8 @@
 */
 t_log *debug_logger;
 t_log *cpu_logger;
-t_pcb *pcb;
+
+t_pcb *pcb = NULL;
 
 // Variables de config
 char *ip_memoria;
@@ -46,22 +47,37 @@ int main(int argc, char *argv[])
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
 
-    // Recibe primer PCB
-    log_info(debug_logger, "Esperando PCB");
-    pcb = pcb_receive(conexion_dispatch);
-    log_info(debug_logger, "Recibido PCB exitosamente");
-
+    bool incrementar_pc;
+    // Ciclo de instruccion
     while (true) {
+        // Por defecto siempre se incrementa.
+        incrementar_pc = true;
+
+        // Si no hay PCB, esperar uno.
+        if (pcb == NULL) {
+            log_info(debug_logger, "Esperando PCB");
+            pcb = pcb_receive(conexion_dispatch);
+            log_info(debug_logger, "Recibido PCB con PID: %ud", pcb->pid);
+        }
+
+        pcb_debug_print(pcb);
+
         // Fetch
         char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
+
+        log_info(debug_logger, "Instruccion: %s", str_instruccion);
 
         // Decode
         t_instruccion instruccion = decode(str_instruccion);
         free(str_instruccion);
 
         // Excecute
-        excecute(instruccion);
+        execute(instruccion, &incrementar_pc, conexion_dispatch);
+
+        // El PCB pudo ser desalojado durante execute
+        if (incrementar_pc && pcb != NULL)
+            pcb->program_counter++;
     }
 
     // Esperar que los hilos terminen
@@ -113,14 +129,27 @@ void *servidor_interrupt(int *socket_escucha)
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
 {
     enviar_mensaje(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
-    // Solcitiar instruccion
+    // Enviar PID y PC para solicitar una instruccion.
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
     agregar_a_paquete(paquete, &program_counter, sizeof(uint32_t));
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
-    log_info(debug_logger, "Solicitada instruccion %d de proceso %d ", program_counter, pid);
 
     // Recibir instruccion
     return recibir_mensaje(conexion_memoria);
+}
+
+void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
+{
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, pcb, sizeof(t_pcb));
+    agregar_a_paquete(paquete, &motivo, sizeof(t_motivo_desalojo));
+    enviar_paquete(paquete, conexion_dispatch);
+    log_info(debug_logger, "PCB (PID: %ud) devuelto con motivo %d", pcb->pid, motivo);
+    eliminar_paquete(paquete);
+
+    // Luego de enviarlo, lo liberamos
+    pcb_destroy(pcb);
+    pcb = NULL;
 }
