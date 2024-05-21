@@ -154,6 +154,17 @@ int iniciar_servidor(char *puerto)
                                 servinfo->ai_socktype,
                                 servinfo->ai_protocol);
 
+    // Evita errores en bind despues de un crash
+    int reuse = 1;
+    if (setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) != 0) {
+        log_error(debug_logger, "No se pudo configurar la opcion SO_REUSEADDR en el socket");
+        exit(1);
+    }
+    if (setsockopt(socket_escucha, SOL_SOCKET, SO_REUSEPORT, &reuse, sizeof(int)) != 0) {
+        log_error(debug_logger, "No se pudo configurar la opcion SO_REUSEPORT en el socket");
+        exit(1);
+    }
+
     // Asociamos el socket a un puerto
     if (bind(socket_escucha, servinfo->ai_addr, servinfo->ai_addrlen) != 0) {
         log_error(debug_logger, "No se pudo bindear el socket.");
