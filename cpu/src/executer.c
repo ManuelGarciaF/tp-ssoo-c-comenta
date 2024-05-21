@@ -5,27 +5,28 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
     switch (instruccion_a_ejecutar.opcode) {
     case SET: {
         set_registro(instruccion_a_ejecutar.parametros[0].registro,
-                     instruccion_a_ejecutar.parametros[1].valor_numerico);
+                     instruccion_a_ejecutar.parametros[1].valor_numerico,
+                     incrementar_pc);
         break;
     }
     case SUM: {
-        uint32_t valor_destino_sum = get_registro(instruccion_a_ejecutar.parametros[0].registro);
-        uint32_t valor_origen_sum = get_registro(instruccion_a_ejecutar.parametros[1].registro);
-        set_registro(instruccion_a_ejecutar.parametros[0].registro, valor_destino_sum + valor_origen_sum);
+        uint32_t valor_destino = get_registro(instruccion_a_ejecutar.parametros[0].registro);
+        uint32_t valor_origen = get_registro(instruccion_a_ejecutar.parametros[1].registro);
+        set_registro(instruccion_a_ejecutar.parametros[0].registro, valor_destino + valor_origen, incrementar_pc);
         break;
     }
     case SUB: {
-        uint32_t valor_destino_sub = get_registro(instruccion_a_ejecutar.parametros[0].registro);
-        uint32_t valor_origen_sub = get_registro(instruccion_a_ejecutar.parametros[1].registro);
+        uint32_t valor_destino = get_registro(instruccion_a_ejecutar.parametros[0].registro);
+        uint32_t valor_origen = get_registro(instruccion_a_ejecutar.parametros[1].registro);
         set_registro(instruccion_a_ejecutar.parametros[0].registro,
-                     valor_destino_sub - valor_origen_sub); // TODO: Que pasa si la resta produce un valor negativo
+                     valor_destino - valor_origen, // TODO: Que pasa si la resta produce un valor negativo
+                     incrementar_pc);
         break;
     }
     case JNZ: {
         uint32_t valor_registro = get_registro(instruccion_a_ejecutar.parametros[0].registro);
         if (valor_registro != 0) {
-            set_registro(PC, (uint32_t)instruccion_a_ejecutar.parametros[1].valor_numerico);
-            *incrementar_pc = false; // Luego de un JNZ no se incrementa el pc automáticamente.
+            set_registro(PC, (uint32_t)instruccion_a_ejecutar.parametros[1].valor_numerico, incrementar_pc);
         }
         break;
     }
@@ -76,11 +77,12 @@ uint32_t get_registro(t_registro registro)
     }
 }
 
-void set_registro(t_registro registro, int valor)
+void set_registro(t_registro registro, int valor, bool *incrementar_pc)
 {
     switch (registro) {
     case PC:
         pcb->program_counter = valor;
+        *incrementar_pc = false; // Si modificamos PC no hay que autoincrementarlo.
         break;
     case AX:
         pcb->registros.ax = valor;
