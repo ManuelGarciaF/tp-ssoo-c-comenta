@@ -66,10 +66,12 @@ int main(int argc, char *argv[])
         char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
 
-        log_info(debug_logger, "Instruccion: %s", str_instruccion);
-
         // Decode
         t_instruccion instruccion = decode(str_instruccion);
+
+        char **partes = string_n_split(str_instruccion, 2, " ");
+        log_info(cpu_logger, "PID: %u - Ejecutando: %s - %s", pcb->pid, partes[0], partes[1]);
+        string_array_destroy(partes);
         free(str_instruccion);
 
         // Excecute

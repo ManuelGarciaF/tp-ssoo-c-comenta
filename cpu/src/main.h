@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <commons/string.h>
 #include <utils/mensajes.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
