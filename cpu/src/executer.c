@@ -31,8 +31,20 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
         break;
     }
     case IO_GEN_SLEEP: {
-        // TODO Completar
-        assert(false && "No Implementado");
+        char *nombre_interfaz = instruccion_a_ejecutar.parametros[0].str;
+        uint32_t unidades_trabajo = instruccion_a_ejecutar.parametros[1].valor_numerico;
+
+        devolver_pcb(IO, conexion_dispatch);
+
+        // Enviar nombre de interfaz y unidades de trabajo.
+        t_paquete *paquete = crear_paquete();
+        agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+        agregar_a_paquete(paquete, &unidades_trabajo, sizeof(uint32_t));
+
+        enviar_paquete(paquete, conexion_dispatch);
+
+        eliminar_paquete(paquete);
+
         break;
     }
     case EXIT: {
