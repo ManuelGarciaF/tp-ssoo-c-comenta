@@ -100,10 +100,12 @@ t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado
     t_list *elementos = recibir_paquete(conexion_cpu_dispatch);
     *pcb_actualizado = list_get(elementos, 0);
     t_motivo_desalojo *motivo = list_get(elementos, 1);
+    t_motivo_desalojo motivo_ret = *motivo;
 
+    free(motivo);
     list_destroy(elementos);
 
-    return *motivo;
+    return motivo_ret;
 }
 
 void manejar_fin_quantum(t_pcb *pcb_recibido)
