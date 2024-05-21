@@ -83,7 +83,7 @@ void iniciar_proceso(char const *path)
     squeue_push(cola_new, proceso_nuevo);
     sem_post(&sem_elementos_en_new); // Avisamos que hay 1 elemento mas en NEW
 
-    log_info(kernel_logger, "Proceso %d agregado a la cola de new", proceso_nuevo->pid);
+    log_info(kernel_logger, "Se crea el proceso %d en NEW", proceso_nuevo->pid);
     // Ahora depende del planificador a largo plazo.
 }
 

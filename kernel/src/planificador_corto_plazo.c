@@ -175,6 +175,9 @@ void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int
         // Agregarlo a la cola de bloqueados
         t_squeue *cola = sdictionary_get(colas_blocked_recursos, nombre_recurso);
         squeue_push(cola, pcb_recibido);
+
+        log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: BLOCKED", pcb_recibido->pid);
+        log_info(kernel_logger, "PID: %d - Bloqueado por: %s", pcb_recibido->pid, nombre_recurso);
     }
 
     // Reducir el contador de instancias del recurso.
