@@ -11,6 +11,12 @@ void planificador_largo_plazo(int *conexion_memoria)
         // disponible para agregar un proceso.
         sem_wait(&sem_multiprogramacion);
 
+        // Ver si hay que pausar
+        if (planificacion_pausada) {
+            log_info(debug_logger, "PLP esperando sem_reanudar_plp");
+            sem_wait(&sem_reanudar_plp);
+        }
+
         // Sacar el proceso de NEW y enviarlo a memoria
         t_proceso_nuevo *proceso = squeue_pop(cola_new);
         enviar_proceso_nuevo_a_memoria(proceso, *conexion_memoria);

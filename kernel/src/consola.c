@@ -17,45 +17,67 @@ void correr_consola(void)
             break;
         }
 
-        // Dividir input en comando y parametro
-        char **comando = string_n_split(input, 2, " ");
+        ejecutar_comando(input);
 
-        if (!strcmp(comando[0], "EJECUTAR_SCRIPT")) {
-            assert(0 && "No implementado"); // TODO
-
-        } else if (!strcmp(comando[0], "INICIAR_PROCESO")) {
-            if (comando[1] != NULL) {
-                char *path_copy = string_duplicate(comando[1]);
-                iniciar_proceso(path_copy);
-            } else {
-                printf("error: El comando necesita un parametro.\n");
-            }
-
-        } else if (!strcmp(comando[0], "FINALIZAR_PROCESO")) {
-            if (comando[1] != NULL) {
-                char *pid_copy = string_duplicate(comando[1]);
-                finalizar_proceso(pid_copy);
-            } else {
-                printf("error: El comando necesita un parametro.\n");
-            }
-        }
-        // TODO
-
-        string_array_destroy(comando);
         free(input);
     }
 }
 
-void iniciar_proceso(char *path)
+void ejecutar_comando(char const *linea)
+{
+    // Dividir input en comando y parametro
+    char **comando = string_n_split((char *)linea, 2, " ");
+
+    if (!strcmp(comando[0], "EJECUTAR_SCRIPT")) {
+        assert(0 && "No implementado"); // TODO
+
+    } else if (!strcmp(comando[0], "INICIAR_PROCESO")) {
+        if (comando[1] == NULL) {
+            printf("error: El comando necesita un parametro.\n");
+        }
+        iniciar_proceso(comando[1]);
+
+    } else if (!strcmp(comando[0], "FINALIZAR_PROCESO")) {
+        if (comando[1] == NULL) {
+            printf("error: El comando necesita un parametro.\n");
+            return;
+        }
+        finalizar_proceso(comando[1]);
+
+    } else if (!strcmp(comando[0], "DETENER_PLANIFICACION")) {
+        pausar_planificacion();
+
+    } else if (!strcmp(comando[0], "INICIAR_PLANIFICACION")) {
+        if (planificacion_pausada) {
+            reanudar_planificacion();
+        }
+
+    } else if (!strcmp(comando[0], "MULTIPROGRAMACION")) {
+        if (comando[1] == NULL) {
+            printf("error: El comando necesita un parametro.\n");
+            return;
+        }
+        actualizar_grado_multiprogramacion(atoi(comando[1]));
+
+    } else if (!strcmp(comando[0], "PROCESO_ESTADO")) {
+        assert(false && "No Implementado");
+    } else {
+        printf("Comando no reconocido\n");
+    }
+
+
+    string_array_destroy(comando);
+}
+
+void iniciar_proceso(char const *path)
 {
     // Guardar tanto el pid como el path, para enviar a memoria
     t_proceso_nuevo *proceso_nuevo = malloc(sizeof(t_proceso_nuevo));
-    if (proceso_nuevo == NULL) {
-        log_error(debug_logger, "No se pudo alojar espacio para el proceso nuevo");
-    }
+    assert(proceso_nuevo != NULL);
 
     proceso_nuevo->pid = ultimo_pid++;
-    proceso_nuevo->path = path;
+    // Hay que duplicarlo para poder liberar el comando despues
+    proceso_nuevo->path = string_duplicate((char *)path);
 
     // Agregarlo a la lista de new
     squeue_push(cola_new, proceso_nuevo);
@@ -65,9 +87,25 @@ void iniciar_proceso(char *path)
     // Ahora depende del planificador a largo plazo.
 }
 
-void finalizar_proceso(char *pid)
+void finalizar_proceso(char const *pid)
 {
     // TODO
-    // free(pid)
     assert(false && "No implementado");
+}
+
+void actualizar_grado_multiprogramacion(int nuevo)
+{
+    int diferencia = nuevo - grado_multiprogramacion;
+
+    grado_multiprogramacion = nuevo;
+
+    // Hay que agregar espacio
+    if (diferencia > 0) {
+        for (int i = 0; i < diferencia; i++) {
+            sem_post(&sem_multiprogramacion);
+        }
+    } else if (diferencia < 0) { // Hay que quitar espacio (diferencia es negativo)
+        int procesos_extra = -diferencia;
+        procesos_extra_multiprogramacion += procesos_extra;
+    }
 }

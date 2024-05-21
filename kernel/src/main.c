@@ -18,6 +18,9 @@ int grado_multiprogramacion;
 int quantum;
 t_algoritmo_planificacion algoritmo_planificacion;
 
+uint32_t pid_en_ejecucion = -1; // -1 Cuando no hay ninguno
+int procesos_extra_multiprogramacion = 0;
+
 t_squeue *cola_new;
 t_squeue *cola_ready;
 t_sdictionary *colas_blocked_recursos;
@@ -31,6 +34,10 @@ sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
 sem_t sem_interrupciones_activadas;
+
+bool planificacion_pausada = false;
+sem_t sem_reanudar_pcp;
+sem_t sem_reanudar_plp;
 
 int main(int argc, char *argv[])
 {
@@ -148,6 +155,9 @@ void inicializar_globales(void)
 
     string_array_destroy(recursos_strs);
     string_array_destroy(instancias_recursos_strs);
+
+    sem_init(&sem_reanudar_pcp, 0, 0);
+    sem_init(&sem_reanudar_plp, 0, 0);
 }
 
 void liberar_globales(void)
@@ -171,6 +181,9 @@ void liberar_globales(void)
     sem_destroy(&sem_multiprogramacion);
     sem_destroy(&sem_elementos_en_new);
     sem_destroy(&sem_elementos_en_ready);
+
+    sem_destroy(&sem_reanudar_pcp);
+    sem_destroy(&sem_reanudar_plp);
 }
 
 void esperar_conexiones_io(void)
@@ -216,8 +229,43 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)
     exit(1);
 }
 
-void eliminar_proceso(t_pcb *pcb, int conexion_memoria) {
+void pausar_planificacion()
+{
+    // Asegurarse que los semaforos esten en 0
+    sem_trywait(&sem_reanudar_pcp);
+    sem_trywait(&sem_reanudar_plp);
+
+    planificacion_pausada = true;
+}
+
+void reanudar_planificacion()
+{
+    if (!planificacion_pausada) {
+        log_error(debug_logger, "La planificacion no se encuentra pausada");
+    }
+
+    // Hay que ponerlo en falso antes de los signals.
+    planificacion_pausada = false;
+    sem_post(&sem_reanudar_pcp);
+    sem_post(&sem_reanudar_plp);
+}
+
+void eliminar_proceso(t_pcb *pcb, char const *motivo, int conexion_memoria)
+{
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: %s", pcb->pid, motivo);
+
+    // Si se achico el grado_multiprogramacion, los proximos procesos que
+    // se eliminen no liberan espacio en el sem_multiprogramacion.
+    if (procesos_extra_multiprogramacion > 0) {
+        procesos_extra_multiprogramacion--;
+    } else {
+        sem_post(&sem_multiprogramacion);
+    }
+
+    pcb_destroy(pcb);
+
     // TODO
-    assert(false && "No implementado");
     // Hay que liberar los recursos en base a asignaciones_recursos
+    assert(false && "No implementado");
 }

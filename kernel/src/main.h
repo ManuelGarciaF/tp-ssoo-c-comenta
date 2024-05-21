@@ -54,6 +54,10 @@ extern t_algoritmo_planificacion algoritmo_planificacion;
 extern int grado_multiprogramacion;
 extern int quantum;
 
+extern uint32_t pid_en_ejecucion;
+extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogramacion, los proximos procesos que
+                                             // se eliminen no liberan espacio en el sem_multiprogramacion.
+
 // Colas de procesos
 extern t_squeue *cola_new;                      // Contiene t_proceso_nuevo
 extern t_squeue *cola_ready;                    // Contiene t_pcb
@@ -70,9 +74,13 @@ extern t_sdictionary *asignaciones_recursos; // Necesito saber que procesos tien
 extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
 extern sem_t sem_elementos_en_new;
 extern sem_t sem_elementos_en_ready;
-/* extern sem_t sem_proceso_en_ejecucion; */ // No estoy seguro si es necesario, esperamos que el proceso termine en el
-                                             // bloqueando en el recv del planificador a corto plazo
 extern sem_t sem_interrupciones_activadas;
+
+// Control sobre planificadores
+// Ponemos el bool en true para hacer wait al semaforo en el loop de cada hilo.
+extern bool planificacion_pausada;
+extern sem_t sem_reanudar_pcp;
+extern sem_t sem_reanudar_plp;
 
 /*
 ** Definiciones de funciones
@@ -93,7 +101,10 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str);
 void planificador_largo_plazo(int *conexion_memoria);
 void planificador_corto_plazo(t_parametros_pcp *params);
 
-// Solicita a memoria eliminar un proceso y libera sus recursos.
-void eliminar_proceso(t_pcb *pcb, int conexion_memoria);
+// Solicita a memoria eliminar un proceso y libera sus recursos, incluye los logs.
+void eliminar_proceso(t_pcb *pcb, char const *motivo, int conexion_memoria);
+
+void pausar_planificacion();
+void reanudar_planificacion();
 
 #endif // MAIN_H_

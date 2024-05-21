@@ -26,6 +26,12 @@ void planificador_corto_plazo(t_parametros_pcp *params)
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
 
+            // Ver si hay que pausar (siempre despues de bloqueo)
+            if (planificacion_pausada) {
+                log_info(debug_logger, "PCP esperando sem_reanudar_pcp");
+                sem_wait(&sem_reanudar_pcp);
+            }
+
             // Por FIFO y RR siempre tomamos el primero
             t_pcb *pcb_a_ejecutar = squeue_pop(cola_ready);
             // Enviamos el pcb a CPU.
@@ -45,7 +51,13 @@ void planificador_corto_plazo(t_parametros_pcp *params)
         // nos devuelvan el pcb actualizado y el motivo.
 
         t_pcb *pcb_recibido = NULL;
-        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido);
+        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
+
+        // Ver si hay que pausar (siempre despues de bloqueo)
+        if (planificacion_pausada) {
+            log_info(debug_logger, "PCP esperando sem_reanudar_pcp");
+            sem_wait(&sem_reanudar_pcp);
+        }
 
         log_info(debug_logger, "Se recibio el pcb:");
         pcb_debug_print(pcb_recibido);
@@ -123,16 +135,7 @@ void manejar_fin_quantum(t_pcb *pcb_recibido)
 
 void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria)
 {
-    // Habilitar 1 espacio en el grado de multiprogramacion
-    sem_post(&sem_multiprogramacion);
-
-    pcb_debug_print(pcb_recibido);
-
-    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
-    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_recibido->pid);
-
-    eliminar_proceso(pcb_recibido, conexion_memoria);
-    pcb_destroy(pcb_recibido);
+    eliminar_proceso(pcb_recibido, "SUCCESS", conexion_memoria);
 }
 
 void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
@@ -217,14 +220,7 @@ void manejar_io(t_pcb *pcb_recibido)
 
 void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria)
 {
-    // Habilitar 1 espacio en el grado de multiprogramacion
-    sem_post(&sem_multiprogramacion);
-
-    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
-    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_RESOURCE", pcb_recibido->pid);
-
-    eliminar_proceso(pcb_recibido, conexion_memoria);
-    pcb_destroy(pcb_recibido);
+    eliminar_proceso(pcb_recibido, "INVALID_RESOURCE", conexion_memoria);
 }
 
 void asignar_recurso(uint32_t pid, char *recurso)

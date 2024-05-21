@@ -27,7 +27,7 @@ sleep 2
 tmux new-window -t tp-ssoo:3 -n "Kernel"
 tmux send-keys -t tp-ssoo:3 "cd kernel && make && make memcheck" C-m
 sleep 2
-tmux send-keys -t tp-ssoo:3 "INICIAR_PROCESO test.txt" C-m
+# tmux send-keys -t tp-ssoo:3 "INICIAR_PROCESO test.txt" C-m
 
 # Attach to the session
 tmux attach-session -t tp-ssoo

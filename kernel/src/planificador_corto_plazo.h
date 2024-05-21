@@ -4,7 +4,6 @@
 #include "main.h"
 
 // Variables globales.
-uint32_t pid_en_ejecucion;
 bool proceso_desalojo_previamente = false;
 
 sem_t sem_comenzar_reloj;
