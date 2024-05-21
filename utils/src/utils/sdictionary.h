@@ -24,5 +24,6 @@ t_sdictionary *sdictionary_create();
 void sdictionary_destroy(t_sdictionary *);
 void sdictionary_destroy_and_destroy_elements(t_sdictionary *, void (*element_destroyer)(void *));
 bool sdictionary_has_key(t_sdictionary *, char *key);
+void sdictionary_iterator(t_sdictionary *, void (*closure)(char *key, void *value));
 
 #endif // SDICTIONARY_H_

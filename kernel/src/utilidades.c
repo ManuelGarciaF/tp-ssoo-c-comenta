@@ -1,9 +1,10 @@
 #include "utilidades.h"
 
-char *obtener_lista_pids(t_squeue *cola_ready) {
+char *obtener_lista_pids(t_squeue *cola_ready)
+{
     // Bloquear el mutex mientras se leen los elementos.
     pthread_mutex_lock(cola_ready->mutex);
-    t_list *pid_strs = list_map(cola_ready->queue->elements, (void *)pcb_to_pidstr);
+    t_list *pid_strs = list_map(cola_ready->queue->elements, pcb_to_pidstr);
     pthread_mutex_unlock(cola_ready->mutex);
 
     char *str = string_new();
@@ -25,6 +26,7 @@ char *obtener_lista_pids(t_squeue *cola_ready) {
     return str;
 }
 
-char *pcb_to_pidstr(t_pcb *pcb) {
-    return string_itoa(pcb->pid);
+void *pcb_to_pidstr(void *pcb)
+{
+    return (void *)string_itoa(((t_pcb *)pcb)->pid);
 }

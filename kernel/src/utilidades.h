@@ -8,6 +8,6 @@
 
 char *obtener_lista_pids(t_squeue *cola_ready);
 
-char *pcb_to_pidstr(t_pcb *pcb);
+void *pcb_to_pidstr(void *pcb);
 
 #endif // UTILIDADESKERNEL_H_

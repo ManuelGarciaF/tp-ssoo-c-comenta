@@ -3,8 +3,10 @@
 bool planificar_nuevo_proceso;
 
 // Pasa procesos de READY a EXEC
-void planificador_corto_plazo(t_parametros_pcp *params)
+/* void planificador_corto_plazo(t_parametros_pcp *params) */
+void *planificador_corto_plazo(void *vparams)
 {
+    t_parametros_pcp *params = (t_parametros_pcp *)vparams;
     // Empieza en 0 para bloquear hasta que le digamos.
     sem_init(&sem_comenzar_reloj, 0, 0);
 
@@ -12,7 +14,7 @@ void planificador_corto_plazo(t_parametros_pcp *params)
     pthread_t hilo_reloj_rr;
     // Crear hilo de reloj para desalojar procesos en RR.
     if (algoritmo_planificacion == RR) {
-        int iret = pthread_create(&hilo_reloj_rr, NULL, (void *)reloj_rr, NULL);
+        int iret = pthread_create(&hilo_reloj_rr, NULL, reloj_rr, &(params->conexion_cpu_interrupt));
         if (iret != 0) {
             log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
         }
@@ -87,8 +89,9 @@ void planificador_corto_plazo(t_parametros_pcp *params)
     sem_destroy(&sem_comenzar_reloj);
 }
 
-void reloj_rr(int conexion_cpu_interrupt)
+void *reloj_rr(void *param)
 {
+    int conexion_cpu_interrupt = *((int *)param);
     while (true) {
         sem_wait(&sem_comenzar_reloj);
         // Multiplicamos por 1000 porque toma microsegundos, quantum esta en milisegundos.
@@ -135,7 +138,10 @@ void manejar_fin_quantum(t_pcb *pcb_recibido)
 
 void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria)
 {
-    eliminar_proceso(pcb_recibido, "SUCCESS", conexion_memoria);
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_recibido->pid);
+
+    eliminar_proceso(pcb_recibido, conexion_memoria);
 }
 
 void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
@@ -188,24 +194,7 @@ void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, i
 
     // Eliminar la asignacion
     liberar_asignacion_recurso(pcb_recibido->pid, nombre_recurso);
-
-    // NOTE No necesito mutexear esto ya que los recursos solo son modificados por el pcp.
-    int *cant_recurso = sdictionary_get(colas_blocked_recursos, nombre_recurso);
-
-    // Si es <0, hay procesos bloqueados.
-    if (*cant_recurso < 0) {
-        // Sacar el primer proceso de la cola de bloqueados.
-        t_squeue *cola = sdictionary_get(instancias_recursos, nombre_recurso);
-        t_pcb *pcb = squeue_pop(cola);
-
-        // Asignarle el recurso y agregarlo a ready.
-        asignar_recurso(pcb->pid, nombre_recurso);
-
-        squeue_push(cola_ready, pcb);
-    }
-
-    // Incrementar el contador de instancias del recurso.
-    (*cant_recurso)++;
+    liberar_recurso(nombre_recurso);
 
     // Devolver la ejecucion al proceso.
     pcb_send(pcb_recibido, socket_conexion_dispatch);
@@ -220,31 +209,7 @@ void manejar_io(t_pcb *pcb_recibido)
 
 void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria)
 {
-    eliminar_proceso(pcb_recibido, "INVALID_RESOURCE", conexion_memoria);
-}
-
-void asignar_recurso(uint32_t pid, char *recurso)
-{
-    t_list *asignaciones = sdictionary_get(asignaciones_recursos, recurso);
-    uint32_t *elem = malloc(sizeof(uint32_t));
-    *elem = pid;
-    list_add(asignaciones, elem);
-}
-
-void liberar_asignacion_recurso(uint32_t pid, char *recurso)
-{
-    t_list *asignaciones = sdictionary_get(asignaciones_recursos, recurso);
-
-    // Iterar hasta encontrar el pid y eliminarlo.
-    // NOTE si no hay asignaciones no se hace nada, esto es correcto.
-    t_list_iterator *it = list_iterator_create(asignaciones);
-    while (list_iterator_has_next(it)) {
-        uint32_t *pid_asignado = list_iterator_next(it);
-        if (*pid_asignado == pid) {
-            list_iterator_remove(it);
-            free(pid_asignado);
-            break;
-        }
-    }
-    list_iterator_destroy(it);
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_RESOURCE", pcb_recibido->pid);
+    eliminar_proceso(pcb_recibido, conexion_memoria);
 }

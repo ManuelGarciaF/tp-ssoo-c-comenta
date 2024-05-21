@@ -57,5 +57,13 @@ bool sdictionary_has_key(t_sdictionary *sd, char *key)
 void sdictionary_destroy_and_destroy_elements(t_sdictionary *sd, void (*element_destroyer)(void *))
 {
     dictionary_clean_and_destroy_elements(sd->dict, element_destroyer);
+    pthread_mutex_destroy(sd->mutex);
     sdictionary_destroy(sd);
+}
+
+void sdictionary_iterator(t_sdictionary *sd, void (*closure)(char *key, void *value))
+{
+    pthread_mutex_lock(sd->mutex);
+    dictionary_iterator(sd->dict, closure);
+    pthread_mutex_unlock(sd->mutex);
 }

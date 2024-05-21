@@ -5,6 +5,7 @@ void atender_kernel(int socket_conexion)
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
         char *mensaje = recibir_mensaje(socket_conexion);
+        log_info(debug_logger, "Mensaje enviado por el kernel: %s", mensaje);
         if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
             recibir_crear_proceso(socket_conexion);
         } else if (strcmp(mensaje, MENSAJE_FIN_PROCESO) == 0) {
@@ -42,8 +43,12 @@ void recibir_liberar_proceso(int socket_conexion)
 {
     t_list *paquete = recibir_paquete(socket_conexion);
     uint32_t *pid = list_get(paquete, 0);
+    log_info(debug_logger, "Liberando proceso con pid: %u", *pid);
     char *pid_str = string_itoa(*pid);
-    dictionary_remove_and_destroy(codigo_procesos, pid_str, (void *)eliminar_data);
+    dictionary_remove_and_destroy(codigo_procesos, pid_str, eliminar_pseudocodigo);
+
+    free(pid_str);
+    list_destroy_and_destroy_elements(paquete, free);
 }
 
 t_list *devolver_lineas(char *path)
@@ -68,20 +73,13 @@ t_list *devolver_lineas(char *path)
         // Allojar espacio para nuevas lineas
         linea = malloc(LIMITE_LINEA_INSTRUCCION);
     }
-    // FIXME solo para debuggear
-    // t_list_iterator *iterator = list_iterator_create(lineas); 
-    // printf("Se leyo archivo de path %s\n", path); 
-    // while (list_iterator_has_next(iterator)) { 
-    //     printf("%s", (char *)list_iterator_next(iterator)); 
-    // } 
-    // list_iterator_destroy(iterator); 
 
     free(linea);
     fclose(archivo);
     return lineas;
 }
 
-void eliminar_data(t_list *data)
+void eliminar_pseudocodigo(void *data)
 {
-    list_destroy_and_destroy_elements(data, free);
+    list_destroy_and_destroy_elements((t_list *)data, free);
 }

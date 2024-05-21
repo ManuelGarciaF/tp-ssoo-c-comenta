@@ -1,8 +1,8 @@
 #/usr/bin/env bash
 
-sudo fuser --kill 8002/tcp
-sudo fuser --kill 8006/tcp
-sudo fuser --kill 8007/tcp
+#sudo fuser --kill 8002/tcp
+#sudo fuser --kill 8006/tcp
+#sudo fuser --kill 8007/tcp
 
 # Check if the session already exists
 if tmux has-session -t tp-ssoo 2>/dev/null; then

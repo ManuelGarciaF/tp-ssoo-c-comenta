@@ -27,7 +27,7 @@ t_sdictionary *colas_blocked_recursos;
 t_sdictionary *colas_blocked_interfaces;
 
 t_sdictionary *instancias_recursos;
-t_sdictionary *asignaciones_recursos;
+t_slist *asignaciones_recursos;
 
 // Semaforos
 sem_t sem_multiprogramacion;
@@ -64,20 +64,20 @@ int main(int argc, char *argv[])
 
     // Crear hilo para esperar conexiones de entrada/salida
     pthread_t hilo_esperar_io;
-    int iret = pthread_create(&hilo_esperar_io, NULL, (void *)esperar_conexiones_io, NULL);
+    int iret = pthread_create(&hilo_esperar_io, NULL, esperar_conexiones_io, NULL);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para esperar conexiones");
     }
 
     pthread_t hilo_planificador_largo_plazo;
-    iret = pthread_create(&hilo_planificador_largo_plazo, NULL, (void *)planificador_largo_plazo, &conexion_memoria);
+    iret = pthread_create(&hilo_planificador_largo_plazo, NULL, planificador_largo_plazo, &conexion_memoria);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
     }
 
     pthread_t hilo_planificador_corto_plazo;
     t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt, conexion_memoria};
-    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, (void *)planificador_corto_plazo, &params_pcp);
+    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, planificador_corto_plazo, &params_pcp);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
     }
@@ -133,7 +133,7 @@ void inicializar_globales(void)
     colas_blocked_interfaces = sdictionary_create();
 
     instancias_recursos = sdictionary_create();
-    asignaciones_recursos = sdictionary_create();
+    asignaciones_recursos = slist_create();
 
     char **recursos_strs = config_get_array_value(config, "RECURSOS");
     char **instancias_recursos_strs = config_get_array_value(config, "INSTANCIAS_RECURSOS");
@@ -147,10 +147,6 @@ void inicializar_globales(void)
         // Inicializar las colas de bloqueados para cada recurso.
         t_squeue *cola_bloqueados = squeue_create();
         sdictionary_put(colas_blocked_recursos, recursos_strs[i], cola_bloqueados);
-
-        // Inicializar las listas de asignaciones.
-        t_list *asignaciones = list_create();
-        sdictionary_put(asignaciones_recursos, recursos_strs[i], asignaciones);
     }
 
     string_array_destroy(recursos_strs);
@@ -176,7 +172,7 @@ void liberar_globales(void)
     sdictionary_destroy(colas_blocked_interfaces);
 
     sdictionary_destroy(instancias_recursos);
-    sdictionary_destroy(asignaciones_recursos);
+    slist_destroy(asignaciones_recursos);
 
     sem_destroy(&sem_multiprogramacion);
     sem_destroy(&sem_elementos_en_new);
@@ -186,7 +182,7 @@ void liberar_globales(void)
     sem_destroy(&sem_reanudar_plp);
 }
 
-void esperar_conexiones_io(void)
+void *esperar_conexiones_io(void *param)
 {
     // Esperar constantemente conexiones de io
     int socket_escucha = iniciar_servidor(puerto_escucha);
@@ -197,7 +193,7 @@ void esperar_conexiones_io(void)
 
         // Crear hilo para manejar esta conexion
         pthread_t hilo;
-        int iret = pthread_create(&hilo, NULL, (void *)atender_io, conexion_io);
+        int iret = pthread_create(&hilo, NULL, atender_io, conexion_io);
         if (iret != 0) {
             log_error(debug_logger, "No se pudo crear un hilo para atender la interfaz de I/O");
             exit(1);
@@ -206,9 +202,9 @@ void esperar_conexiones_io(void)
     }
 }
 
-/* Maneja las conexiones de los dispositivos de I/O */
-void atender_io(int *socket_conexion)
+void *atender_io(void *param)
 {
+    int *socket_conexion = (int *)param;
     recibir_handshake(*socket_conexion);
 
     close(*socket_conexion);
@@ -250,11 +246,8 @@ void reanudar_planificacion()
     sem_post(&sem_reanudar_plp);
 }
 
-void eliminar_proceso(t_pcb *pcb, char const *motivo, int conexion_memoria)
+void eliminar_proceso(t_pcb *pcb, int conexion_memoria)
 {
-    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb->pid);
-    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: %s", pcb->pid, motivo);
-
     // Si se achico el grado_multiprogramacion, los proximos procesos que
     // se eliminen no liberan espacio en el sem_multiprogramacion.
     if (procesos_extra_multiprogramacion > 0) {
@@ -263,9 +256,29 @@ void eliminar_proceso(t_pcb *pcb, char const *motivo, int conexion_memoria)
         sem_post(&sem_multiprogramacion);
     }
 
-    pcb_destroy(pcb);
+    // Avisar a memoria que debe liberar el proceso.
+    enviar_mensaje(MENSAJE_FIN_PROCESO, conexion_memoria);
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pcb->pid), sizeof(pcb->pid));
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete);
 
-    // TODO
-    // Hay que liberar los recursos en base a asignaciones_recursos
-    assert(false && "No implementado");
+    // Liberar todos los recursos en base a asignaciones_recursos.
+    slist_lock(asignaciones_recursos);
+    t_list_iterator *it = list_iterator_create(asignaciones_recursos->list);
+    while (list_iterator_has_next(it)) {
+        t_asignacion_recurso *ar = list_iterator_next(it);
+        if (ar->pid == pcb->pid) {
+            list_iterator_remove(it);            // Eliminarlo de la lista
+            liberar_recurso(ar->nombre_recurso); // Liberar ese recurso
+
+            // Liberar ar
+            free(ar->nombre_recurso);
+            free(ar);
+        }
+    }
+    list_iterator_destroy(it);
+    slist_unlock(asignaciones_recursos);
+
+    pcb_destroy(pcb);
 }

@@ -1,8 +1,11 @@
 #include "planificador_largo_plazo.h"
 
 // Pasa procesos en NEW a READY cuando hay espacio en el semaforo.
-void planificador_largo_plazo(int *conexion_memoria)
+/* void planificador_largo_plazo(int *conexion_memoria) */
+void *planificador_largo_plazo(void *param)
 {
+    int conexion_memoria = *((int *)param);
+
     while (true) {
         // Esperar hasta que haya elementos en NEW, reduciendo el semaforo.
         sem_wait(&sem_elementos_en_new);
@@ -19,7 +22,7 @@ void planificador_largo_plazo(int *conexion_memoria)
 
         // Sacar el proceso de NEW y enviarlo a memoria
         t_proceso_nuevo *proceso = squeue_pop(cola_new);
-        enviar_proceso_nuevo_a_memoria(proceso, *conexion_memoria);
+        enviar_proceso_nuevo_a_memoria(proceso, conexion_memoria);
 
         log_info(debug_logger, "Se envió el proceso %d con path: %s a memoria", proceso->pid, proceso->path);
 

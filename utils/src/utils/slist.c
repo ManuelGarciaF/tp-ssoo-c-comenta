@@ -46,3 +46,12 @@ void *slist_remove_by_condition(t_slist *sl, bool (*condition)(void *))
 
     return elem;
 }
+
+void slist_lock(t_slist *sl)
+{
+    pthread_mutex_lock(sl->mutex);
+}
+void slist_unlock(t_slist *sl)
+{
+    pthread_mutex_unlock(sl->mutex);
+}
