@@ -7,10 +7,12 @@ t_log *debug_logger;
 t_log *memoria_logger;
 
 char *puerto_escucha;
+int tam_memoria;
+int tam_pagina;
+char *path_instrucciones;
 int retardo_respuesta;
 
 t_dictionary *codigo_procesos;
-
 
 int main(int argc, char *argv[])
 {
@@ -55,6 +57,9 @@ int main(int argc, char *argv[])
 void cargar_config(t_config *config)
 {
     puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+    tam_memoria = config_get_int_or_exit(config, "TAM_MEMORIA");
+    tam_pagina = config_get_int_or_exit(config, "TAM_PAGINA");
+    path_instrucciones = config_get_string_or_exit(config, "PATH_INSTRUCCIONES");;
     retardo_respuesta = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
 }
 

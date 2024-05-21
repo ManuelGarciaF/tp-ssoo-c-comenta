@@ -27,6 +27,9 @@ extern t_log *memoria_logger;
 
 // Variables de config
 extern char *puerto_escucha;
+extern int tam_memoria;
+extern int tam_pagina;
+extern char *path_instrucciones;
 extern int retardo_respuesta;
 
 extern t_dictionary *codigo_procesos;

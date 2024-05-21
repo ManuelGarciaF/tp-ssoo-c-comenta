@@ -20,11 +20,18 @@ void recibir_crear_proceso(int socket_conexion)
     t_list *paquete = recibir_paquete(socket_conexion);
     uint32_t *pid = list_get(paquete, 0);
     char *pid_str = string_itoa(*pid);
-    char *path = list_get(paquete, 1);
+    char *path_parcial = list_get(paquete, 1);
 
-    log_info(debug_logger, "Cargando instrucciones para PID: %d, con path: %s", *pid, path);
+    char *path_completo = string_new();
+    string_append(&path_completo, path_instrucciones);
+    string_append(&path_completo, "/"); // Ya que es un directorio.
+    string_append(&path_completo, path_parcial);
 
-    t_list *lineas = devolver_lineas(path);
+    log_info(debug_logger, "Cargando instrucciones para PID: %d, con path: %s", *pid, path_completo);
+
+    t_list *lineas = devolver_lineas(path_completo);
+    free(path_completo);
+
     dictionary_put(codigo_procesos, pid_str, lineas);
 
     free(pid_str);
