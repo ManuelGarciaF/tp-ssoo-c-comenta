@@ -126,8 +126,9 @@ int aceptar_conexion_kernel(int socket_escucha)
 void *servidor_interrupt(int *socket_escucha)
 {
     int conexion_interrupt = esperar_cliente(*socket_escucha);
-    if (recibir_handshake(conexion_interrupt)) {
-        log_info(debug_logger, "Se realizo el handshake correctamente (interrupt)");
+    if (!recibir_handshake(conexion_interrupt)) {
+        log_info(debug_logger, "No se pudo realizar el handshake correctamente (interrupt)");
+        exit(1);
     }
 
     while (true) {
