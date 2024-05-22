@@ -7,19 +7,8 @@ bool planificar_nuevo_proceso;
 void *planificador_corto_plazo(void *vparams)
 {
     t_parametros_pcp *params = (t_parametros_pcp *)vparams;
-    // Empieza en 0 para bloquear hasta que le digamos.
-    sem_init(&sem_comenzar_reloj, 0, 0);
 
-    // TODO crear el hilo cada vez luego de enviar el pcb, para poder matarlo si es necesario.
     pthread_t hilo_reloj_rr;
-    // Crear hilo de reloj para desalojar procesos en RR.
-    if (algoritmo_planificacion == RR) {
-        int iret = pthread_create(&hilo_reloj_rr, NULL, reloj_rr, &(params->conexion_cpu_interrupt));
-        if (iret != 0) {
-            log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
-        }
-    }
-
     planificar_nuevo_proceso = true;
     while (true) {
         // No siempre hay que enviar un proceso nuevo segun el algoritmo de planificacion,
@@ -41,12 +30,22 @@ void *planificador_corto_plazo(void *vparams)
 
             log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
-            pcb_destroy(pcb_a_ejecutar);
-
             // Si estamos en RR o VRR, iniciar el reloj.
             if (algoritmo_planificacion == RR || algoritmo_planificacion == VRR) {
-                sem_post(&sem_comenzar_reloj);
+                log_info(debug_logger, "Iniciando reloj RR con q=%d para pid=%u", quantum, pcb_a_ejecutar->pid);
+
+                t_parametros_reloj_rr *params_reloj = malloc(sizeof(t_parametros_reloj_rr));
+                params_reloj->conexion_cpu_interrupt = params->conexion_cpu_interrupt;
+                params_reloj->ms_espera = quantum;
+                params_reloj->pid = pcb_a_ejecutar->pid;
+
+                int iret = pthread_create(&hilo_reloj_rr, NULL, reloj_rr, params_reloj);
+                if (iret != 0) {
+                    log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
+                }
             }
+
+            pcb_destroy(pcb_a_ejecutar);
         }
 
         // En este punto, se esta ejecutando el proceso, esperamos que interrumpa y
@@ -91,23 +90,26 @@ void *planificador_corto_plazo(void *vparams)
 
 void *reloj_rr(void *param)
 {
-    int conexion_cpu_interrupt = *((int *)param);
-    while (true) {
-        sem_wait(&sem_comenzar_reloj);
-        // Multiplicamos por 1000 porque toma microsegundos, quantum esta en milisegundos.
-        usleep(quantum * 1000);
-        // TODO actualizar proceso_desalojo_previamente en algun lado segun corresponda.
-        if (!proceso_desalojo_previamente) {
-            // Desalojar por fin de Quantum
-            desalojar_proceso(conexion_cpu_interrupt);
-        }
-    }
-}
+    int conexion_cpu_interrupt = ((t_parametros_reloj_rr *)param)->conexion_cpu_interrupt;
+    int ms_espera = ((t_parametros_reloj_rr *)param)->ms_espera;
+    uint32_t pid = ((t_parametros_reloj_rr *)param)->pid;
 
-void desalojar_proceso(int conexion_interrupt)
-{
-    // TODO enviar un mensaje al CPU para desalojar
-    assert(false && "No implementado");
+    // Esperar
+    usleep(ms_espera * 1000);
+
+    log_info(debug_logger, "Reloj para pid=%u termino despues de esperar %dms", pid, ms_espera);
+
+    // Desalojar el proceso
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
+    t_motivo_desalojo motivo = FIN_QUANTUM;
+    agregar_a_paquete(paquete, &motivo, sizeof(t_motivo_desalojo));
+    enviar_paquete(paquete, conexion_cpu_interrupt);
+    eliminar_paquete(paquete);
+
+    free(param);
+
+    return NULL;
 }
 
 t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado)
@@ -127,6 +129,7 @@ void manejar_fin_quantum(t_pcb *pcb_recibido)
 {
     // Lo volvemos a agregar a la cola de READY
     squeue_push(cola_ready, pcb_recibido);
+    sem_post(&sem_elementos_en_ready);
 
     // Logs
     log_info(kernel_logger, "PID: %d - Desalojado por fin de Quantum", pcb_recibido->pid);
@@ -147,7 +150,7 @@ void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria)
 void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
 {
     // El CPU, luego de hacer wait, envia el nombre del recurso en un mensaje.
-    char *nombre_recurso = recibir_mensaje(socket_conexion_dispatch);
+    char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
@@ -175,6 +178,9 @@ void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int
         // Agregarlo a la cola de bloqueados
         t_squeue *cola = sdictionary_get(colas_blocked_recursos, nombre_recurso);
         squeue_push(cola, pcb_recibido);
+
+        log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: BLOCKED", pcb_recibido->pid);
+        log_info(kernel_logger, "PID: %d - Bloqueado por: %s", pcb_recibido->pid, nombre_recurso);
     }
 
     // Reducir el contador de instancias del recurso.
@@ -184,7 +190,7 @@ void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int
 void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
 {
     // El CPU, luego de hacer signal, envia el nombre del recurso en un mensaje.
-    char *nombre_recurso = recibir_mensaje(socket_conexion_dispatch);
+    char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {

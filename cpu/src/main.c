@@ -7,6 +7,7 @@ t_log *debug_logger;
 t_log *cpu_logger;
 
 t_pcb *pcb = NULL;
+t_slist *interrupts;
 
 // Variables de config
 char *ip_memoria;
@@ -26,6 +27,8 @@ int main(int argc, char *argv[])
     }
     cargar_config(config);
 
+    interrupts = slist_create();
+
     int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
     int socket_escucha_interrupt = iniciar_servidor(puerto_escucha_interrupt);
 
@@ -42,7 +45,7 @@ int main(int argc, char *argv[])
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con memoria");
     }
-    enviar_mensaje(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
+    enviar_str(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
@@ -60,16 +63,18 @@ int main(int argc, char *argv[])
             log_info(debug_logger, "Recibido PCB con PID: %ud", pcb->pid);
         }
 
-        pcb_debug_print(pcb);
+        /* pcb_debug_print(pcb); */
 
         // Fetch
         char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
 
-        log_info(debug_logger, "Instruccion: %s", str_instruccion);
-
         // Decode
         t_instruccion instruccion = decode(str_instruccion);
+
+        char **partes = string_n_split(str_instruccion, 2, " ");
+        log_info(cpu_logger, "PID: %u - Ejecutando: %s - %s", pcb->pid, partes[0], partes[1]);
+        string_array_destroy(partes);
         free(str_instruccion);
 
         // Excecute
@@ -78,6 +83,9 @@ int main(int argc, char *argv[])
         // El PCB pudo ser desalojado durante execute
         if (incrementar_pc && pcb != NULL)
             pcb->program_counter++;
+
+        // Check interrupt
+        check_interrupt(conexion_dispatch);
     }
 
     // Esperar que los hilos terminen
@@ -117,18 +125,33 @@ int aceptar_conexion_kernel(int socket_escucha)
 
 void *servidor_interrupt(int *socket_escucha)
 {
-    int socket_conexion = esperar_cliente(*socket_escucha);
-    if (recibir_handshake(socket_conexion)) {
+    int conexion_interrupt = esperar_cliente(*socket_escucha);
+    if (recibir_handshake(conexion_interrupt)) {
         log_info(debug_logger, "Se realizo el handshake correctamente (interrupt)");
     }
 
-    close(*socket_escucha);
+    while (true) {
+        t_list *paquete = recibir_paquete(conexion_interrupt);
+        uint32_t *pid_recibido = list_get(paquete, 0);
+        t_motivo_desalojo *motivo_desalojo = list_get(paquete, 1);
+
+        log_info(debug_logger, "Se recibio una interrupcion para el pid %u con motivo %d", *pid_recibido, *motivo_desalojo);
+
+        t_interrupcion *interrupcion = malloc(sizeof(t_interrupcion));
+        interrupcion->pid = *pid_recibido;
+        interrupcion->motivo = *motivo_desalojo;
+
+        slist_add(interrupts, interrupcion);
+
+        list_destroy_and_destroy_elements(paquete, free);
+    }
+
     return NULL;
 }
 
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
 {
-    enviar_mensaje(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
+    enviar_str(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
     // Enviar PID y PC para solicitar una instruccion.
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
@@ -137,7 +160,7 @@ char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
     eliminar_paquete(paquete);
 
     // Recibir instruccion
-    return recibir_mensaje(conexion_memoria);
+    return recibir_str(conexion_memoria);
 }
 
 void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
@@ -152,4 +175,24 @@ void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
     // Luego de enviarlo, lo liberamos
     pcb_destroy(pcb);
     pcb = NULL;
+}
+
+void check_interrupt(int conexion_dispatch)
+{
+    bool encontrado = false;
+    slist_lock(interrupts);
+    t_list_iterator *it = list_iterator_create(interrupts->list);
+    while (list_iterator_has_next(it)) {
+        t_interrupcion *interrupcion = list_iterator_next(it);
+        // Si hay un pid en la lista que coincida con el proceso en ejecucion
+        if (interrupcion->pid == pcb->pid) {
+            devolver_pcb(interrupcion->motivo, conexion_dispatch);
+        }
+    }
+    list_iterator_destroy(it);
+
+    // Vaciar la lista
+    list_clean_and_destroy_elements(interrupts->list, free);
+
+    slist_unlock(interrupts);
 }

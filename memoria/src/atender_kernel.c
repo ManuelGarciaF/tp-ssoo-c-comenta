@@ -4,7 +4,7 @@ void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
-        char *mensaje = recibir_mensaje(socket_conexion);
+        char *mensaje = recibir_str(socket_conexion);
         log_info(debug_logger, "Mensaje enviado por el kernel: %s", mensaje);
         if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
             recibir_crear_proceso(socket_conexion);

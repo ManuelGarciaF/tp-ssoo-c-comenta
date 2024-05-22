@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
     }
     // Avisar quien es a la memoria
-    enviar_mensaje(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
+    enviar_str(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
 
     // Crear hilo para esperar conexiones de entrada/salida
     pthread_t hilo_esperar_io;
@@ -257,7 +257,7 @@ void eliminar_proceso(t_pcb *pcb, int conexion_memoria)
     }
 
     // Avisar a memoria que debe liberar el proceso.
-    enviar_mensaje(MENSAJE_FIN_PROCESO, conexion_memoria);
+    enviar_str(MENSAJE_FIN_PROCESO, conexion_memoria);
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pcb->pid), sizeof(pcb->pid));
     enviar_paquete(paquete, conexion_memoria);

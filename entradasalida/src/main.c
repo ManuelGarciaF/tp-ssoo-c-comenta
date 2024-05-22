@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
             log_error(debug_logger,
                     "No se pudo realizar un handshake con la memoria");
         }
-        enviar_mensaje(MENSAJE_A_MEMORIA_IO, conexion_memoria);
+      enviar_str(MENSAJE_A_MEMORIA_IO, conexion_memoria);
     }
 
     t_paquete *paquete = crear_paquete();

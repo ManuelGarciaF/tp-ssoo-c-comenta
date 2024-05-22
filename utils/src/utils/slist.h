@@ -22,6 +22,7 @@ int slist_add(t_slist *, void *element);
 void *slist_get(t_slist *, int index);
 void *slist_remove_by_condition(t_slist *, bool (*condition)(void *));
 
+
 void slist_lock(t_slist *);
 void slist_unlock(t_slist *);
 
