@@ -70,7 +70,7 @@ void atender_conexion(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
 
-    char *modulo = recibir_mensaje(*socket_conexion);
+    char *modulo = recibir_str(*socket_conexion);
 
     if (strcmp(modulo, MENSAJE_A_MEMORIA_KERNEL) == 0) {
         free(modulo);
