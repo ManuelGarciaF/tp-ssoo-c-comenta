@@ -81,11 +81,14 @@ int main(int argc, char *argv[])
         execute(instruccion, &incrementar_pc, conexion_dispatch);
 
         // El PCB pudo ser desalojado durante execute
-        if (incrementar_pc && pcb != NULL)
-            pcb->program_counter++;
+        if (pcb != NULL) {
+            if (incrementar_pc) {
+                pcb->program_counter++;
+            }
 
-        // Check interrupt
-        check_interrupt(conexion_dispatch);
+            // Check interrupt
+            check_interrupt(conexion_dispatch);
+        }
     }
 
     // Esperar que los hilos terminen
@@ -136,7 +139,10 @@ void *servidor_interrupt(int *socket_escucha)
         uint32_t *pid_recibido = list_get(paquete, 0);
         t_motivo_desalojo *motivo_desalojo = list_get(paquete, 1);
 
-        log_info(debug_logger, "Se recibio una interrupcion para el pid %u con motivo %d", *pid_recibido, *motivo_desalojo);
+        log_info(debug_logger,
+                 "Se recibio una interrupcion para el pid %u con motivo %d",
+                 *pid_recibido,
+                 *motivo_desalojo);
 
         t_interrupcion *interrupcion = malloc(sizeof(t_interrupcion));
         interrupcion->pid = *pid_recibido;

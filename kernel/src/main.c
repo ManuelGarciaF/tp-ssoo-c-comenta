@@ -24,7 +24,8 @@ int procesos_extra_multiprogramacion = 0;
 t_squeue *cola_new;
 t_squeue *cola_ready;
 t_sdictionary *colas_blocked_recursos;
-t_sdictionary *colas_blocked_interfaces;
+
+t_sdictionary *interfaces_conectadas;
 
 t_sdictionary *instancias_recursos;
 t_slist *asignaciones_recursos;
@@ -130,7 +131,8 @@ void inicializar_globales(void)
     cola_new = squeue_create();
     cola_ready = squeue_create();
     colas_blocked_recursos = sdictionary_create();
-    colas_blocked_interfaces = sdictionary_create();
+
+    interfaces_conectadas = sdictionary_create();
 
     instancias_recursos = sdictionary_create();
     asignaciones_recursos = slist_create();
@@ -169,7 +171,7 @@ void liberar_globales(void)
     squeue_destroy(cola_new);
     squeue_destroy(cola_ready);
     sdictionary_destroy(colas_blocked_recursos);
-    sdictionary_destroy(colas_blocked_interfaces);
+    sdictionary_destroy(interfaces_conectadas);
 
     sdictionary_destroy(instancias_recursos);
     slist_destroy(asignaciones_recursos);
@@ -200,16 +202,6 @@ void *esperar_conexiones_io(void *param)
         }
         pthread_detach(hilo);
     }
-}
-
-void *atender_io(void *param)
-{
-    int *socket_conexion = (int *)param;
-    recibir_handshake(*socket_conexion);
-
-    close(*socket_conexion);
-    free(socket_conexion);
-    pthread_exit(NULL);
 }
 
 t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)

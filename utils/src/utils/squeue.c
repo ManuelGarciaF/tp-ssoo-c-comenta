@@ -43,6 +43,15 @@ void *squeue_pop(t_squeue *sq)
     return elem;
 }
 
+void *squeue_peek(t_squeue *sq)
+{
+    pthread_mutex_lock(sq->mutex);
+    void *elem = queue_peek(sq->queue);
+    pthread_mutex_unlock(sq->mutex);
+
+    return elem;
+}
+
 bool squeue_is_empty(t_squeue *sq)
 {
     return queue_is_empty(sq->queue);

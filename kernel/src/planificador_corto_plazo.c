@@ -80,7 +80,7 @@ void *planificador_corto_plazo(void *vparams)
             manejar_signal_recurso(pcb_recibido, params->conexion_cpu_dispatch, params->conexion_memoria);
             break;
         case IO:
-            manejar_io(pcb_recibido);
+            manejar_io(pcb_recibido, params->conexion_cpu_dispatch, params->conexion_memoria);
             break;
         }
     }
@@ -207,15 +207,45 @@ void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, i
     planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
 }
 
-void manejar_io(t_pcb *pcb_recibido)
+void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria)
 {
-    // TODO
-    assert(false && "No implementado");
+    t_list *paquete = recibir_paquete(conexion_dispatch);
+    char *nombre_interfaz = list_get(paquete, 0);
+    t_operacion_io *operacion = list_get(paquete, 1);
+
+    // Si no existe la interfaz, o no soporta la operacion, mandar el proceso a EXIT.
+    if (!existe_interfaz(nombre_interfaz) || !interfaz_soporta_operacion(nombre_interfaz, *operacion)) {
+        interfaz_invalida(pcb_recibido, conexion_memoria);
+        return;
+    }
+
+    // Antes de agregarlo a la lista de bloqueados, incrementar el pc
+    // FIXME esto deberia hacerse en el cpu
+    (pcb_recibido->program_counter)++;
+
+    // Agregarlo a la cola de bloqueados de la interfaz.
+    t_bloqueado_io *tbi = malloc(sizeof(t_bloqueado_io));
+    tbi->pcb = pcb_recibido;
+    tbi->opcode = *operacion;
+    tbi->operacion = paquete;
+
+    t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre_interfaz);
+    squeue_push(interfaz->bloqueados, tbi);
+
+    // Avisar a la interfaz que hay un proceso nuevo esperando.
+    sem_post(&(interfaz->procesos_esperando));
 }
 
 void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria)
 {
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_RESOURCE", pcb_recibido->pid);
+    eliminar_proceso(pcb_recibido, conexion_memoria);
+}
+
+void interfaz_invalida(t_pcb *pcb_recibido, int conexion_memoria)
+{
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_INTERFACE", pcb_recibido->pid);
     eliminar_proceso(pcb_recibido, conexion_memoria);
 }

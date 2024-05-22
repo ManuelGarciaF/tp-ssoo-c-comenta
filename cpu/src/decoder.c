@@ -109,7 +109,7 @@ t_instruccion parsear_mov_out(char *argumentos)
     t_registro direccion = parsear_a_t_registro(argumentos_separados[0]);
     t_registro datos = parsear_a_t_registro(argumentos_separados[1]);
 
-    instruccion.opcode = MOV_IN;
+    instruccion.opcode = MOV_OUT;
     instruccion.parametros[0].registro = direccion;
     instruccion.parametros[1].registro = datos;
 
@@ -199,7 +199,7 @@ t_instruccion parsear_wait(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
     
-    instruccion.opcode = COPY_STRING;
+    instruccion.opcode = WAIT;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
 
     string_array_destroy(argumentos_separados);
@@ -211,7 +211,7 @@ t_instruccion parsear_signal(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_n_split(argumentos, 2, " ");
     
-    instruccion.opcode = COPY_STRING;
+    instruccion.opcode = SIGNAL;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
 
     string_array_destroy(argumentos_separados);
@@ -225,7 +225,7 @@ t_instruccion parsear_io_gen_sleep(char *argumentos)
     
     int unidades_de_trabajo = atoi(argumentos_separados[1]);
 
-    instruccion.opcode = SET;
+    instruccion.opcode = IO_GEN_SLEEP;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
     instruccion.parametros[1].valor_numerico = unidades_de_trabajo;
     

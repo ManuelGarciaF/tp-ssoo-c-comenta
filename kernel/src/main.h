@@ -42,6 +42,21 @@ typedef struct {
     uint32_t pid;
 } t_asignacion_recurso;
 
+typedef struct {
+    char *nombre;
+    t_tipo_interfaz tipo;
+    int conexion;
+    sem_t procesos_esperando;
+    t_squeue *bloqueados; // Contiene t_bloqueado_io, el primer elemento es el que esta usando la interfaz
+} t_interfaz;
+
+typedef struct {
+    t_pcb *pcb;
+    t_operacion_io opcode;
+    t_list *operacion; // Contiene el nombre de la interfaz [0], la operacion [1],
+                       // y el resto de los argumentos.
+} t_bloqueado_io;
+
 /*
 ** Variables globales
 */
@@ -65,15 +80,17 @@ extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogr
                                              // se eliminen no liberan espacio en el sem_multiprogramacion.
 
 // Colas de procesos
-extern t_squeue *cola_new;                      // Contiene t_proceso_nuevo
-extern t_squeue *cola_ready;                    // Contiene t_pcb
-extern t_sdictionary *colas_blocked_recursos;   // Contiene squeues de t_pcb
-extern t_sdictionary *colas_blocked_interfases; // Contiene squeues de t_pcb
+extern t_squeue *cola_new;                    // Contiene t_proceso_nuevo
+extern t_squeue *cola_ready;                  // Contiene t_pcb
+extern t_sdictionary *colas_blocked_recursos; // Contiene squeues de t_pcb
+
+extern t_sdictionary *interfaces_conectadas; // Contiene t_interfaz
 
 // Recursos
 extern t_sdictionary *instancias_recursos; // Contiene ints.
 extern t_slist *asignaciones_recursos;     // Necesito saber que procesos tienen que recursos para liberarlos
                                            // al eliminar al proceso. Contiene t_asignacion_recursos.
+
 // Semaforos
 extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
 extern sem_t sem_elementos_en_new;
@@ -119,5 +136,9 @@ void liberar_asignacion_recurso(uint32_t pid, char *recurso);
 
 void pausar_planificacion();
 void reanudar_planificacion();
+
+// Interfaces
+bool existe_interfaz(char *nombre);
+bool interfaz_soporta_operacion(char *nombre, t_operacion_io op);
 
 #endif // MAIN_H_

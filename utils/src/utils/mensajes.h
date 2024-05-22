@@ -14,19 +14,14 @@
 
 #define MENSAJE_SOLICITAR_INSTRUCCION "instruccion"
 
-#define MENSAJE_FIN_IO_SLEEP "fin sleep"
+#define MENSAJE_FIN_IO 1
 
 typedef enum { FIN_QUANTUM, FIN_PROCESO, WAIT_RECURSO, SIGNAL_RECURSO, IO } t_motivo_desalojo;
 
-typedef enum {
-    GENERICA,
-    STDIN,
-    STDOUT,
-    DIALFS
-} t_tipo_interfaz;
+typedef enum { GENERICA, STDIN, STDOUT, DIALFS } t_tipo_interfaz;
 
 typedef enum {
-    GEN_SLEEP,
+    GEN_SLEEP = 0,
     STDIN_READ,
     STDOUT_WRITE,
     FS_CREATE,
@@ -35,5 +30,8 @@ typedef enum {
     FS_WRITE,
     FS_READ
 } t_operacion_io;
+
+// Le pasamos un t_operacion_io y devuelve el tipo de interfaz que puede hacer esa operacion
+extern const t_tipo_interfaz TIPO_INTERFAZ_CAPAZ_DE_HACER[];
 
 #endif

@@ -46,7 +46,7 @@ void eliminar_paquete(t_paquete *paquete);
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
 
 /* Envia paquete */
-void enviar_paquete(t_paquete *paquete, int socket_conexion);
+int enviar_paquete(t_paquete *paquete, int socket_conexion);
 
 /* Inicia un socket como servidor en un puerto dado y lo devuelve */
 int iniciar_servidor(char *puerto);

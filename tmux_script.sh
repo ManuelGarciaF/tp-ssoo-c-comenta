@@ -1,14 +1,4 @@
-#/usr/bin/env bash
-
-#sudo fuser --kill 8002/tcp
-#sudo fuser --kill 8006/tcp
-#sudo fuser --kill 8007/tcp
-
-# Check if the session already exists
-if tmux has-session -t tp-ssoo 2>/dev/null; then
-    # If the session exists, kill it
-    tmux kill-session -t tp-ssoo
-fi
+#!/usr/bin/env bash
 
 tmux new-session -d -s tp-ssoo
 
@@ -28,6 +18,10 @@ tmux new-window -t tp-ssoo:3 -n "Kernel"
 tmux send-keys -t tp-ssoo:3 "cd kernel && make && make memcheck" C-m
 sleep 2
 # tmux send-keys -t tp-ssoo:3 "INICIAR_PROCESO test.txt" C-m
+
+tmux new-window -t tp-ssoo:4 -n "IO"
+tmux send-keys -t tp-ssoo:4 "cd entradasalida && make" C-m
+sleep 2
 
 # Attach to the session
 tmux attach-session -t tp-ssoo

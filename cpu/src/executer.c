@@ -40,6 +40,8 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
         // Enviar nombre de interfaz y unidades de trabajo.
         t_paquete *paquete = crear_paquete();
         agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+        t_operacion_io op = GEN_SLEEP;
+        agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
         agregar_a_paquete(paquete, &unidades_trabajo, sizeof(uint32_t));
 
         enviar_paquete(paquete, conexion_dispatch);

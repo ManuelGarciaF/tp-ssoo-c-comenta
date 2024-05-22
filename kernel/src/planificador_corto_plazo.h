@@ -26,8 +26,9 @@ void manejar_fin_quantum(t_pcb *pcb_recibido);
 void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria);
 void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
 void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
-void manejar_io(t_pcb *pcb_recibido);
+void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria);
 
 void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria);
+void interfaz_invalida(t_pcb *pcb_recibido, int conexion_memoria);
 
 #endif // PLANIFICADOR_CORTO_PLAZO_H_

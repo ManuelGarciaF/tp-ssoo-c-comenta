@@ -1,11 +1,11 @@
 #ifndef SDICTIONARY_H_
 #define SDICTIONARY_H_
 
+#include <assert.h>
 #include <commons/collections/dictionary.h>
 #include <commons/log.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include <assert.h>
 
 // Debe estar definido
 extern t_log *debug_logger;
