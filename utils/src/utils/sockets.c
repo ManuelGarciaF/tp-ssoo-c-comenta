@@ -17,9 +17,7 @@ void *serializar_paquete(t_paquete *paquete, int bytes)
     desplazamiento += sizeof(int);
     memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
     desplazamiento += sizeof(int);
-    memcpy(magic + desplazamiento,
-           paquete->buffer->stream,
-           paquete->buffer->size);
+    memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
     desplazamiento += paquete->buffer->size;
 
     return magic;
@@ -41,14 +39,10 @@ int crear_conexion(char *ip, char *puerto)
     }
 
     // Ahora vamos a crear el socket.
-    int socket_conexion = socket(server_info->ai_family,
-                                 server_info->ai_socktype,
-                                 server_info->ai_protocol);
+    int socket_conexion = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 
     // Ahora que tenemos el socket, vamos a conectarlo
-    if (connect(socket_conexion,
-                server_info->ai_addr,
-                server_info->ai_addrlen) != 0) {
+    if (connect(socket_conexion, server_info->ai_addr, server_info->ai_addrlen) != 0) {
         log_error(debug_logger, "No se pudo conectar al servidor");
         exit(1);
     }
@@ -58,15 +52,35 @@ int crear_conexion(char *ip, char *puerto)
     return socket_conexion;
 }
 
-void enviar_mensaje(char *mensaje, int socket_conexion)
+void enviar_str(char *mensaje, int socket_conexion)
 {
     t_paquete *paquete = malloc(sizeof(t_paquete));
 
-    paquete->codigo_operacion = OP_MENSAJE;
+    paquete->codigo_operacion = OP_MENSAJE_STR;
     paquete->buffer = malloc(sizeof(t_buffer));
     paquete->buffer->size = strlen(mensaje) + 1;
     paquete->buffer->stream = malloc(paquete->buffer->size);
     memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
+
+    void *a_enviar = serializar_paquete(paquete, bytes);
+
+    send(socket_conexion, a_enviar, bytes, 0);
+
+    free(a_enviar);
+    eliminar_paquete(paquete);
+}
+
+void enviar_int(uint32_t mensaje, int socket_conexion)
+{
+    t_paquete *paquete = malloc(sizeof(t_paquete));
+
+    paquete->codigo_operacion = OP_MENSAJE_INT;
+    paquete->buffer = malloc(sizeof(t_buffer));
+    paquete->buffer->size = sizeof(uint32_t);
+    paquete->buffer->stream = malloc(sizeof(uint32_t));
+    *((uint32_t *)paquete->buffer->stream) = mensaje;
 
     int bytes = paquete->buffer->size + 2 * sizeof(int);
 
@@ -95,16 +109,10 @@ t_paquete *crear_paquete(void)
 
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
 {
-    paquete->buffer->stream =
-        realloc(paquete->buffer->stream,
-                paquete->buffer->size + tamanio + sizeof(int));
+    paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
-    memcpy(paquete->buffer->stream + paquete->buffer->size,
-           &tamanio,
-           sizeof(int));
-    memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int),
-           valor,
-           tamanio);
+    memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
+    memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
     paquete->buffer->size += tamanio + sizeof(int);
 }
@@ -150,9 +158,7 @@ int iniciar_servidor(char *puerto)
     }
 
     // Creamos el socket de escucha del servidor
-    int socket_escucha = socket(servinfo->ai_family,
-                                servinfo->ai_socktype,
-                                servinfo->ai_protocol);
+    int socket_escucha = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 
     // Evita errores en bind despues de un crash
     int reuse = 1;
@@ -214,17 +220,33 @@ void *recibir_buffer(int *size, int socket_conexion)
     return buffer;
 }
 
-char *recibir_mensaje(int socket_conexion)
+char *recibir_str(int socket_conexion)
 {
-    // Verificar que se envió un mensaje
-    if (recibir_operacion(socket_conexion) != OP_MENSAJE) {
-        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje");
+    // Verificar que se envió un string
+    if (recibir_operacion(socket_conexion) != OP_MENSAJE_STR) {
+        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un string");
         exit(1);
     }
 
     int size;
     char *buffer = recibir_buffer(&size, socket_conexion);
     return buffer;
+}
+
+uint32_t recibir_int(int socket_conexion)
+{
+    // Verificar que se envió un int
+    if (recibir_operacion(socket_conexion) != OP_MENSAJE_INT) {
+        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un int");
+        exit(1);
+    }
+
+    int size;
+    uint32_t *buffer = recibir_buffer(&size, socket_conexion);
+    uint32_t valor = *buffer;
+    free(buffer);
+
+    return valor;
 }
 
 t_list *recibir_paquete(int socket_conexion)
@@ -275,17 +297,14 @@ bool realizar_handshake(int socket_conexion)
 bool recibir_handshake(int socket_conexion)
 {
     uint32_t mensaje_recibido;
-    ssize_t bytes =
-        recv(socket_conexion, &mensaje_recibido, sizeof(uint32_t), MSG_WAITALL);
+    ssize_t bytes = recv(socket_conexion, &mensaje_recibido, sizeof(uint32_t), MSG_WAITALL);
     if (bytes <= 0) {
         log_error(debug_logger, "Hubo un error recibiendo el handshake");
         exit(1);
     }
 
     // Si el mensaje recibido es correcto
-    uint32_t msg = (mensaje_recibido == MENSAJE_HANDSHAKE)
-                       ? RESPUESTA_HANDSHAKE_OK
-                       : RESPUESTA_HANDSHAKE_ERROR;
+    uint32_t msg = (mensaje_recibido == MENSAJE_HANDSHAKE) ? RESPUESTA_HANDSHAKE_OK : RESPUESTA_HANDSHAKE_ERROR;
     bytes = send(socket_conexion, &msg, sizeof(uint32_t), 0);
     if (bytes <= 0) {
         log_error(debug_logger, "No se pudo enviar la respuesta al handshake");

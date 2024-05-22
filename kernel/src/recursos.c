@@ -15,6 +15,7 @@ void liberar_recurso(char *recurso)
         asignar_recurso(pcb->pid, recurso);
 
         squeue_push(cola_ready, pcb);
+        sem_post(&sem_elementos_en_ready);
     }
 
     // Incrementar el contador de instancias del recurso.

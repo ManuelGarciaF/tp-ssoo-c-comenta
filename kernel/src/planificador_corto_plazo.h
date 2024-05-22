@@ -8,6 +8,12 @@ bool proceso_desalojo_previamente = false;
 
 sem_t sem_comenzar_reloj;
 
+typedef struct {
+    int conexion_cpu_interrupt;
+    int ms_espera;
+    uint32_t pid;
+} t_parametros_reloj_rr;
+
 // Definiciones de funciones.
 void *reloj_rr(void *param);
 

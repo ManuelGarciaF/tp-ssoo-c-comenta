@@ -3,12 +3,13 @@
 
 #include <assert.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <estructuras/pcb.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <commons/string.h>
 #include <utils/mensajes.h>
+#include <utils/slist.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
 
@@ -48,6 +49,11 @@ typedef struct {
     } parametros[5];
 } t_instruccion;
 
+typedef struct {
+    uint32_t pid;
+    t_motivo_desalojo motivo;
+} t_interrupcion;
+
 /*
 ** Variables globales
 */
@@ -55,6 +61,7 @@ extern t_log *debug_logger;
 extern t_log *cpu_logger;
 
 extern t_pcb *pcb;
+extern t_slist *interrupts; // Contiene t_interrupcion
 
 // Variables de config
 extern char *ip_memoria;
@@ -76,5 +83,7 @@ t_instruccion decode(char *instruccion);
 void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch);
 
 void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch);
+
+void check_interrupt(int conexion_dispatch);
 
 #endif // MAIN_H_

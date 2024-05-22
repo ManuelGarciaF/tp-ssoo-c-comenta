@@ -46,7 +46,7 @@ void *planificador_largo_plazo(void *param)
 
 void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *proceso_nuevo, int conexion_memoria)
 {
-    enviar_mensaje(MENSAJE_INICIO_PROCESO, conexion_memoria);
+    enviar_str(MENSAJE_INICIO_PROCESO, conexion_memoria);
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(proceso_nuevo->pid), sizeof(uint32_t));
 

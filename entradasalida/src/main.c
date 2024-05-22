@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
                     "No se pudo realizar un handshake con la memoria");
         }
 
-        enviar_mensaje(MENSAJE_A_MEMORIA_IO, conexion_memoria);
+        enviar_str(MENSAJE_A_MEMORIA_IO, conexion_memoria);
     }
 
     // Liberar memoria
