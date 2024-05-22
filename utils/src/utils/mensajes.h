@@ -14,6 +14,26 @@
 
 #define MENSAJE_SOLICITAR_INSTRUCCION "instruccion"
 
+#define MENSAJE_FIN_IO_SLEEP "fin sleep"
+
 typedef enum { FIN_QUANTUM, FIN_PROCESO, WAIT_RECURSO, SIGNAL_RECURSO, IO } t_motivo_desalojo;
+
+typedef enum {
+    GENERICA,
+    STDIN,
+    STDOUT,
+    DIALFS
+} t_tipo_interfaz;
+
+typedef enum {
+    GEN_SLEEP,
+    STDIN_READ,
+    STDOUT_WRITE,
+    FS_CREATE,
+    FS_DELETE,
+    FS_TRUNCATE,
+    FS_WRITE,
+    FS_READ
+} t_operacion_io;
 
 #endif
