@@ -114,12 +114,12 @@ void cargar_config(t_config *config)
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case STDOUT:
-        tiempo_unidad_trabajo = config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case DIALFS:
-        tiempo_unidad_trabajo = config_get_string_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
         puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         path_base_dialfs = config_get_string_or_exit(config, "PATH_BASE_DIALFS");
