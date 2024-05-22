@@ -14,26 +14,21 @@
 /*
 ** Variables globales
 */
-typedef enum {
-    GENERICA,
-    STDIN,
-    STDOUT,
-    DIALFS
-} t_tipo_interfaz;
 
-t_log *debug_logger;
-t_log *entradasalida_logger;
+extern t_log *debug_logger;
+extern t_log *entradasalida_logger;
 
 // Variables de config
-t_tipo_interfaz tipo_interfaz;
-char *tiempo_unidad_trabajo;
-char *ip_kernel;
-char *puerto_kernel;
-char *ip_memoria;
-char *puerto_memoria;
-char *path_base_dialfs;
-char *block_size;
-char *block_count;
+extern t_tipo_interfaz tipo_interfaz;
+extern char *nombre_interfaz;
+extern int tiempo_unidad_trabajo;
+extern char *ip_kernel;
+extern char *puerto_kernel;
+extern char *ip_memoria;
+extern char *puerto_memoria;
+extern char *path_base_dialfs;
+extern int block_size;
+extern int block_count;
 
 /*
 ** Definiciones de funciones
@@ -41,5 +36,6 @@ char *block_count;
 
 void cargar_config(t_config *config);
 t_tipo_interfaz parsear_a_t_tipo_interfaz(char* str);
+void generica(int conexion_kernel);
 
 #endif // MAIN_H_
