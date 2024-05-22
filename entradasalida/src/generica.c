@@ -11,7 +11,7 @@ void generica(int conexion_kernel) {
             log_info(entradasalida_logger, "PID: %u - Operacion: IO_GEN_SLEEP", *pid);
             int milisegundos_de_espera = *unidades_de_trabajo * tiempo_unidad_trabajo;
             usleep(milisegundos_de_espera * 1000); // Multiplicado por 1000 ya que toma microsegundos.
-            enviar_mensaje(MENSAJE_FIN_IO_SLEEP, conexion_kernel);
+            enviar_str(MENSAJE_FIN_IO_SLEEP, conexion_kernel);
         }
         else {
             log_error(debug_logger, "Operacion invalida");

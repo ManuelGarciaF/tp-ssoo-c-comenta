@@ -180,7 +180,6 @@ void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
 
 void check_interrupt(int conexion_dispatch)
 {
-    bool encontrado = false;
     slist_lock(interrupts);
     t_list_iterator *it = list_iterator_create(interrupts->list);
     while (list_iterator_has_next(it)) {
