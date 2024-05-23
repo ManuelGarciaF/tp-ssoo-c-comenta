@@ -203,12 +203,13 @@ int esperar_cliente(int socket_escucha)
 int recibir_operacion(int socket_conexion)
 {
     int cod_op;
-    if (recv(socket_conexion, &cod_op, sizeof(int), MSG_WAITALL) > 0)
-        return cod_op;
-    else {
+    if (recv(socket_conexion, &cod_op, sizeof(int), MSG_WAITALL) <= 0) {
+        log_error(debug_logger, "La conexion fue cerrada");
         close(socket_conexion);
-        return -1;
+        abort();
     }
+
+    return cod_op;
 }
 
 void *recibir_buffer(int *size, int socket_conexion)
@@ -227,7 +228,7 @@ char *recibir_str(int socket_conexion)
     // Verificar que se envió un string
     if (recibir_operacion(socket_conexion) != OP_MENSAJE_STR) {
         log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un string");
-        exit(1);
+        abort();
     }
 
     int size;
