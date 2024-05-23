@@ -38,11 +38,20 @@ void *atender_io(void *param)
             break;
         }
 
-        // Sacamos el elemento de la cola
+        // Tomar el permiso para agregar procesos a ready
+        sem_wait(&sem_entrada_a_ready);
+        // TODO checkear que luego de esta espera el proceso en new por el que se esperaba siga siendo el
+        // mismo (puede haber sido eliminado por comando)
+
+        // Sacamos el elemento de la cola (ya tenemos su referencia por peek)
         squeue_pop(self->bloqueados);
 
         // Volver a agregar el proceso a READY
         squeue_push(cola_ready, proceso_bloqueado->pcb);
+
+        // Liberar el permiso para agregar procesos a ready
+        sem_post(&sem_entrada_a_ready);
+
         sem_post(&sem_elementos_en_ready);
 
         // Liberar proceso_bloqueado

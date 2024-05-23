@@ -38,9 +38,10 @@ sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
 
-bool planificacion_pausada = false;
-sem_t sem_reanudar_pcp;
-sem_t sem_reanudar_plp;
+sem_t sem_entrada_a_ready;
+sem_t sem_entrada_a_exec;
+sem_t sem_manejo_desalojo_cpu;
+bool planificacion_pausada; // Para registrar el estado de la planificacion.
 
 int main(int argc, char *argv[])
 {
@@ -158,8 +159,11 @@ void inicializar_globales(void)
     string_array_destroy(recursos_strs);
     string_array_destroy(instancias_recursos_strs);
 
-    sem_init(&sem_reanudar_pcp, 0, 0);
-    sem_init(&sem_reanudar_plp, 0, 0);
+    // Comienzan en 1 ya que la planificacion inicialmente esta habilitada.
+    sem_init(&sem_entrada_a_ready, 0, 1);
+    sem_init(&sem_entrada_a_exec, 0, 1);
+    sem_init(&sem_manejo_desalojo_cpu, 0, 1);
+    planificacion_pausada = false;
 
     pthread_mutex_init(&mutex_conexion_memoria, NULL);
 }
@@ -186,8 +190,9 @@ void liberar_globales(void)
     sem_destroy(&sem_elementos_en_new);
     sem_destroy(&sem_elementos_en_ready);
 
-    sem_destroy(&sem_reanudar_pcp);
-    sem_destroy(&sem_reanudar_plp);
+    sem_destroy(&sem_entrada_a_ready);
+    sem_destroy(&sem_entrada_a_exec);
+    sem_destroy(&sem_manejo_desalojo_cpu);
 
     pthread_mutex_destroy(&mutex_conexion_memoria);
 }
@@ -227,23 +232,32 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)
 
 void pausar_planificacion()
 {
-    // Asegurarse que los semaforos esten en 0
-    sem_trywait(&sem_reanudar_pcp);
-    sem_trywait(&sem_reanudar_plp);
+    if (planificacion_pausada) {
+        log_warning(debug_logger, "Se intento pausar la planificacion cuando ya esta pausada, ignorando la solicitud.");
+        return;
+    }
 
+    // Retener el permiso para que procesos entren a ready, exec o vuelvan de la cpu.
+    // Va a esperar que terminen las operaciones actuales de los planificadores antes
+    // de bloquear.
+    sem_wait(&sem_entrada_a_ready);
+    sem_wait(&sem_entrada_a_exec);
+    sem_wait(&sem_manejo_desalojo_cpu);
     planificacion_pausada = true;
 }
 
 void reanudar_planificacion()
 {
     if (!planificacion_pausada) {
-        log_error(debug_logger, "La planificacion no se encuentra pausada");
+        log_warning(debug_logger, "Se intento reanudar la planificacion cuando no se encuentra pausada, ignorando la solicitud.");
+        return;
     }
 
-    // Hay que ponerlo en falso antes de los signals.
+    // Devolver el permiso para que los procesos se muevan
+    sem_post(&sem_entrada_a_ready);
+    sem_post(&sem_entrada_a_exec);
+    sem_post(&sem_manejo_desalojo_cpu);
     planificacion_pausada = false;
-    sem_post(&sem_reanudar_pcp);
-    sem_post(&sem_reanudar_plp);
 }
 
 void eliminar_proceso(t_pcb *pcb)

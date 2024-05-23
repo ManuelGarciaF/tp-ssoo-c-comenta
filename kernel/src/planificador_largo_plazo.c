@@ -3,7 +3,7 @@
 // Definiciones locales
 void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *);
 
-// Pasa procesos en NEW a READY cuando hay espacio en el semaforo.
+// Pasa procesos en NEW a READY cuando hay espacio.
 void *planificador_largo_plazo(void *param)
 {
     while (true) {
@@ -14,11 +14,10 @@ void *planificador_largo_plazo(void *param)
         // disponible para agregar un proceso.
         sem_wait(&sem_multiprogramacion);
 
-        // Ver si hay que pausar
-        if (planificacion_pausada) {
-            log_info(debug_logger, "PLP esperando sem_reanudar_plp");
-            sem_wait(&sem_reanudar_plp);
-        }
+        // Tomar el permiso para agregar procesos a ready
+        sem_wait(&sem_entrada_a_ready);
+        // TODO checkear que luego de esta espera el proceso en new por el que se esperaba siga siendo el
+        // mismo (puede haber sido eliminado por comando)
 
         // Sacar el proceso de NEW y enviarlo a memoria
         t_proceso_nuevo *proceso = squeue_pop(cola_new);
@@ -31,6 +30,10 @@ void *planificador_largo_plazo(void *param)
         // TODO capaz hay que esperar que memoria nos avise que ya cargo el archivo
         t_pcb *pcb = pcb_create(proceso->pid);
         squeue_push(cola_ready, pcb);
+
+        // Liberar el permiso para agregar procesos a ready
+        sem_post(&sem_entrada_a_ready);
+
         sem_post(&sem_elementos_en_ready);
 
         // Logs
@@ -38,6 +41,7 @@ void *planificador_largo_plazo(void *param)
         char *lista_pids = obtener_lista_pids_pcb(cola_ready);
         log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
         free(lista_pids);
+
 
         // Liberar el proceso
         free(proceso->path);

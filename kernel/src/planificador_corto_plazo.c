@@ -40,17 +40,19 @@ void *planificador_corto_plazo(void *vparams)
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
 
-            // Ver si hay que pausar (siempre despues de bloqueo)
-            if (planificacion_pausada) {
-                log_info(debug_logger, "PCP esperando sem_reanudar_pcp");
-                sem_wait(&sem_reanudar_pcp);
-            }
+            // Tomar el permiso para agregar procesos a exec
+            sem_wait(&sem_entrada_a_exec);
+            // TODO checkear que luego de esta espera el proceso en ready por el que se esperaba siga siendo el
+            // mismo (puede haber sido eliminado por comando)
 
             // Por FIFO y RR siempre tomamos el primero
             t_pcb *pcb_a_ejecutar = squeue_pop(cola_ready);
             // Enviamos el pcb a CPU.
             pcb_send(pcb_a_ejecutar, params->conexion_cpu_dispatch);
             pid_en_ejecucion = pcb_a_ejecutar->pid; // Registrar que proceso esta en ejecucion
+
+            // Liberar el permiso para agregar procesos a exec
+            sem_post(&sem_entrada_a_exec);
 
             log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
@@ -79,14 +81,13 @@ void *planificador_corto_plazo(void *vparams)
         t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
         pid_en_ejecucion = -1;
 
-        // Ver si hay que pausar (siempre despues de bloqueo)
-        if (planificacion_pausada) {
-            log_info(debug_logger, "PCP esperando sem_reanudar_pcp");
-            sem_wait(&sem_reanudar_pcp);
-        }
-
         log_info(debug_logger, "Se recibio un PCB de CPU con el motivo %d:", motivo);
         pcb_debug_print(pcb_recibido);
+
+        // Esperar si no tenemos permiso para manejar el desalojo.
+        // Como gestionamos este permiso no hace falta ver si tenemos permiso para entrar a
+        // ready en las funciones de manejar_xxx
+        sem_wait(&sem_manejo_desalojo_cpu);
 
         // Por defecto, enviar un nuevo proceso en la proxima iteracion.
         planificar_nuevo_proceso = true;
@@ -111,6 +112,9 @@ void *planificador_corto_plazo(void *vparams)
             manejar_interrumpido_por_usuario(pcb_recibido);
             break;
         }
+
+        // Devolver el permiso para manejar el desalojo.
+        sem_post(&sem_manejo_desalojo_cpu);
     }
 
     sem_destroy(&sem_comenzar_reloj);
