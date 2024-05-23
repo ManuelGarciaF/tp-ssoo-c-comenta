@@ -5,18 +5,31 @@
 ** Variables globales
 */
 
-#define MENSAJE_A_MEMORIA_CPU "cpu"
-#define MENSAJE_A_MEMORIA_KERNEL "kernel"
-#define MENSAJE_A_MEMORIA_IO "io"
+typedef enum { // Enviados a memoria para dar a conocer quien se conecta
+    MENSAJE_A_MEMORIA_CPU,
+    MENSAJE_A_MEMORIA_KERNEL,
+    MENSAJE_A_MEMORIA_IO
+} t_mensaje_identificacion_memoria;
 
-#define MENSAJE_INICIO_PROCESO "inicio"
-#define MENSAJE_FIN_PROCESO "fin"
+typedef enum { // Enviados a memoria por kernel
+    MENSAJE_INICIO_PROCESO,
+    MENSAJE_FIN_PROCESO
+} t_op_memoria_kernel;
 
-#define MENSAJE_SOLICITAR_INSTRUCCION "instruccion"
+typedef enum { // Enviados a memoria por cpu
+    MENSAJE_SOLICITAR_INSTRUCCION
+} t_op_memoria_cpu;
 
+// Enviado a kernel por la interfaz para avisar que termino
 #define MENSAJE_FIN_IO 1
 
-typedef enum { FIN_QUANTUM, FIN_PROCESO, WAIT_RECURSO, SIGNAL_RECURSO, IO } t_motivo_desalojo;
+typedef enum { // Enviados a kernel por cpu al devolver un pcb
+    FIN_QUANTUM,
+    FIN_PROCESO,
+    WAIT_RECURSO,
+    SIGNAL_RECURSO,
+    IO
+} t_motivo_desalojo;
 
 typedef enum { GENERICA, STDIN, STDOUT, DIALFS } t_tipo_interfaz;
 

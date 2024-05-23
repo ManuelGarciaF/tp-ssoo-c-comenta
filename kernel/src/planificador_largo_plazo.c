@@ -1,4 +1,7 @@
-#include "planificador_largo_plazo.h"
+#include "main.h"
+
+// Definiciones locales
+void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *, int conexion_memoria);
 
 // Pasa procesos en NEW a READY cuando hay espacio en el semaforo.
 /* void planificador_largo_plazo(int *conexion_memoria) */
@@ -22,9 +25,12 @@ void *planificador_largo_plazo(void *param)
 
         // Sacar el proceso de NEW y enviarlo a memoria
         t_proceso_nuevo *proceso = squeue_pop(cola_new);
-        enviar_proceso_nuevo_a_memoria(proceso, conexion_memoria);
 
-        log_info(debug_logger, "Se envió el proceso %d con path: %s a memoria", proceso->pid, proceso->path);
+        pthread_mutex_lock(&mutex_conexion_memoria);
+        enviar_proceso_nuevo_a_memoria(proceso, conexion_memoria);
+        pthread_mutex_unlock(&mutex_conexion_memoria);
+
+        log_info(debug_logger, "Se envió el path %s a memoria para el proceso %d", proceso->path, proceso->pid);
 
         // Crear el PCB y agregarlo a READY
         // TODO capaz hay que esperar que memoria nos avise que ya cargo el archivo
@@ -46,10 +52,10 @@ void *planificador_largo_plazo(void *param)
 
 void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *proceso_nuevo, int conexion_memoria)
 {
-    enviar_str(MENSAJE_INICIO_PROCESO, conexion_memoria);
+    enviar_int(MENSAJE_INICIO_PROCESO, conexion_memoria);
+
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(proceso_nuevo->pid), sizeof(uint32_t));
-
     agregar_a_paquete(paquete, proceso_nuevo->path, strlen(proceso_nuevo->path) + 1);
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);

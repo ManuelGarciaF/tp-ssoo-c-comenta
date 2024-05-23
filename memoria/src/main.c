@@ -70,20 +70,21 @@ void atender_conexion(int *socket_conexion)
 {
     recibir_handshake(*socket_conexion);
 
-    char *modulo = recibir_str(*socket_conexion);
+    t_mensaje_identificacion_memoria modulo = recibir_int(*socket_conexion);
 
-    if (strcmp(modulo, MENSAJE_A_MEMORIA_KERNEL) == 0) {
-        free(modulo);
-        atender_kernel(*socket_conexion);
-    } else if (strcmp(modulo, MENSAJE_A_MEMORIA_CPU) == 0) {
-        free(modulo);
+    switch (modulo) {
+    case MENSAJE_A_MEMORIA_CPU:
         atender_cpu(*socket_conexion);
-    } else if (strcmp(modulo, MENSAJE_A_MEMORIA_IO) == 0) {
-        free(modulo);
+        break;
+    case MENSAJE_A_MEMORIA_KERNEL:
+        atender_kernel(*socket_conexion);
+        break;
+    case MENSAJE_A_MEMORIA_IO:
         atender_io(*socket_conexion);
-    } else {
-        log_error(debug_logger, "El cliente no informo su identidad.");
-        pthread_exit(NULL);
+        break;
+    default:
+        log_error(debug_logger, "El cliente no informo su identidad correctamente");
+        return;
     }
 
     close(*socket_conexion);

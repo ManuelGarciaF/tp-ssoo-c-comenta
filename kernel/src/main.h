@@ -103,6 +103,10 @@ extern bool planificacion_pausada;
 extern sem_t sem_reanudar_pcp;
 extern sem_t sem_reanudar_plp;
 
+// Mutexes
+extern pthread_mutex_t mutex_conexion_memoria; // Necesitamos asegurar que solo un hilo puede comunicarse
+                                               // con la memoria a la vez
+
 /*
 ** Definiciones de funciones
 */
@@ -123,9 +127,8 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str);
 void *planificador_largo_plazo(void *param);
 void *planificador_corto_plazo(void *params);
 
-// Solicita a memoria eliminar un proceso y libera sus recursos, incluye los logs.
+// Solicita a memoria eliminar un proceso y libera sus recursos, también libera el pcb.
 void eliminar_proceso(t_pcb *pcb, int conexion_memoria);
-void liberar_recursos_proceso(char *key, void *value); // Usado en un iterador.
 
 // Incrementa las instancias y desbloquea procesos.
 void liberar_recurso(char *recurso);

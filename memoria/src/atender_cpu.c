@@ -4,23 +4,25 @@ void atender_cpu(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (cpu)");
     while (true) {
-        char *mensaje = recibir_str(socket_conexion);
-        if (strcmp(mensaje, MENSAJE_SOLICITAR_INSTRUCCION) == 0) {
-            t_list *info_fetch = recibir_paquete(socket_conexion);
+        t_op_memoria_cpu op = recibir_int(socket_conexion);
+
+        switch (op) {
+        case MENSAJE_SOLICITAR_INSTRUCCION:
             // Esperar el tiempo establecido por el config
             usleep(retardo_respuesta * 1000); // Multiplicado por 1000 ya que toma microsegundos.
-            enviar_instruccion(info_fetch, socket_conexion);
-        } else {
+            enviar_instruccion(socket_conexion);
+            break;
+        default:
             log_error(debug_logger, "CPU envio una operacion invalida");
-            exit(1);
+            abort();
         }
-
-        free(mensaje);
     }
 }
 
-void enviar_instruccion(t_list *info_fetch, int socket_conexion)
+void enviar_instruccion(int socket_conexion)
 {
+    t_list *info_fetch = recibir_paquete(socket_conexion);
+
     int *pid_int = list_get(info_fetch, 0);
     char *pid = string_itoa(*pid_int);
     int *pc = list_get(info_fetch, 1);

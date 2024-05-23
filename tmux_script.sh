@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+tmux kill-session -t tp-ssoo
+
 tmux new-session -d -s tp-ssoo
 
 tmux rename-window "Memoria"
@@ -21,6 +23,7 @@ sleep 2
 
 tmux new-window -t tp-ssoo:4 -n "IO"
 tmux send-keys -t tp-ssoo:4 "cd entradasalida && make" C-m
+tmux send-keys -t tp-ssoo:4 "valgrind --leak-check=full ./bin/entradasalida Interfaz1 generica_ejemplo.config" C-m
 sleep 2
 
 # Attach to the session

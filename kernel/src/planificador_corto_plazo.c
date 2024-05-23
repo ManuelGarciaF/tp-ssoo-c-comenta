@@ -1,9 +1,31 @@
-#include "planificador_corto_plazo.h"
+#include "main.h"
 
-bool planificar_nuevo_proceso;
+// Variables globales
+static bool planificar_nuevo_proceso;
+static sem_t sem_comenzar_reloj;
+
+// Estructuras
+typedef struct {
+    int conexion_cpu_interrupt;
+    int ms_espera;
+    uint32_t pid;
+} t_parametros_reloj_rr;
+
+// Definiciones locales
+static void *reloj_rr(void *param);
+static t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado);
+
+// Motivos de devolucion de pcb
+static void manejar_fin_quantum(t_pcb *pcb_recibido);
+static void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria);
+static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
+static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
+static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria);
+
+static void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria);
+static void interfaz_invalida(t_pcb *pcb_recibido, int conexion_memoria);
 
 // Pasa procesos de READY a EXEC
-/* void planificador_corto_plazo(t_parametros_pcp *params) */
 void *planificador_corto_plazo(void *vparams)
 {
     t_parametros_pcp *params = (t_parametros_pcp *)vparams;
@@ -60,7 +82,7 @@ void *planificador_corto_plazo(void *vparams)
             sem_wait(&sem_reanudar_pcp);
         }
 
-        log_info(debug_logger, "Se recibio el pcb:");
+        log_info(debug_logger, "Se recibio un PCB de CPU con el motivo %d:", motivo);
         pcb_debug_print(pcb_recibido);
 
         // Por defecto, enviar un nuevo proceso en la proxima iteracion.

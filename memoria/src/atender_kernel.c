@@ -4,15 +4,17 @@ void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
-        char *mensaje = recibir_str(socket_conexion);
-        log_info(debug_logger, "Mensaje enviado por el kernel: %s", mensaje);
-        if (strcmp(mensaje, MENSAJE_INICIO_PROCESO) == 0) {
-            recibir_crear_proceso(socket_conexion);
-        } else if (strcmp(mensaje, MENSAJE_FIN_PROCESO) == 0) {
-            recibir_liberar_proceso(socket_conexion);
-        }
+        t_op_memoria_kernel op = recibir_int(socket_conexion);
+        log_info(debug_logger, "Operacion enviada por el kernel: %d", op);
 
-        free(mensaje);
+        switch (op) {
+        case MENSAJE_INICIO_PROCESO:
+            recibir_crear_proceso(socket_conexion);
+            break;
+        case MENSAJE_FIN_PROCESO:
+            recibir_liberar_proceso(socket_conexion);
+            break;
+        }
     }
 }
 

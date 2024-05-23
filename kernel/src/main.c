@@ -40,6 +40,8 @@ bool planificacion_pausada = false;
 sem_t sem_reanudar_pcp;
 sem_t sem_reanudar_plp;
 
+pthread_mutex_t mutex_conexion_memoria;
+
 int main(int argc, char *argv[])
 {
     inicializar_globales();
@@ -56,12 +58,14 @@ int main(int argc, char *argv[])
     }
 
     // Conexion con la memoria
+    pthread_mutex_lock(&mutex_conexion_memoria);
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
     }
     // Avisar quien es a la memoria
-    enviar_str(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
+    enviar_int(MENSAJE_A_MEMORIA_KERNEL, conexion_memoria);
+    pthread_mutex_unlock(&mutex_conexion_memoria);
 
     // Crear hilo para esperar conexiones de entrada/salida
     pthread_t hilo_esperar_io;
@@ -156,6 +160,8 @@ void inicializar_globales(void)
 
     sem_init(&sem_reanudar_pcp, 0, 0);
     sem_init(&sem_reanudar_plp, 0, 0);
+
+    pthread_mutex_init(&mutex_conexion_memoria, NULL);
 }
 
 void liberar_globales(void)
@@ -182,6 +188,8 @@ void liberar_globales(void)
 
     sem_destroy(&sem_reanudar_pcp);
     sem_destroy(&sem_reanudar_plp);
+
+    pthread_mutex_destroy(&mutex_conexion_memoria);
 }
 
 void *esperar_conexiones_io(void *param)
@@ -249,11 +257,13 @@ void eliminar_proceso(t_pcb *pcb, int conexion_memoria)
     }
 
     // Avisar a memoria que debe liberar el proceso.
-    enviar_str(MENSAJE_FIN_PROCESO, conexion_memoria);
+    pthread_mutex_lock(&mutex_conexion_memoria);
+    enviar_int(MENSAJE_FIN_PROCESO, conexion_memoria);
     t_paquete *paquete = crear_paquete();
-    agregar_a_paquete(paquete, &(pcb->pid), sizeof(pcb->pid));
+    agregar_a_paquete(paquete, &(pcb->pid), sizeof(uint32_t));
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
+    pthread_mutex_unlock(&mutex_conexion_memoria);
 
     // Liberar todos los recursos en base a asignaciones_recursos.
     slist_lock(asignaciones_recursos);

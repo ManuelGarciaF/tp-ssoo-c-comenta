@@ -1,14 +1,20 @@
-#include "consola.h"
+#include "main.h"
 
-uint32_t ultimo_pid = 0;
+static uint32_t ultimo_pid = 0;
+
+// Definiciones locales
+static void ejecutar_comando(char const *linea);
+static void iniciar_proceso(char const *path);
+static void finalizar_proceso(char const *pid);
+static void actualizar_grado_multiprogramacion(int nuevo);
 
 void correr_consola(void)
 {
     char *input;
     while (true) {
         // Esperar unos milisegundos para que no se desordene por los logs
-        // TODO ver si esto es ilegal
-        usleep(50 * 1000);
+        // producidos por los planificadores
+        usleep(50 * 1000); // TODO ver si esto es ilegal
         input = readline("kernel> ");
         if (input) {
             add_history(input);

@@ -1,4 +1,9 @@
-#include "interfaces.h"
+#include "main.h"
+
+// Definiciones locales
+static t_interfaz *registrar_interfaz(int conexion_io);
+static int enviar_operacion(t_bloqueado_io *pb, int conexion_io);
+static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io);
 
 // El hilo principal de cada interfaz
 void *atender_io(void *param)
@@ -16,8 +21,8 @@ void *atender_io(void *param)
         // Esperamos que haya un proceso esperando.
         sem_wait(&(self->procesos_esperando));
 
-        // Agarramos el primer elemento bloqueado.
-        t_bloqueado_io *proceso_bloqueado = squeue_pop(self->bloqueados);
+        // Agarramos el primer elemento bloqueado, dejandolo en la cola para facilitar logs.
+        t_bloqueado_io *proceso_bloqueado = squeue_peek(self->bloqueados);
 
         // Si fallo enviar, significa que la interfaz se desconecto
         if (enviar_operacion(proceso_bloqueado, *conexion_io) < 0) {
@@ -31,6 +36,9 @@ void *atender_io(void *param)
             break;
         }
 
+        // Sacamos el elemento de la cola
+        squeue_pop(self->bloqueados);
+
         // Volver a agregar el proceso a READY
         squeue_push(cola_ready, proceso_bloqueado->pcb);
         sem_post(&sem_elementos_en_ready);
@@ -39,6 +47,9 @@ void *atender_io(void *param)
         list_destroy_and_destroy_elements(proceso_bloqueado->operacion, free);
         free(proceso_bloqueado);
     }
+
+    // Si la interfaz se desconecto con procesos aun bloqueados, enviarlos a exit
+
 
     // Limpiar datos interfaz
     sdictionary_remove(interfaces_conectadas, self->nombre);
@@ -52,7 +63,23 @@ void *atender_io(void *param)
     pthread_exit(NULL);
 }
 
-t_interfaz *registrar_interfaz(int conexion_io)
+bool existe_interfaz(char *nombre)
+{
+    return sdictionary_has_key(interfaces_conectadas, nombre);
+}
+
+bool interfaz_soporta_operacion(char *nombre, t_operacion_io op)
+{
+    assert(existe_interfaz(nombre));
+
+    t_tipo_interfaz tipo_requerido = TIPO_INTERFAZ_CAPAZ_DE_HACER[op];
+
+    t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre);
+
+    return interfaz->tipo == tipo_requerido;
+}
+
+static t_interfaz *registrar_interfaz(int conexion_io)
 {
     // Recibir la info de la interfaz
     t_list *paquete_info_interfaz = recibir_paquete(conexion_io);
@@ -76,22 +103,6 @@ t_interfaz *registrar_interfaz(int conexion_io)
     return interfaz;
 }
 
-bool existe_interfaz(char *nombre)
-{
-    return sdictionary_has_key(interfaces_conectadas, nombre);
-}
-
-bool interfaz_soporta_operacion(char *nombre, t_operacion_io op)
-{
-    assert(existe_interfaz(nombre));
-
-    t_tipo_interfaz tipo_requerido = TIPO_INTERFAZ_CAPAZ_DE_HACER[op];
-
-    t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre);
-
-    return interfaz->tipo == tipo_requerido;
-}
-
 int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
 {
     switch (pb->opcode) {
@@ -106,6 +117,7 @@ int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
     case FS_READ:
         assert(false && "Not implemented");
     }
+    assert(false && "Operacion invalida");
 }
 
 int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)

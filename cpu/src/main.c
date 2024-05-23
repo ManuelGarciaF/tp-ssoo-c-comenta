@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con memoria");
     }
-    enviar_str(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
+    enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
@@ -158,7 +158,7 @@ void *servidor_interrupt(int *socket_escucha)
 
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
 {
-    enviar_str(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
+    enviar_int(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
     // Enviar PID y PC para solicitar una instruccion.
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &pid, sizeof(uint32_t));

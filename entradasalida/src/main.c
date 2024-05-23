@@ -30,12 +30,8 @@ int main(int argc, char *argv[])
 
     nombre_interfaz = argv[1];
     char *archivo_config = argv[2];
-    debug_logger = log_create("entradasalida_debug.log",
-                              "entradasalida_debug",
-                              true,
-                              LOG_LEVEL_INFO);
-    entradasalida_logger =
-        log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("entradasalida_debug.log", "entradasalida_debug", true, LOG_LEVEL_INFO);
+    entradasalida_logger = log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create(archivo_config);
     if (config == NULL) {
@@ -48,19 +44,17 @@ int main(int argc, char *argv[])
     // Conexion con el kernel
     int conexion_kernel = crear_conexion(ip_kernel, puerto_kernel);
     if (!realizar_handshake(conexion_kernel)) {
-        log_error(debug_logger,
-                  "No se pudo realizar un handshake con el Kernel");
+        log_error(debug_logger, "No se pudo realizar un handshake con el Kernel");
     }
 
     // Conexion con la memoria
     int conexion_memoria;
-    if (tipo_interfaz != GENERICA ) {
-         conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    if (tipo_interfaz != GENERICA) {
+        conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
         if (!realizar_handshake(conexion_memoria)) {
-            log_error(debug_logger,
-                    "No se pudo realizar un handshake con la memoria");
+            log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
         }
-      enviar_str(MENSAJE_A_MEMORIA_IO, conexion_memoria);
+        enviar_int(MENSAJE_A_MEMORIA_IO, conexion_memoria);
     }
 
     t_paquete *paquete = crear_paquete();
@@ -99,15 +93,13 @@ int main(int argc, char *argv[])
 void cargar_config(t_config *config)
 {
     // Propiedades Generales (van a estar en todos los tipos de interfaz)
-    tipo_interfaz = parsear_a_t_tipo_interfaz(
-        config_get_string_or_exit(config, "TIPO_INTERFAZ"));
+    tipo_interfaz = parsear_a_t_tipo_interfaz(config_get_string_or_exit(config, "TIPO_INTERFAZ"));
     ip_kernel = config_get_string_or_exit(config, "IP_KERNEL");
     puerto_kernel = config_get_string_or_exit(config, "PUERTO_KERNEL");
 
     switch (tipo_interfaz) {
     case GENERICA:
-        tiempo_unidad_trabajo =
-            config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         break;
     case STDIN:
         ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
