@@ -64,11 +64,11 @@ extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprog
 extern sem_t sem_elementos_en_new;
 extern sem_t sem_elementos_en_ready;
 
-// Control sobre planificadores
-// Ponemos el bool en true para hacer wait al semaforo en el loop de cada hilo.
-extern bool planificacion_pausada;
-extern sem_t sem_reanudar_pcp;
-extern sem_t sem_reanudar_plp;
+// Control sobre movimientos entre estados (para pausar la planificacion)
+extern sem_t sem_entrada_a_ready;
+extern sem_t sem_entrada_a_exec;
+extern sem_t sem_manejo_desalojo_cpu;
+extern bool planificacion_pausada; // Para registrar el estado de la planificacion.
 
 /*
 ** Definiciones de funciones

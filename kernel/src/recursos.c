@@ -1,5 +1,9 @@
 #include "main.h"
 
+// NOTE No necesito mirar los semaforos de permiso para agregar a ready, ya que estas
+// funciones solo se ejecutan como parte del pcp o en eliminar_proceso, en cuyo caso
+// tampoco quiero que bloquee.
+
 void liberar_recurso(char *recurso)
 {
     // NOTE No necesito mutexear esto ya que los recursos solo son modificados por el pcp.
