@@ -26,5 +26,8 @@ tmux send-keys -t tp-ssoo:4 "cd entradasalida && make" C-m
 tmux send-keys -t tp-ssoo:4 "valgrind --leak-check=full ./bin/entradasalida Interfaz1 generica_ejemplo.config" C-m
 sleep 2
 
+# Select the kernel window
+tmux select-window -t tp-ssoo:3
+
 # Attach to the session
 tmux attach-session -t tp-ssoo

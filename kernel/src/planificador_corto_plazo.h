@@ -1,7 +1,0 @@
-#ifndef PLANIFICADOR_CORTO_PLAZO_H_
-#define PLANIFICADOR_CORTO_PLAZO_H_
-
-#include "main.h"
-
-
-#endif // PLANIFICADOR_CORTO_PLAZO_H_

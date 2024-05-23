@@ -7,6 +7,9 @@ static void ejecutar_comando(char const *linea);
 static void iniciar_proceso(char const *path);
 static void finalizar_proceso(char const *pid);
 static void actualizar_grado_multiprogramacion(int nuevo);
+static void ejecutar_script(char const *path);
+
+#define LIMITE_LINEA_COMANDO 256
 
 void correr_consola(void)
 {
@@ -35,11 +38,16 @@ void ejecutar_comando(char const *linea)
     char **comando = string_n_split((char *)linea, 2, " ");
 
     if (!strcmp(comando[0], "EJECUTAR_SCRIPT")) {
-        assert(0 && "No implementado"); // TODO
+        if (comando[1] == NULL) {
+            printf("error: El comando necesita un parametro.\n");
+            return;
+        }
+        ejecutar_script(comando[1]);
 
     } else if (!strcmp(comando[0], "INICIAR_PROCESO")) {
         if (comando[1] == NULL) {
             printf("error: El comando necesita un parametro.\n");
+            return;
         }
         iniciar_proceso(comando[1]);
 
@@ -66,16 +74,16 @@ void ejecutar_comando(char const *linea)
         actualizar_grado_multiprogramacion(atoi(comando[1]));
 
     } else if (!strcmp(comando[0], "PROCESO_ESTADO")) {
+        // TODO
         assert(false && "No Implementado");
     } else {
         printf("Comando no reconocido\n");
     }
 
-
     string_array_destroy(comando);
 }
 
-void iniciar_proceso(char const *path)
+static void iniciar_proceso(char const *path)
 {
     // Guardar tanto el pid como el path, para enviar a memoria
     t_proceso_nuevo *proceso_nuevo = malloc(sizeof(t_proceso_nuevo));
@@ -93,13 +101,13 @@ void iniciar_proceso(char const *path)
     // Ahora depende del planificador a largo plazo.
 }
 
-void finalizar_proceso(char const *pid)
+static void finalizar_proceso(char const *pid)
 {
     // TODO
     assert(false && "No implementado");
 }
 
-void actualizar_grado_multiprogramacion(int nuevo)
+static void actualizar_grado_multiprogramacion(int nuevo)
 {
     int diferencia = nuevo - grado_multiprogramacion;
 
@@ -113,5 +121,30 @@ void actualizar_grado_multiprogramacion(int nuevo)
     } else if (diferencia < 0) { // Hay que quitar espacio (diferencia es negativo)
         int procesos_extra = -diferencia;
         procesos_extra_multiprogramacion += procesos_extra;
+    }
+}
+
+static void ejecutar_script(char const *path)
+{
+    FILE *fp = fopen(path, "r");
+    if (fp == NULL) {
+        printf("error: No se pudo abrir el archivo de script.\n");
+        return;
+    }
+
+    // Alojar espacio en el stack
+    char linea[LIMITE_LINEA_COMANDO] = {0};
+
+    char *ret = fgets(linea, LIMITE_LINEA_COMANDO, fp); // Leer la primera linea
+    while (ret != NULL) {
+        // Quitar el \n final leido por fgets
+        if (linea[strlen(linea) - 1] == '\n') {
+            linea[strlen(linea) - 1] = '\0';
+        }
+
+        printf("<SCRIPT> Ejecutando: %s\n", linea);
+        ejecutar_comando(linea);
+
+        ret = fgets(linea, LIMITE_LINEA_COMANDO, fp);
     }
 }

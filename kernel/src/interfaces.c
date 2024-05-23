@@ -16,7 +16,6 @@ void *atender_io(void *param)
 
     log_info(debug_logger, "Se registro la interfaz \'%s\', con tipo %d\n", self->nombre, self->tipo);
 
-    // TODO poder romper el loop cuando se desconecta
     while (true) {
         // Esperamos que haya un proceso esperando.
         sem_wait(&(self->procesos_esperando));
