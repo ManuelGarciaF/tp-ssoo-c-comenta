@@ -113,8 +113,8 @@ static void imprimir_bloqueados_interfaz(char *nombre_interfaz, void *puntero_in
         t_bloqueado_io *primer_bloqueado = list_iterator_next(it);
         printf("[%d", primer_bloqueado->pcb->pid);
         while (list_iterator_has_next(it)) {
-            t_pcb *pcb = list_iterator_next(it);
-            printf(", %d", primer_bloqueado->pcb->pid);
+            t_bloqueado_io *bloqueado = list_iterator_next(it);
+            printf(", %d", bloqueado->pcb->pid);
         }
         printf("]\n");
     } else { // La lista esta vacia
