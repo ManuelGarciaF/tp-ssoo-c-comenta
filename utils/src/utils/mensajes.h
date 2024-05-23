@@ -28,7 +28,8 @@ typedef enum { // Enviados a kernel por cpu al devolver un pcb
     FIN_PROCESO,
     WAIT_RECURSO,
     SIGNAL_RECURSO,
-    IO
+    IO,
+    INTERRUMPIDO_POR_USUARIO
 } t_motivo_desalojo;
 
 typedef enum { GENERICA, STDIN, STDOUT, DIALFS } t_tipo_interfaz;

@@ -17,13 +17,14 @@ static t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actu
 
 // Motivos de devolucion de pcb
 static void manejar_fin_quantum(t_pcb *pcb_recibido);
-static void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria);
-static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
-static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria);
-static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria);
+static void manejar_fin_proceso(t_pcb *pcb_recibido);
+static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch);
+static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch);
+static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch);
+static void manejar_interrumpido_por_usuario(t_pcb *pcb_recibido);
 
-static void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria);
-static void interfaz_invalida(t_pcb *pcb_recibido, int conexion_memoria);
+static void recurso_invalido(t_pcb *pcb_recibido);
+static void interfaz_invalida(t_pcb *pcb_recibido);
 
 // Pasa procesos de READY a EXEC
 void *planificador_corto_plazo(void *vparams)
@@ -49,6 +50,7 @@ void *planificador_corto_plazo(void *vparams)
             t_pcb *pcb_a_ejecutar = squeue_pop(cola_ready);
             // Enviamos el pcb a CPU.
             pcb_send(pcb_a_ejecutar, params->conexion_cpu_dispatch);
+            pid_en_ejecucion = pcb_a_ejecutar->pid; // Registrar que proceso esta en ejecucion
 
             log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
@@ -75,6 +77,7 @@ void *planificador_corto_plazo(void *vparams)
 
         t_pcb *pcb_recibido = NULL;
         t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
+        pid_en_ejecucion = -1;
 
         // Ver si hay que pausar (siempre despues de bloqueo)
         if (planificacion_pausada) {
@@ -93,16 +96,19 @@ void *planificador_corto_plazo(void *vparams)
             manejar_fin_quantum(pcb_recibido);
             break;
         case FIN_PROCESO:
-            manejar_fin_proceso(pcb_recibido, params->conexion_memoria);
+            manejar_fin_proceso(pcb_recibido);
             break;
         case WAIT_RECURSO:
-            manejar_wait_recurso(pcb_recibido, params->conexion_cpu_dispatch, params->conexion_memoria);
+            manejar_wait_recurso(pcb_recibido, params->conexion_cpu_dispatch);
             break;
         case SIGNAL_RECURSO:
-            manejar_signal_recurso(pcb_recibido, params->conexion_cpu_dispatch, params->conexion_memoria);
+            manejar_signal_recurso(pcb_recibido, params->conexion_cpu_dispatch);
             break;
         case IO:
-            manejar_io(pcb_recibido, params->conexion_cpu_dispatch, params->conexion_memoria);
+            manejar_io(pcb_recibido, params->conexion_cpu_dispatch);
+            break;
+        case INTERRUMPIDO_POR_USUARIO:
+            manejar_interrumpido_por_usuario(pcb_recibido);
             break;
         }
     }
@@ -110,7 +116,7 @@ void *planificador_corto_plazo(void *vparams)
     sem_destroy(&sem_comenzar_reloj);
 }
 
-void *reloj_rr(void *param)
+static void *reloj_rr(void *param)
 {
     int conexion_cpu_interrupt = ((t_parametros_reloj_rr *)param)->conexion_cpu_interrupt;
     int ms_espera = ((t_parametros_reloj_rr *)param)->ms_espera;
@@ -134,7 +140,7 @@ void *reloj_rr(void *param)
     return NULL;
 }
 
-t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado)
+static t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado)
 {
     t_list *elementos = recibir_paquete(conexion_cpu_dispatch);
     *pcb_actualizado = list_get(elementos, 0);
@@ -147,7 +153,7 @@ t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado
     return motivo_ret;
 }
 
-void manejar_fin_quantum(t_pcb *pcb_recibido)
+static void manejar_fin_quantum(t_pcb *pcb_recibido)
 {
     // Lo volvemos a agregar a la cola de READY
     squeue_push(cola_ready, pcb_recibido);
@@ -156,27 +162,27 @@ void manejar_fin_quantum(t_pcb *pcb_recibido)
     // Logs
     log_info(kernel_logger, "PID: %d - Desalojado por fin de Quantum", pcb_recibido->pid);
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: READY", pcb_recibido->pid);
-    char *lista_pids = obtener_lista_pids(cola_ready);
+    char *lista_pids = obtener_lista_pids_pcb(cola_ready);
     log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
     free(lista_pids);
 }
 
-void manejar_fin_proceso(t_pcb *pcb_recibido, int conexion_memoria)
+static void manejar_fin_proceso(t_pcb *pcb_recibido)
 {
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_recibido->pid);
 
-    eliminar_proceso(pcb_recibido, conexion_memoria);
+    eliminar_proceso(pcb_recibido);
 }
 
-void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
+static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
     // El CPU, luego de hacer wait, envia el nombre del recurso en un mensaje.
     char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
-        recurso_invalido(pcb_recibido, conexion_memoria);
+        recurso_invalido(pcb_recibido);
         return;
     }
 
@@ -209,14 +215,14 @@ void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int
     (*cant_recurso)--;
 }
 
-void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, int conexion_memoria)
+static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
     // El CPU, luego de hacer signal, envia el nombre del recurso en un mensaje.
     char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
-        recurso_invalido(pcb_recibido, conexion_memoria);
+        recurso_invalido(pcb_recibido);
         return;
     }
 
@@ -229,7 +235,7 @@ void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch, i
     planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
 }
 
-void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria)
+static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
 {
     t_list *paquete = recibir_paquete(conexion_dispatch);
     char *nombre_interfaz = list_get(paquete, 0);
@@ -237,7 +243,7 @@ void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria
 
     // Si no existe la interfaz, o no soporta la operacion, mandar el proceso a EXIT.
     if (!existe_interfaz(nombre_interfaz) || !interfaz_soporta_operacion(nombre_interfaz, *operacion)) {
-        interfaz_invalida(pcb_recibido, conexion_memoria);
+        interfaz_invalida(pcb_recibido);
         return;
     }
 
@@ -258,16 +264,21 @@ void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch, int conexion_memoria
     sem_post(&(interfaz->procesos_esperando));
 }
 
-void recurso_invalido(t_pcb *pcb_recibido, int conexion_memoria)
+static void recurso_invalido(t_pcb *pcb_recibido)
 {
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_RESOURCE", pcb_recibido->pid);
-    eliminar_proceso(pcb_recibido, conexion_memoria);
+    eliminar_proceso(pcb_recibido);
 }
 
-void interfaz_invalida(t_pcb *pcb_recibido, int conexion_memoria)
+static void interfaz_invalida(t_pcb *pcb_recibido)
 {
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_INTERFACE", pcb_recibido->pid);
-    eliminar_proceso(pcb_recibido, conexion_memoria);
+    eliminar_proceso(pcb_recibido);
+}
+
+static void manejar_interrumpido_por_usuario(t_pcb *pcb_recibido)
+{
+    // TODO
 }

@@ -61,3 +61,12 @@ int squeue_size(t_squeue *sq)
 {
     return queue_size(sq->queue);
 }
+
+void squeue_lock(t_squeue *sq)
+{
+    pthread_mutex_lock(sq->mutex);
+}
+void squeue_unlock(t_squeue *sq)
+{
+    pthread_mutex_unlock(sq->mutex);
+}

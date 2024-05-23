@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <commons/log.h>
 #include <commons/string.h>
-#include <estructuras/pcb.h>
+#include <utils/pcb.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

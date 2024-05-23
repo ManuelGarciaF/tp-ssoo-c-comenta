@@ -18,8 +18,11 @@ int grado_multiprogramacion;
 int quantum;
 t_algoritmo_planificacion algoritmo_planificacion;
 
-uint32_t pid_en_ejecucion = -1; // -1 Cuando no hay ninguno
+int pid_en_ejecucion = -1; // -1 Cuando no hay ninguno
 int procesos_extra_multiprogramacion = 0;
+
+int conexion_memoria;
+pthread_mutex_t mutex_conexion_memoria;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
@@ -34,13 +37,10 @@ t_slist *asignaciones_recursos;
 sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
-sem_t sem_interrupciones_activadas;
 
 bool planificacion_pausada = false;
 sem_t sem_reanudar_pcp;
 sem_t sem_reanudar_plp;
-
-pthread_mutex_t mutex_conexion_memoria;
 
 int main(int argc, char *argv[])
 {
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     // Conexion con la memoria
     pthread_mutex_lock(&mutex_conexion_memoria);
-    int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
     }
@@ -75,13 +75,13 @@ int main(int argc, char *argv[])
     }
 
     pthread_t hilo_planificador_largo_plazo;
-    iret = pthread_create(&hilo_planificador_largo_plazo, NULL, planificador_largo_plazo, &conexion_memoria);
+    iret = pthread_create(&hilo_planificador_largo_plazo, NULL, planificador_largo_plazo, NULL);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
     }
 
     pthread_t hilo_planificador_corto_plazo;
-    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt, conexion_memoria};
+    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt};
     iret = pthread_create(&hilo_planificador_corto_plazo, NULL, planificador_corto_plazo, &params_pcp);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
@@ -246,7 +246,7 @@ void reanudar_planificacion()
     sem_post(&sem_reanudar_plp);
 }
 
-void eliminar_proceso(t_pcb *pcb, int conexion_memoria)
+void eliminar_proceso(t_pcb *pcb)
 {
     // Si se achico el grado_multiprogramacion, los proximos procesos que
     // se eliminen no liberan espacio en el sem_multiprogramacion.

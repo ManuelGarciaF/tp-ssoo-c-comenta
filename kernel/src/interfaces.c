@@ -5,6 +5,9 @@ static t_interfaz *registrar_interfaz(int conexion_io);
 static int enviar_operacion(t_bloqueado_io *pb, int conexion_io);
 static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io);
 
+static bool socket_sigue_abierto(int conexion);
+static void eliminar_procesos_bloqueados(t_squeue *bloqueados);
+
 // El hilo principal de cada interfaz
 void *atender_io(void *param)
 {
@@ -23,8 +26,8 @@ void *atender_io(void *param)
         // Agarramos el primer elemento bloqueado, dejandolo en la cola para facilitar logs.
         t_bloqueado_io *proceso_bloqueado = squeue_peek(self->bloqueados);
 
-        // Si fallo enviar, significa que la interfaz se desconecto
-        if (enviar_operacion(proceso_bloqueado, *conexion_io) < 0) {
+        // Checkear que enviar funciona y que el socket sigue abierto
+        if (enviar_operacion(proceso_bloqueado, *conexion_io) <= 0 || !socket_sigue_abierto(*conexion_io)) {
             log_error(debug_logger, "La interfaz %s se desconecto", self->nombre);
             break;
         }
@@ -48,7 +51,7 @@ void *atender_io(void *param)
     }
 
     // Si la interfaz se desconecto con procesos aun bloqueados, enviarlos a exit
-
+    eliminar_procesos_bloqueados(self->bloqueados);
 
     // Limpiar datos interfaz
     sdictionary_remove(interfaces_conectadas, self->nombre);
@@ -102,7 +105,7 @@ static t_interfaz *registrar_interfaz(int conexion_io)
     return interfaz;
 }
 
-int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
+static int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
 {
     switch (pb->opcode) {
     case GEN_SLEEP:
@@ -119,7 +122,7 @@ int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
     assert(false && "Operacion invalida");
 }
 
-int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)
+static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)
 {
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
@@ -131,4 +134,34 @@ int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)
     eliminar_paquete(paquete);
 
     return bytes;
+}
+
+// El socket puede haber cerrado aunque send() haya retornado > 0 :')
+static bool socket_sigue_abierto(int conexion)
+{
+    int err = 0;
+    socklen_t errlen = sizeof(err);
+    if (getsockopt(conexion, SOL_SOCKET, SO_ERROR, (void *)&err, &errlen) == -1) {
+        perror("getsockopt");
+        return false;
+    }
+
+    if (err != 0) {
+        log_error(debug_logger, "El socket de la interfaz cerro con error: %s", strerror(err));
+        return false;
+    }
+
+    return true;
+}
+
+static void eliminar_procesos_bloqueados(t_squeue *bloqueados)
+{
+    while (!squeue_is_empty(bloqueados)) {
+        t_bloqueado_io *pb = squeue_pop(bloqueados);
+        eliminar_proceso(pb->pcb);
+
+        // Liberar pb
+        list_destroy_and_destroy_elements(pb->operacion, free);
+        free(pb);
+    }
 }

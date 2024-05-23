@@ -26,4 +26,8 @@ void *squeue_peek(t_squeue *);
 bool squeue_is_empty(t_squeue *);
 int squeue_size(t_squeue *);
 
+// Permiten bloquear y desbloquear la cola manualmente, para usar la cola interna
+void squeue_lock(t_squeue *);
+void squeue_unlock(t_squeue *);
+
 #endif // SQUEUE_H_

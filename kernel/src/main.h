@@ -1,12 +1,13 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#include "estructuras.h"
 #include "utilidades.h"
+
 #include <assert.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/log.h>
-#include <estructuras/pcb.h>
 #include <pthread.h>
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -14,48 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <utils/mensajes.h>
+#include <utils/pcb.h>
 #include <utils/sdictionary.h>
 #include <utils/slist.h>
 #include <utils/sockets.h>
 #include <utils/squeue.h>
 #include <utils/utils.h>
-
-/*
-** Estructuras
-*/
-
-typedef struct {
-    uint32_t pid;
-    char *path;
-} t_proceso_nuevo;
-
-typedef struct {
-    int conexion_cpu_dispatch;
-    int conexion_cpu_interrupt;
-    int conexion_memoria;
-} t_parametros_pcp;
-
-typedef enum { FIFO, RR, VRR } t_algoritmo_planificacion;
-
-typedef struct {
-    char *nombre_recurso;
-    uint32_t pid;
-} t_asignacion_recurso;
-
-typedef struct {
-    char *nombre;
-    t_tipo_interfaz tipo;
-    int conexion;
-    sem_t procesos_esperando;
-    t_squeue *bloqueados; // Contiene t_bloqueado_io, el primer elemento es el que esta usando la interfaz
-} t_interfaz;
-
-typedef struct {
-    t_pcb *pcb;
-    t_operacion_io opcode;
-    t_list *operacion; // Contiene el nombre de la interfaz [0], la operacion [1],
-                       // y el resto de los argumentos.
-} t_bloqueado_io;
 
 /*
 ** Variables globales
@@ -75,16 +40,19 @@ extern t_algoritmo_planificacion algoritmo_planificacion;
 extern int grado_multiprogramacion;
 extern int quantum;
 
-extern uint32_t pid_en_ejecucion;
+extern int pid_en_ejecucion;
 extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogramacion, los proximos procesos que
                                              // se eliminen no liberan espacio en el sem_multiprogramacion.
+                                             //
+extern int conexion_memoria;
+extern pthread_mutex_t mutex_conexion_memoria; // Necesitamos asegurar que solo un hilo puede comunicarse con la
+                                               // memoria a la vez
 
 // Colas de procesos
 extern t_squeue *cola_new;                    // Contiene t_proceso_nuevo
 extern t_squeue *cola_ready;                  // Contiene t_pcb
 extern t_sdictionary *colas_blocked_recursos; // Contiene squeues de t_pcb
-
-extern t_sdictionary *interfaces_conectadas; // Contiene t_interfaz
+extern t_sdictionary *interfaces_conectadas;  // Contiene t_interfaz, cada interfaz tiene una squeue de bloqueados
 
 // Recursos
 extern t_sdictionary *instancias_recursos; // Contiene ints.
@@ -95,17 +63,12 @@ extern t_slist *asignaciones_recursos;     // Necesito saber que procesos tienen
 extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
 extern sem_t sem_elementos_en_new;
 extern sem_t sem_elementos_en_ready;
-extern sem_t sem_interrupciones_activadas;
 
 // Control sobre planificadores
 // Ponemos el bool en true para hacer wait al semaforo en el loop de cada hilo.
 extern bool planificacion_pausada;
 extern sem_t sem_reanudar_pcp;
 extern sem_t sem_reanudar_plp;
-
-// Mutexes
-extern pthread_mutex_t mutex_conexion_memoria; // Necesitamos asegurar que solo un hilo puede comunicarse
-                                               // con la memoria a la vez
 
 /*
 ** Definiciones de funciones
@@ -128,7 +91,7 @@ void *planificador_largo_plazo(void *param);
 void *planificador_corto_plazo(void *params);
 
 // Solicita a memoria eliminar un proceso y libera sus recursos, también libera el pcb.
-void eliminar_proceso(t_pcb *pcb, int conexion_memoria);
+void eliminar_proceso(t_pcb *pcb);
 
 // Incrementa las instancias y desbloquea procesos.
 void liberar_recurso(char *recurso);
