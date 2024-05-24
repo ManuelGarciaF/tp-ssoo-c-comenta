@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-tmux kill-session -t tp-ssoo
+tmux kill-session -t tp-ssoo 2> /dev/null
 
 tmux new-session -d -s tp-ssoo
 

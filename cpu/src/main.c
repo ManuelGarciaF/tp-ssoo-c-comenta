@@ -81,14 +81,12 @@ int main(int argc, char *argv[])
         execute(instruccion, &incrementar_pc, conexion_dispatch);
 
         // El PCB pudo ser desalojado durante execute
-        if (pcb != NULL) {
-            if (incrementar_pc) {
-                pcb->program_counter++;
-            }
-
-            // Check interrupt
-            check_interrupt(conexion_dispatch);
+        if (incrementar_pc && pcb != NULL) {
+            pcb->program_counter++;
         }
+
+        // Check interrupt
+        check_interrupt(conexion_dispatch);
     }
 
     // Esperar que los hilos terminen
@@ -187,15 +185,21 @@ void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
 void check_interrupt(int conexion_dispatch)
 {
     slist_lock(interrupts);
-    t_list_iterator *it = list_iterator_create(interrupts->list);
-    while (list_iterator_has_next(it)) {
-        t_interrupcion *interrupcion = list_iterator_next(it);
-        // Si hay un pid en la lista que coincida con el proceso en ejecucion
-        if (interrupcion->pid == pcb->pid) {
-            devolver_pcb(interrupcion->motivo, conexion_dispatch);
+
+    // Si no estamos ejecutando, no tiene sentido ver si hay interrupts
+    if (pcb != NULL) {
+        t_list_iterator *it = list_iterator_create(interrupts->list);
+        while (list_iterator_has_next(it)) {
+            t_interrupcion *interrupcion = list_iterator_next(it);
+            assert(interrupcion != NULL);
+            assert(pcb != NULL);
+            // Si hay un pid en la lista que coincida con el proceso en ejecucion
+            if (interrupcion->pid == pcb->pid) {
+                devolver_pcb(interrupcion->motivo, conexion_dispatch);
+            }
         }
+        list_iterator_destroy(it);
     }
-    list_iterator_destroy(it);
 
     // Vaciar la lista
     list_clean_and_destroy_elements(interrupts->list, free);

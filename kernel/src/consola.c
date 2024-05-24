@@ -4,6 +4,7 @@ static uint32_t ultimo_pid = 0;
 
 // Definiciones locales
 static void ejecutar_comando(const char *linea);
+
 static void iniciar_proceso(const char *path);
 static void finalizar_proceso(const char *pid_str);
 static void actualizar_grado_multiprogramacion(int nuevo);
@@ -22,6 +23,7 @@ static void imprimir_bloqueados_interfaz(char *nombre_interfaz, void *puntero_in
 
 #define LIMITE_LINEA_COMANDO 256
 
+// Funcion llamada desde main
 void correr_consola(void)
 {
     char *input;
@@ -119,7 +121,11 @@ static void finalizar_proceso(const char *pid_str)
     printf("Buscando proceso con pid: %u\n", pid);
 
     // Evitar que los procesos cambien de estado.
-    pausar_planificacion();
+    bool reanudar = false;
+    if (!planificacion_pausada) { // Solo pausar cuando no estaba pausado.
+        reanudar = true;
+        pausar_planificacion();
+    }
 
     // Ver si se encuentra en ejecucion
     if (pid_en_ejecucion != -1 && pid_en_ejecucion == (int)pid) {
@@ -148,7 +154,9 @@ static void finalizar_proceso(const char *pid_str)
     }
 
     // Volver a habilitar la planificacion.
-    reanudar_planificacion();
+    if (reanudar) { // Solo reanudar si fue pausada por este comando
+        reanudar_planificacion();
+    }
 }
 
 static void actualizar_grado_multiprogramacion(int nuevo)
@@ -311,7 +319,8 @@ static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid)
     t_list_iterator *it_nombres = list_iterator_create(nombres_interfaces->list);
     while (list_iterator_has_next(it_nombres) && !encontrado) {
         char *nombre_interfaz = list_iterator_next(it_nombres);
-        t_interfaz *interfaz = sdictionary_get(colas_blocked_recursos, nombre_interfaz);
+        t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre_interfaz);
+        assert(interfaz != NULL);
 
         // Buscar en los bloqueados de esta interfaz
         squeue_lock(interfaz->bloqueados);

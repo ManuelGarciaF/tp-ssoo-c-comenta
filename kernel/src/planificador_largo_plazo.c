@@ -9,7 +9,7 @@ void *planificador_largo_plazo(void *param)
     while (true) {
         // Esperar hasta que haya elementos en NEW.
         sem_wait(&sem_elementos_en_new);
-        t_proceso_nuevo *proceso_inicial = squeue_peek(cola_new);
+        t_proceso_nuevo *proceso_inicial = (squeue_is_empty(cola_new)) ? NULL : squeue_peek(cola_new);
 
         // Una vez que tenemos un elemento en NEW, esperar hasta que haya espacio
         // disponible para agregar un proceso.
@@ -20,8 +20,9 @@ void *planificador_largo_plazo(void *param)
 
         // Ver que mientras esperabamos no nos hayan sacado el proceso en new (eliminado por consola)
         // Obtener el primer proceso en NEW
-        t_proceso_nuevo *proceso = squeue_peek(cola_new);
-        if (proceso_inicial != proceso) { // Si cambio, no hacer nada
+        t_proceso_nuevo *proceso = (squeue_is_empty(cola_new)) ? NULL : squeue_peek(cola_new);
+        // Si cambio o no tenemos ningun proceso, no hacer nada
+        if (proceso_inicial != proceso || proceso_inicial == NULL || proceso == NULL) {
             // Devolvemos el espacio que no utilizamos
             sem_post(&sem_multiprogramacion);
             // Liberar el permiso para agregar procesos a ready
@@ -51,7 +52,6 @@ void *planificador_largo_plazo(void *param)
         char *lista_pids = obtener_lista_pids_pcb(cola_ready);
         log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
         free(lista_pids);
-
 
         // Liberar el proceso
         free(proceso->path);

@@ -42,14 +42,14 @@ void *planificador_corto_plazo(void *vparams)
         if (planificar_nuevo_proceso) {
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
-            t_pcb *pcb_inicial = squeue_peek(cola_ready);
+            t_pcb *pcb_inicial = (squeue_is_empty(cola_ready)) ? NULL : squeue_peek(cola_ready);
 
             // Tomar el permiso para agregar procesos a exec
             sem_wait(&sem_entrada_a_exec);
 
             // Ver que mientras esperabamos no nos hayan sacado el proceso en ready (eliminado por consola)
-            t_pcb *pcb_a_ejecutar = squeue_peek(cola_ready);
-            if (pcb_inicial != pcb_a_ejecutar) { // Si cambio, no hacer nada
+            t_pcb *pcb_a_ejecutar = (squeue_is_empty(cola_ready)) ? NULL : squeue_peek(cola_ready);
+            if (pcb_inicial != pcb_a_ejecutar || pcb_inicial == NULL || pcb_a_ejecutar == NULL) { // Si cambio o no tenemos ningun proceso, no hacer nada
                 // Liberar el permiso para agregar procesos a exec
                 sem_post(&sem_entrada_a_exec);
                 continue;
@@ -282,12 +282,13 @@ static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_disp
 
 static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
 {
-    t_list *paquete = recibir_paquete(conexion_dispatch);
-    char *nombre_interfaz = list_get(paquete, 0);
-    t_operacion_io *operacion = list_get(paquete, 1);
+    // Recibir los parametros enviados por la cpu luego de desalojar
+    t_list *operacion = recibir_paquete(conexion_dispatch);
+    char *nombre_interfaz = list_get(operacion, 0);
+    t_operacion_io *opcode = list_get(operacion, 1);
 
     // Si no existe la interfaz, o no soporta la operacion, mandar el proceso a EXIT.
-    if (!existe_interfaz(nombre_interfaz) || !interfaz_soporta_operacion(nombre_interfaz, *operacion)) {
+    if (!existe_interfaz(nombre_interfaz) || !interfaz_soporta_operacion(nombre_interfaz, *opcode)) {
         interfaz_invalida(pcb_recibido);
         return;
     }
@@ -299,14 +300,21 @@ static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
     // Agregarlo a la cola de bloqueados de la interfaz.
     t_bloqueado_io *tbi = malloc(sizeof(t_bloqueado_io));
     tbi->pcb = pcb_recibido;
-    tbi->opcode = *operacion;
-    tbi->operacion = paquete;
+    tbi->opcode = *opcode;
+    tbi->operacion = operacion;
 
     t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre_interfaz);
     squeue_push(interfaz->bloqueados, tbi);
 
     // Avisar a la interfaz que hay un proceso nuevo esperando.
     sem_post(&(interfaz->procesos_esperando));
+}
+
+static void manejar_interrumpido_por_usuario(t_pcb *pcb_recibido)
+{
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INTERRUPTED_BY_USER", pcb_recibido->pid);
+    eliminar_proceso(pcb_recibido);
 }
 
 static void recurso_invalido(t_pcb *pcb_recibido)
@@ -321,10 +329,4 @@ static void interfaz_invalida(t_pcb *pcb_recibido)
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INVALID_INTERFACE", pcb_recibido->pid);
     eliminar_proceso(pcb_recibido);
-}
-
-static void manejar_interrumpido_por_usuario(t_pcb *pcb_recibido)
-{
-    // TODO
-    assert(false);
 }

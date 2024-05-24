@@ -18,14 +18,14 @@ void *atender_io(void *param)
 
     t_interfaz *self = registrar_interfaz(*conexion_io);
 
-    log_info(debug_logger, "Se registro la interfaz \'%s\', con tipo %d\n", self->nombre, self->tipo);
+    log_info(debug_logger, "Se registro la interfaz \'%s\', de tipo %d", self->nombre, self->tipo);
 
     while (true) {
         // Esperamos que haya un proceso esperando.
         sem_wait(&(self->procesos_esperando));
 
         // Agarramos el primer elemento bloqueado, dejandolo en la cola.
-        t_bloqueado_io *proceso_bloqueado = squeue_peek(self->bloqueados);
+        t_bloqueado_io *proceso_bloqueado = (squeue_is_empty(self->bloqueados)) ? NULL : squeue_peek(self->bloqueados);
 
         // Checkear que enviar funciona y que el socket sigue abierto
         if (enviar_operacion(proceso_bloqueado, *conexion_io) <= 0 || !socket_sigue_abierto(*conexion_io)) {
@@ -43,8 +43,9 @@ void *atender_io(void *param)
         sem_wait(&sem_entrada_a_ready);
 
         // Ver que mientras esperabamos no nos hayan sacado el proceso bloqueado (eliminado por consola)
-        t_bloqueado_io *pb_nuevo = squeue_peek(self->bloqueados);
-        if (pb_nuevo != proceso_bloqueado) { // Si cambio seguimos con el proximo
+        t_bloqueado_io *pb_nuevo = (squeue_is_empty(self->bloqueados)) ? NULL : squeue_peek(self->bloqueados);
+        // Si cambio o no tenemos ningun proceso, seguimos con el proximo
+        if (pb_nuevo != proceso_bloqueado || proceso_bloqueado == NULL || pb_nuevo == NULL) {
             // Liberar el permiso para agregar procesos a ready
             sem_post(&sem_entrada_a_ready);
             continue;
@@ -135,7 +136,7 @@ static void desregistrar_interfaz(t_interfaz *interfaz)
             break;
         }
     }
-    list_iterator_remove(it);
+    list_iterator_destroy(it);
     slist_unlock(nombres_interfaces);
 
     // Liberar t_interfaz
