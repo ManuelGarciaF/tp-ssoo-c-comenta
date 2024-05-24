@@ -49,7 +49,8 @@ void *planificador_corto_plazo(void *vparams)
 
             // Ver que mientras esperabamos no nos hayan sacado el proceso en ready (eliminado por consola)
             t_pcb *pcb_a_ejecutar = (squeue_is_empty(cola_ready)) ? NULL : squeue_peek(cola_ready);
-            if (pcb_inicial != pcb_a_ejecutar || pcb_inicial == NULL || pcb_a_ejecutar == NULL) { // Si cambio o no tenemos ningun proceso, no hacer nada
+            // Si cambio o no tenemos ningun proceso, no hacer nada
+            if (pcb_inicial != pcb_a_ejecutar || pcb_inicial == NULL || pcb_a_ejecutar == NULL) {
                 // Liberar el permiso para agregar procesos a exec
                 sem_post(&sem_entrada_a_exec);
                 continue;
@@ -102,7 +103,7 @@ void *planificador_corto_plazo(void *vparams)
             // sin segfaultear.
             *cancelar_ultimo_reloj = true;
             en_ejecucion_ultimo_reloj = false;
-            log_info(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele...");
+            /* log_info(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele..."); */
         }
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
 
@@ -154,7 +155,10 @@ static void *reloj_rr(void *param)
     // Solo enviar la interrupcion si este reloj no fue cancelado mientras esperaba
     bool cancelar_reloj = ((t_parametros_reloj_rr *)param)->cancelado;
     if (!cancelar_reloj) {
-        log_info(debug_logger, "Reloj para pid=%u termino despues de esperar %dms", pid, ms_espera);
+        log_info(debug_logger,
+                 "Reloj para pid=%u termino despues de esperar %dms, enviando interrupcion",
+                 pid,
+                 ms_espera);
 
         // Ver si tenemos permiso para enviar interrupciones
         // (bonus: sirve como mutex para la conexion de interrupt)
@@ -177,7 +181,7 @@ static void *reloj_rr(void *param)
         en_ejecucion_ultimo_reloj = false;
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
     } else {
-        log_info(debug_logger, "El reloj para pid=%u fue cancelado", pid);
+        /* log_info(debug_logger, "El reloj para pid=%u fue cancelado", pid); */
     }
 
     free(param);

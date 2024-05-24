@@ -129,6 +129,7 @@ static void finalizar_proceso(const char *pid_str)
 
     // Ver si se encuentra en ejecucion
     if (pid_en_ejecucion != -1 && pid_en_ejecucion == (int)pid) {
+        log_info(debug_logger, "Se encontro el proceso en EXEC");
         // Desalojar el proceso y eliminarlo cuando vuelva
         t_paquete *paquete = crear_paquete();
         agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
@@ -238,6 +239,7 @@ static bool buscar_y_eliminar_en_new(uint32_t pid)
         t_proceso_nuevo *pn = list_iterator_next(it);
         if (pn->pid == pid) {
             encontrado = true;
+            log_info(debug_logger, "Se encontro el proceso en la cola de NEW");
             // Eliminar y liberar pn
             list_iterator_remove(it);
             free(pn->path);
@@ -260,6 +262,7 @@ static bool buscar_y_eliminar_en_ready(uint32_t pid)
         t_pcb *pcb = list_iterator_next(it);
         if (pcb->pid == pid) {
             encontrado = true;
+            log_info(debug_logger, "Se encontro el proceso en la cola de READY");
             list_iterator_remove(it);
             eliminar_proceso(pcb);
         }
@@ -289,6 +292,7 @@ static bool buscar_y_eliminar_en_blocked_recursos(uint32_t pid)
             t_pcb *pcb = list_iterator_next(it_bloqueados);
             if (pcb->pid == pid) {
                 encontrado = true;
+                log_info(debug_logger, "Se encontro el proceso en la cola de bloqueados del recurso %s", nombre_recurso);
                 list_iterator_remove(it_bloqueados);
                 eliminar_proceso(pcb);
 
@@ -330,6 +334,7 @@ static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid)
             t_bloqueado_io *pb = list_iterator_next(it_bloqueados);
             if (pb->pcb->pid == pid) {
                 encontrado = true;
+                log_info(debug_logger, "Se encontro el proceso en la cola de bloqueados de la interfaz %s", interfaz->nombre);
                 list_iterator_remove(it_bloqueados);
                 eliminar_proceso(pb->pcb);
                 // Liberar el resto de bi
