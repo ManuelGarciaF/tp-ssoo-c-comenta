@@ -47,17 +47,23 @@ extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogr
 extern int conexion_memoria;
 extern pthread_mutex_t mutex_conexion_memoria; // Necesitamos asegurar que solo un hilo puede comunicarse con la
                                                // memoria a la vez
+extern int conexion_cpu_dispatch;              // No hace falta mutex, solo es usado por el pcp
+extern int conexion_cpu_interrupt;             // Usamos sem_interrupcion_rr como mutex
 
 // Colas de procesos
 extern t_squeue *cola_new;                    // Contiene t_proceso_nuevo
 extern t_squeue *cola_ready;                  // Contiene t_pcb
 extern t_sdictionary *colas_blocked_recursos; // Contiene squeues de t_pcb
 extern t_sdictionary *interfaces_conectadas;  // Contiene t_interfaz, cada interfaz tiene una squeue de bloqueados
+extern t_slist *nombres_interfaces;           // Contiene strings de los nombres,
+                                              // usado para poder iterar sobre los diccionarios.
 
 // Recursos
 extern t_sdictionary *instancias_recursos; // Contiene ints.
 extern t_slist *asignaciones_recursos;     // Necesito saber que procesos tienen que recursos para liberarlos
                                            // al eliminar al proceso. Contiene t_asignacion_recursos.
+extern t_slist *nombres_recursos;          // Contiene strings de los nombres,
+                                           // usado para poder iterar sobre los diccionarios
 
 // Semaforos
 extern sem_t sem_multiprogramacion; // Semaforo de espacio restante de multiprogamacion
@@ -68,6 +74,7 @@ extern sem_t sem_elementos_en_ready;
 extern sem_t sem_entrada_a_ready;
 extern sem_t sem_entrada_a_exec;
 extern sem_t sem_manejo_desalojo_cpu;
+extern sem_t sem_interrupcion_rr;
 extern bool planificacion_pausada; // Para registrar el estado de la planificacion.
 
 /*
@@ -76,7 +83,6 @@ extern bool planificacion_pausada; // Para registrar el estado de la planificaci
 
 // Inicializa y libera las variables globales.
 void inicializar_globales(void);
-void liberar_globales(void);
 
 void *esperar_conexiones_io(void *);
 
@@ -85,7 +91,7 @@ void correr_consola(void);
 // Maneja las conexiones de los dispositivos de I/O
 void *atender_io(void *param);
 
-t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str);
+t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str);
 
 void *planificador_largo_plazo(void *param);
 void *planificador_corto_plazo(void *params);

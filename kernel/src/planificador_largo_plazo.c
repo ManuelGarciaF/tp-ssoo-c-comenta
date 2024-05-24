@@ -7,8 +7,9 @@ void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *);
 void *planificador_largo_plazo(void *param)
 {
     while (true) {
-        // Esperar hasta que haya elementos en NEW, reduciendo el semaforo.
+        // Esperar hasta que haya elementos en NEW.
         sem_wait(&sem_elementos_en_new);
+        t_proceso_nuevo *proceso_inicial = squeue_peek(cola_new);
 
         // Una vez que tenemos un elemento en NEW, esperar hasta que haya espacio
         // disponible para agregar un proceso.
@@ -16,11 +17,20 @@ void *planificador_largo_plazo(void *param)
 
         // Tomar el permiso para agregar procesos a ready
         sem_wait(&sem_entrada_a_ready);
-        // TODO checkear que luego de esta espera el proceso en new por el que se esperaba siga siendo el
-        // mismo (puede haber sido eliminado por comando)
 
-        // Sacar el proceso de NEW y enviarlo a memoria
-        t_proceso_nuevo *proceso = squeue_pop(cola_new);
+        // Ver que mientras esperabamos no nos hayan sacado el proceso en new (eliminado por consola)
+        // Obtener el primer proceso en NEW
+        t_proceso_nuevo *proceso = squeue_peek(cola_new);
+        if (proceso_inicial != proceso) { // Si cambio, no hacer nada
+            // Devolvemos el espacio que no utilizamos
+            sem_post(&sem_multiprogramacion);
+            // Liberar el permiso para agregar procesos a ready
+            sem_post(&sem_entrada_a_ready);
+            continue;
+        }
+
+        // Sacar el proceso que vimos antes de la cola
+        squeue_pop(cola_new);
 
         enviar_proceso_nuevo_a_memoria(proceso);
 

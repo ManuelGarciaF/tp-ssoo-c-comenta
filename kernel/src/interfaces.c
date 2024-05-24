@@ -2,6 +2,7 @@
 
 // Definiciones locales
 static t_interfaz *registrar_interfaz(int conexion_io);
+static void desregistrar_interfaz(t_interfaz *interfaz);
 static int enviar_operacion(t_bloqueado_io *pb, int conexion_io);
 static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io);
 
@@ -23,7 +24,7 @@ void *atender_io(void *param)
         // Esperamos que haya un proceso esperando.
         sem_wait(&(self->procesos_esperando));
 
-        // Agarramos el primer elemento bloqueado, dejandolo en la cola para facilitar logs.
+        // Agarramos el primer elemento bloqueado, dejandolo en la cola.
         t_bloqueado_io *proceso_bloqueado = squeue_peek(self->bloqueados);
 
         // Checkear que enviar funciona y que el socket sigue abierto
@@ -40,8 +41,14 @@ void *atender_io(void *param)
 
         // Tomar el permiso para agregar procesos a ready
         sem_wait(&sem_entrada_a_ready);
-        // TODO checkear que luego de esta espera el proceso en new por el que se esperaba siga siendo el
-        // mismo (puede haber sido eliminado por comando)
+
+        // Ver que mientras esperabamos no nos hayan sacado el proceso bloqueado (eliminado por consola)
+        t_bloqueado_io *pb_nuevo = squeue_peek(self->bloqueados);
+        if (pb_nuevo != proceso_bloqueado) { // Si cambio seguimos con el proximo
+            // Liberar el permiso para agregar procesos a ready
+            sem_post(&sem_entrada_a_ready);
+            continue;
+        }
 
         // Sacamos el elemento de la cola (ya tenemos su referencia por peek)
         squeue_pop(self->bloqueados);
@@ -54,7 +61,7 @@ void *atender_io(void *param)
 
         sem_post(&sem_elementos_en_ready);
 
-        // Liberar proceso_bloqueado
+        // Liberar proceso_bloqueado (no el pcb)
         list_destroy_and_destroy_elements(proceso_bloqueado->operacion, free);
         free(proceso_bloqueado);
     }
@@ -63,11 +70,7 @@ void *atender_io(void *param)
     eliminar_procesos_bloqueados(self->bloqueados);
 
     // Limpiar datos interfaz
-    sdictionary_remove(interfaces_conectadas, self->nombre);
-    free(self->nombre);
-    sem_destroy(&(self->procesos_esperando));
-    squeue_destroy(self->bloqueados);
-    free(self);
+    desregistrar_interfaz(self);
 
     close(*conexion_io);
     free(conexion_io);
@@ -99,8 +102,7 @@ static t_interfaz *registrar_interfaz(int conexion_io)
 
     // Crear el t_interfaz
     t_interfaz *interfaz = malloc(sizeof(t_interfaz));
-    interfaz->nombre = malloc(strlen(nombre_interfaz) + 1);
-    strcpy(interfaz->nombre, nombre_interfaz);
+    interfaz->nombre = string_duplicate(nombre_interfaz);
     interfaz->tipo = *tipo_interfaz;
     interfaz->conexion = conexion_io;
     interfaz->bloqueados = squeue_create();
@@ -109,9 +111,38 @@ static t_interfaz *registrar_interfaz(int conexion_io)
     // Guardarlo en el diccionario.
     sdictionary_put(interfaces_conectadas, interfaz->nombre, interfaz);
 
+    // Guardar el nombre en la lista
+    slist_add(nombres_interfaces, string_duplicate(interfaz->nombre));
+
     list_destroy_and_destroy_elements(paquete_info_interfaz, free);
 
     return interfaz;
+}
+
+static void desregistrar_interfaz(t_interfaz *interfaz)
+{
+    // Eliminar la interfaz del diccionario
+    sdictionary_remove(interfaces_conectadas, interfaz->nombre);
+
+    // Eliminar de nombres_interfaces
+    slist_lock(nombres_interfaces);
+    t_list_iterator *it = list_iterator_create(nombres_interfaces->list);
+    while (list_iterator_has_next(it)) {
+        char *nombre = list_iterator_next(it);
+        if (strcmp(nombre, interfaz->nombre) == 0) {
+            list_iterator_remove(it);
+            free(nombre);
+            break;
+        }
+    }
+    list_iterator_remove(it);
+    slist_unlock(nombres_interfaces);
+
+    // Liberar t_interfaz
+    free(interfaz->nombre);
+    sem_destroy(&(interfaz->procesos_esperando));
+    squeue_destroy(interfaz->bloqueados);
+    free(interfaz);
 }
 
 static int enviar_operacion(t_bloqueado_io *pb, int conexion_io)

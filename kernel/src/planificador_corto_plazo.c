@@ -1,15 +1,17 @@
 #include "main.h"
 
-// Variables globales
-static bool planificar_nuevo_proceso;
-static sem_t sem_comenzar_reloj;
-
 // Estructuras
 typedef struct {
-    int conexion_cpu_interrupt;
     int ms_espera;
     uint32_t pid;
+    bool cancelado;
 } t_parametros_reloj_rr;
+
+// Variables globales
+static bool planificar_nuevo_proceso;
+static bool *cancelar_ultimo_reloj;    // Permite cancelar el ultimo reloj.
+static bool en_ejecucion_ultimo_reloj; // Permite saber si el ultimo reloj ya termino.
+static pthread_mutex_t mutex_en_ejecucion_ultimo_reloj;
 
 // Definiciones locales
 static void *reloj_rr(void *param);
@@ -29,26 +31,35 @@ static void interfaz_invalida(t_pcb *pcb_recibido);
 // Pasa procesos de READY a EXEC
 void *planificador_corto_plazo(void *vparams)
 {
-    t_parametros_pcp *params = (t_parametros_pcp *)vparams;
-
     pthread_t hilo_reloj_rr;
     planificar_nuevo_proceso = true;
+
+    pthread_mutex_init(&mutex_en_ejecucion_ultimo_reloj, NULL);
+
     while (true) {
         // No siempre hay que enviar un proceso nuevo segun el algoritmo de planificacion,
         // a veces devolvemos la ejecucion al proceso devuelto.
         if (planificar_nuevo_proceso) {
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
+            t_pcb *pcb_inicial = squeue_peek(cola_ready);
 
             // Tomar el permiso para agregar procesos a exec
             sem_wait(&sem_entrada_a_exec);
-            // TODO checkear que luego de esta espera el proceso en ready por el que se esperaba siga siendo el
-            // mismo (puede haber sido eliminado por comando)
 
-            // Por FIFO y RR siempre tomamos el primero
-            t_pcb *pcb_a_ejecutar = squeue_pop(cola_ready);
+            // Ver que mientras esperabamos no nos hayan sacado el proceso en ready (eliminado por consola)
+            t_pcb *pcb_a_ejecutar = squeue_peek(cola_ready);
+            if (pcb_inicial != pcb_a_ejecutar) { // Si cambio, no hacer nada
+                // Liberar el permiso para agregar procesos a exec
+                sem_post(&sem_entrada_a_exec);
+                continue;
+            }
+
+            // Sacar el pcb que vimos antes de la cola
+            squeue_pop(cola_ready);
+
             // Enviamos el pcb a CPU.
-            pcb_send(pcb_a_ejecutar, params->conexion_cpu_dispatch);
+            pcb_send(pcb_a_ejecutar, conexion_cpu_dispatch);
             pid_en_ejecucion = pcb_a_ejecutar->pid; // Registrar que proceso esta en ejecucion
 
             // Liberar el permiso para agregar procesos a exec
@@ -61,9 +72,12 @@ void *planificador_corto_plazo(void *vparams)
                 log_info(debug_logger, "Iniciando reloj RR con q=%d para pid=%u", quantum, pcb_a_ejecutar->pid);
 
                 t_parametros_reloj_rr *params_reloj = malloc(sizeof(t_parametros_reloj_rr));
-                params_reloj->conexion_cpu_interrupt = params->conexion_cpu_interrupt;
                 params_reloj->ms_espera = quantum;
                 params_reloj->pid = pcb_a_ejecutar->pid;
+                params_reloj->cancelado = false;
+
+                cancelar_ultimo_reloj = &(params_reloj->cancelado); // Guardo la ubicacion del campo cancelado
+                en_ejecucion_ultimo_reloj = true;
 
                 int iret = pthread_create(&hilo_reloj_rr, NULL, reloj_rr, params_reloj);
                 if (iret != 0) {
@@ -78,8 +92,19 @@ void *planificador_corto_plazo(void *vparams)
         // nos devuelvan el pcb actualizado y el motivo.
 
         t_pcb *pcb_recibido = NULL;
-        t_motivo_desalojo motivo = recibir_pcb(params->conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
+        t_motivo_desalojo motivo = recibir_pcb(conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
         pid_en_ejecucion = -1;
+
+        // Despues de recibir el pcb, cancelar el hilo del reloj, en caso de que siga corriendo.
+        pthread_mutex_lock(&mutex_en_ejecucion_ultimo_reloj);
+        if (en_ejecucion_ultimo_reloj) {
+            // Significa que la estructura de parametros no fue liberada, podemos pedirle que cancele
+            // sin segfaultear.
+            *cancelar_ultimo_reloj = true;
+            en_ejecucion_ultimo_reloj = false;
+            log_info(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele...");
+        }
+        pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
 
         log_info(debug_logger, "Se recibio un PCB de CPU con el motivo %d:", motivo);
         pcb_debug_print(pcb_recibido);
@@ -100,13 +125,13 @@ void *planificador_corto_plazo(void *vparams)
             manejar_fin_proceso(pcb_recibido);
             break;
         case WAIT_RECURSO:
-            manejar_wait_recurso(pcb_recibido, params->conexion_cpu_dispatch);
+            manejar_wait_recurso(pcb_recibido, conexion_cpu_dispatch);
             break;
         case SIGNAL_RECURSO:
-            manejar_signal_recurso(pcb_recibido, params->conexion_cpu_dispatch);
+            manejar_signal_recurso(pcb_recibido, conexion_cpu_dispatch);
             break;
         case IO:
-            manejar_io(pcb_recibido, params->conexion_cpu_dispatch);
+            manejar_io(pcb_recibido, conexion_cpu_dispatch);
             break;
         case INTERRUMPIDO_POR_USUARIO:
             manejar_interrumpido_por_usuario(pcb_recibido);
@@ -116,28 +141,44 @@ void *planificador_corto_plazo(void *vparams)
         // Devolver el permiso para manejar el desalojo.
         sem_post(&sem_manejo_desalojo_cpu);
     }
-
-    sem_destroy(&sem_comenzar_reloj);
 }
 
 static void *reloj_rr(void *param)
 {
-    int conexion_cpu_interrupt = ((t_parametros_reloj_rr *)param)->conexion_cpu_interrupt;
     int ms_espera = ((t_parametros_reloj_rr *)param)->ms_espera;
     uint32_t pid = ((t_parametros_reloj_rr *)param)->pid;
 
     // Esperar
     usleep(ms_espera * 1000);
 
-    log_info(debug_logger, "Reloj para pid=%u termino despues de esperar %dms", pid, ms_espera);
+    // Solo enviar la interrupcion si este reloj no fue cancelado mientras esperaba
+    bool cancelar_reloj = ((t_parametros_reloj_rr *)param)->cancelado;
+    if (!cancelar_reloj) {
+        log_info(debug_logger, "Reloj para pid=%u termino despues de esperar %dms", pid, ms_espera);
 
-    // Desalojar el proceso
-    t_paquete *paquete = crear_paquete();
-    agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
-    t_motivo_desalojo motivo = FIN_QUANTUM;
-    agregar_a_paquete(paquete, &motivo, sizeof(t_motivo_desalojo));
-    enviar_paquete(paquete, conexion_cpu_interrupt);
-    eliminar_paquete(paquete);
+        // Ver si tenemos permiso para enviar interrupciones
+        // (bonus: sirve como mutex para la conexion de interrupt)
+        sem_wait(&sem_interrupcion_rr);
+
+        // Desalojar el proceso
+        t_paquete *paquete = crear_paquete();
+        agregar_a_paquete(paquete, &pid, sizeof(uint32_t));
+        t_motivo_desalojo motivo = FIN_QUANTUM;
+        agregar_a_paquete(paquete, &motivo, sizeof(t_motivo_desalojo));
+        enviar_paquete(paquete, conexion_cpu_interrupt);
+        eliminar_paquete(paquete);
+
+        // Volver a habilitar el envio de interrupciones
+        sem_post(&sem_interrupcion_rr);
+
+        // Avisar que este reloj termino su ejecucion,
+        // si fue cancelado, en_ejecucion_ultimo reloj es setteado a falso cuando se cancela
+        pthread_mutex_lock(&mutex_en_ejecucion_ultimo_reloj);
+        en_ejecucion_ultimo_reloj = false;
+        pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
+    } else {
+        log_info(debug_logger, "El reloj para pid=%u fue cancelado", pid);
+    }
 
     free(param);
 
@@ -285,4 +326,5 @@ static void interfaz_invalida(t_pcb *pcb_recibido)
 static void manejar_interrumpido_por_usuario(t_pcb *pcb_recibido)
 {
     // TODO
+    assert(false);
 }

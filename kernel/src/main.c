@@ -23,20 +23,25 @@ int procesos_extra_multiprogramacion = 0;
 
 int conexion_memoria;
 pthread_mutex_t mutex_conexion_memoria;
+int conexion_cpu_dispatch;
+int conexion_cpu_interrupt;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
 t_sdictionary *colas_blocked_recursos;
+t_slist *nombres_interfaces;
 
 t_sdictionary *interfaces_conectadas;
 
 t_sdictionary *instancias_recursos;
 t_slist *asignaciones_recursos;
+t_slist *nombres_recursos;
 
 // Semaforos
 sem_t sem_multiprogramacion;
 sem_t sem_elementos_en_new;
 sem_t sem_elementos_en_ready;
+sem_t sem_interrupcion_rr;
 
 sem_t sem_entrada_a_ready;
 sem_t sem_entrada_a_exec;
@@ -48,12 +53,12 @@ int main(int argc, char *argv[])
     inicializar_globales();
 
     // Conexion con el cpu
-    int conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
+    conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
     if (!realizar_handshake(conexion_cpu_dispatch)) {
         log_error(debug_logger, "No Se pudo realizar un handshake con el CPU (dispatch)");
     }
 
-    int conexion_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
+    conexion_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
     if (!realizar_handshake(conexion_cpu_interrupt)) {
         log_error(debug_logger, "No se pudo realizar un handshake con el CPU (interrupt)");
     }
@@ -75,6 +80,7 @@ int main(int argc, char *argv[])
         log_error(debug_logger, "No se pudo crear un hilo para esperar conexiones");
     }
 
+    // Iniciar planificadores
     pthread_t hilo_planificador_largo_plazo;
     iret = pthread_create(&hilo_planificador_largo_plazo, NULL, planificador_largo_plazo, NULL);
     if (iret != 0) {
@@ -82,21 +88,19 @@ int main(int argc, char *argv[])
     }
 
     pthread_t hilo_planificador_corto_plazo;
-    t_parametros_pcp params_pcp = {conexion_cpu_dispatch, conexion_cpu_interrupt};
-    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, planificador_corto_plazo, &params_pcp);
+    iret = pthread_create(&hilo_planificador_corto_plazo, NULL, planificador_corto_plazo, NULL);
     if (iret != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el planificador de corto plazo");
     }
 
+    // Darle el hilo principal a la consola
     correr_consola();
-    // Cuando vuelve esta función, el programa debe terminar.
 
-    // Cerrar sockets
     close(conexion_cpu_dispatch);
     close(conexion_cpu_interrupt);
     close(conexion_memoria);
 
-    liberar_globales();
+    // No me molesto en liberar las variables globales.
 
     pthread_exit(NULL);
 }
@@ -138,9 +142,11 @@ void inicializar_globales(void)
     colas_blocked_recursos = sdictionary_create();
 
     interfaces_conectadas = sdictionary_create();
+    nombres_interfaces = slist_create();
 
     instancias_recursos = sdictionary_create();
     asignaciones_recursos = slist_create();
+    nombres_recursos = slist_create();
 
     char **recursos_strs = config_get_array_value(config, "RECURSOS");
     char **instancias_recursos_strs = config_get_array_value(config, "INSTANCIAS_RECURSOS");
@@ -154,6 +160,9 @@ void inicializar_globales(void)
         // Inicializar las colas de bloqueados para cada recurso.
         t_squeue *cola_bloqueados = squeue_create();
         sdictionary_put(colas_blocked_recursos, recursos_strs[i], cola_bloqueados);
+
+        // Guardar nombres en nombes_recursos
+        slist_add(nombres_recursos, string_duplicate(recursos_strs[i]));
     }
 
     string_array_destroy(recursos_strs);
@@ -163,38 +172,10 @@ void inicializar_globales(void)
     sem_init(&sem_entrada_a_ready, 0, 1);
     sem_init(&sem_entrada_a_exec, 0, 1);
     sem_init(&sem_manejo_desalojo_cpu, 0, 1);
+    sem_init(&sem_interrupcion_rr, 0, 1);
     planificacion_pausada = false;
 
     pthread_mutex_init(&mutex_conexion_memoria, NULL);
-}
-
-void liberar_globales(void)
-{
-    // Liberar memoria
-    log_destroy(debug_logger);
-    log_destroy(kernel_logger);
-
-    config_destroy(config);
-
-    // NOTE todos estos destroy no liberan la memoria de los elementos que contienen,
-    // no es importante ya que el programa termina.
-    squeue_destroy(cola_new);
-    squeue_destroy(cola_ready);
-    sdictionary_destroy(colas_blocked_recursos);
-    sdictionary_destroy(interfaces_conectadas);
-
-    sdictionary_destroy(instancias_recursos);
-    slist_destroy(asignaciones_recursos);
-
-    sem_destroy(&sem_multiprogramacion);
-    sem_destroy(&sem_elementos_en_new);
-    sem_destroy(&sem_elementos_en_ready);
-
-    sem_destroy(&sem_entrada_a_ready);
-    sem_destroy(&sem_entrada_a_exec);
-    sem_destroy(&sem_manejo_desalojo_cpu);
-
-    pthread_mutex_destroy(&mutex_conexion_memoria);
 }
 
 void *esperar_conexiones_io(void *param)
@@ -217,7 +198,7 @@ void *esperar_conexiones_io(void *param)
     }
 }
 
-t_algoritmo_planificacion parse_algoritmo_planifiacion(char *str)
+t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str)
 {
     if (!strcmp(str, "FIFO")) {
         return FIFO;
@@ -243,13 +224,15 @@ void pausar_planificacion()
     sem_wait(&sem_entrada_a_ready);
     sem_wait(&sem_entrada_a_exec);
     sem_wait(&sem_manejo_desalojo_cpu);
+    sem_wait(&sem_interrupcion_rr); // Tambien no permitir que se envien interrupciones por fin de Quantum
     planificacion_pausada = true;
 }
 
 void reanudar_planificacion()
 {
     if (!planificacion_pausada) {
-        log_warning(debug_logger, "Se intento reanudar la planificacion cuando no se encuentra pausada, ignorando la solicitud.");
+        log_warning(debug_logger,
+                    "Se intento reanudar la planificacion cuando no se encuentra pausada, ignorando la solicitud.");
         return;
     }
 
@@ -257,6 +240,7 @@ void reanudar_planificacion()
     sem_post(&sem_entrada_a_ready);
     sem_post(&sem_entrada_a_exec);
     sem_post(&sem_manejo_desalojo_cpu);
+    sem_post(&sem_interrupcion_rr);
     planificacion_pausada = false;
 }
 

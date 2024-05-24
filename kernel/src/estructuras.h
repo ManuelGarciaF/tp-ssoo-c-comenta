@@ -12,11 +12,6 @@ typedef struct {
     char *path;
 } t_proceso_nuevo;
 
-typedef struct {
-    int conexion_cpu_dispatch;
-    int conexion_cpu_interrupt;
-} t_parametros_pcp;
-
 typedef enum { FIFO, RR, VRR } t_algoritmo_planificacion;
 
 typedef struct {
