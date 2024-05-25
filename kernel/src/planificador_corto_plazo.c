@@ -210,9 +210,7 @@ static void manejar_fin_quantum(t_pcb *pcb_recibido)
     // Logs
     log_info(kernel_logger, "PID: %d - Desalojado por fin de Quantum", pcb_recibido->pid);
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: READY", pcb_recibido->pid);
-    char *lista_pids = obtener_lista_pids_pcb(cola_ready);
-    log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
-    free(lista_pids);
+    log_cola_ready();
 
     sem_post(&sem_elementos_en_ready);
 }

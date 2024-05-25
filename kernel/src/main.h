@@ -113,4 +113,6 @@ void reanudar_planificacion();
 bool existe_interfaz(char *nombre);
 bool interfaz_soporta_operacion(char *nombre, t_operacion_io op);
 
+void log_cola_ready(void);
+
 #endif // MAIN_H_

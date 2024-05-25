@@ -282,3 +282,11 @@ void eliminar_proceso(t_pcb *pcb)
 
     pcb_destroy(pcb);
 }
+
+void log_cola_ready(void)
+{
+    char *lista_pids = obtener_lista_pids_pcb(cola_ready);
+    log_info(kernel_logger, "Cola Ready READY: [%s]", lista_pids);
+    free(lista_pids);
+    // TODO agregar READY+ cuando este hecho VRR
+}
