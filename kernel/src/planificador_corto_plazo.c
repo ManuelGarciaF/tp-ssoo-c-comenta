@@ -206,7 +206,6 @@ static void manejar_fin_quantum(t_pcb *pcb_recibido)
 {
     // Lo volvemos a agregar a la cola de READY
     squeue_push(cola_ready, pcb_recibido);
-    sem_post(&sem_elementos_en_ready);
 
     // Logs
     log_info(kernel_logger, "PID: %d - Desalojado por fin de Quantum", pcb_recibido->pid);
@@ -214,6 +213,8 @@ static void manejar_fin_quantum(t_pcb *pcb_recibido)
     char *lista_pids = obtener_lista_pids_pcb(cola_ready);
     log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
     free(lista_pids);
+
+    sem_post(&sem_elementos_en_ready);
 }
 
 static void manejar_fin_proceso(t_pcb *pcb_recibido)
@@ -309,6 +310,8 @@ static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
 
     t_interfaz *interfaz = sdictionary_get(interfaces_conectadas, nombre_interfaz);
     squeue_push(interfaz->bloqueados, tbi);
+
+    log_info(kernel_logger, "PID: %d - Bloqueado por: %s", pcb_recibido->pid, nombre_interfaz);
 
     // Avisar a la interfaz que hay un proceso nuevo esperando.
     sem_post(&(interfaz->procesos_esperando));

@@ -149,7 +149,11 @@ static void finalizar_proceso(const char *pid_str)
         if (!encontrado) { // No estaba bloqueado por recuros, buscar en bloqueados por io
             encontrado = buscar_y_eliminar_en_blocked_interfaces(pid);
         }
-        if (!encontrado) { // No se encontro el proceso en ninguna cola
+
+        if (encontrado) { // No se encontro el proceso en ninguna cola
+            log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
+            log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INTERRUPTED_BY_USER", pid);
+        } else {
             printf("error: No se encontro el proceso con pid: %u\n", pid);
         }
     }
@@ -292,7 +296,9 @@ static bool buscar_y_eliminar_en_blocked_recursos(uint32_t pid)
             t_pcb *pcb = list_iterator_next(it_bloqueados);
             if (pcb->pid == pid) {
                 encontrado = true;
-                log_info(debug_logger, "Se encontro el proceso en la cola de bloqueados del recurso %s", nombre_recurso);
+                log_info(debug_logger,
+                         "Se encontro el proceso en la cola de bloqueados del recurso %s",
+                         nombre_recurso);
                 list_iterator_remove(it_bloqueados);
                 eliminar_proceso(pcb);
 
@@ -334,7 +340,9 @@ static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid)
             t_bloqueado_io *pb = list_iterator_next(it_bloqueados);
             if (pb->pcb->pid == pid) {
                 encontrado = true;
-                log_info(debug_logger, "Se encontro el proceso en la cola de bloqueados de la interfaz %s", interfaz->nombre);
+                log_info(debug_logger,
+                         "Se encontro el proceso en la cola de bloqueados de la interfaz %s",
+                         interfaz->nombre);
                 list_iterator_remove(it_bloqueados);
                 eliminar_proceso(pb->pcb);
                 // Liberar el resto de bi

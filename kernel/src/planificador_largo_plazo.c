@@ -45,13 +45,13 @@ void *planificador_largo_plazo(void *param)
         // Liberar el permiso para agregar procesos a ready
         sem_post(&sem_entrada_a_ready);
 
-        sem_post(&sem_elementos_en_ready);
-
         // Logs
         log_info(kernel_logger, "PID: %d - Estado Anterior: NEW - Estado Actual: READY", pcb->pid);
         char *lista_pids = obtener_lista_pids_pcb(cola_ready);
         log_info(kernel_logger, "Cola Ready cola_ready: [%s]", lista_pids);
         free(lista_pids);
+
+        sem_post(&sem_elementos_en_ready);
 
         // Liberar el proceso
         free(proceso->path);
