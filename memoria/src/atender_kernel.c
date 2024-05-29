@@ -1,24 +1,33 @@
-#include "atender_kernel.h"
+#include "main.h"
+
+// Definiciones locales
+static void recibir_crear_proceso(int socket_conexion);
+static void recibir_liberar_proceso(int socket_conexion);
+static t_list *devolver_lineas(char *path);
+static void eliminar_pseudocodigo(void *data);
 
 void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
-        t_op_memoria_kernel op = recibir_int(socket_conexion);
+        t_op_memoria op = recibir_int(socket_conexion);
         log_info(debug_logger, "Operacion enviada por el kernel: %d", op);
 
         switch (op) {
-        case MENSAJE_INICIO_PROCESO:
+        case OPCODE_INICIO_PROCESO:
             recibir_crear_proceso(socket_conexion);
             break;
-        case MENSAJE_FIN_PROCESO:
+        case OPCODE_FIN_PROCESO:
             recibir_liberar_proceso(socket_conexion);
             break;
+        default:
+            log_error(debug_logger, "Kernel envio una operación invalida");
+            abort();
         }
     }
 }
 
-void recibir_crear_proceso(int socket_conexion)
+static void recibir_crear_proceso(int socket_conexion)
 {
     t_list *paquete = recibir_paquete(socket_conexion);
     uint32_t *pid = list_get(paquete, 0);
@@ -41,7 +50,7 @@ void recibir_crear_proceso(int socket_conexion)
     list_destroy_and_destroy_elements(paquete, free);
 }
 
-void recibir_liberar_proceso(int socket_conexion)
+static void recibir_liberar_proceso(int socket_conexion)
 {
     t_list *paquete = recibir_paquete(socket_conexion);
     uint32_t *pid = list_get(paquete, 0);
@@ -53,7 +62,7 @@ void recibir_liberar_proceso(int socket_conexion)
     list_destroy_and_destroy_elements(paquete, free);
 }
 
-t_list *devolver_lineas(char *path)
+static t_list *devolver_lineas(char *path)
 {
     FILE *archivo = fopen(path, "r");
     // Verifica si el archivo se abrió correctamente
@@ -81,7 +90,7 @@ t_list *devolver_lineas(char *path)
     return lineas;
 }
 
-void eliminar_pseudocodigo(void *data)
+static void eliminar_pseudocodigo(void *data)
 {
     list_destroy_and_destroy_elements((t_list *)data, free);
 }

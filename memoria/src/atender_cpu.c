@@ -1,13 +1,16 @@
-#include "atender_cpu.h"
+#include "main.h"
+
+// Definiciones locales
+static void enviar_instruccion(int socket_conexion);
 
 void atender_cpu(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (cpu)");
     while (true) {
-        t_op_memoria_cpu op = recibir_int(socket_conexion);
+        t_op_memoria op = recibir_int(socket_conexion);
 
         switch (op) {
-        case MENSAJE_SOLICITAR_INSTRUCCION:
+        case OPCODE_SOLICITAR_INSTRUCCION:
             // Esperar el tiempo establecido por el config
             usleep(retardo_respuesta * 1000); // Multiplicado por 1000 ya que toma microsegundos.
             enviar_instruccion(socket_conexion);
@@ -19,7 +22,7 @@ void atender_cpu(int socket_conexion)
     }
 }
 
-void enviar_instruccion(int socket_conexion)
+static void enviar_instruccion(int socket_conexion)
 {
     t_list *info_fetch = recibir_paquete(socket_conexion);
 

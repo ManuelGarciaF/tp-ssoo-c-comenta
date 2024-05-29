@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     nombre_interfaz = argv[1];
     char *archivo_config = argv[2];
-    debug_logger = log_create("entradasalida_debug.log", "entradasalida_debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("entradasalida_debug.log", "debug", true, LOG_LEVEL_INFO);
     entradasalida_logger = log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create(archivo_config);

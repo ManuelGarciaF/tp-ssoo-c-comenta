@@ -5,6 +5,5 @@
 /*
 ** Definiciones de funciones
 */
-void enviar_instruccion(int socket_conexion);
 
 #endif // ATENDER_CPU_H_

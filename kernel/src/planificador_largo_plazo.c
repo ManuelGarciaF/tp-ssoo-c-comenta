@@ -61,7 +61,7 @@ void enviar_proceso_nuevo_a_memoria(t_proceso_nuevo *proceso_nuevo)
 {
     pthread_mutex_lock(&mutex_conexion_memoria);
 
-    enviar_int(MENSAJE_INICIO_PROCESO, conexion_memoria);
+    enviar_int(OPCODE_INICIO_PROCESO, conexion_memoria);
 
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(proceso_nuevo->pid), sizeof(uint32_t));

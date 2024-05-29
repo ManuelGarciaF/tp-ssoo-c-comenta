@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
 
 void inicializar_globales(void)
 {
-    debug_logger = log_create("kernel_debug.log", "kernel_debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("kernel_debug.log", "debug", true, LOG_LEVEL_INFO);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
 
     config = config_create("kernel.config");
@@ -256,7 +256,7 @@ void eliminar_proceso(t_pcb *pcb)
 
     // Avisar a memoria que debe liberar el proceso.
     pthread_mutex_lock(&mutex_conexion_memoria);
-    enviar_int(MENSAJE_FIN_PROCESO, conexion_memoria);
+    enviar_int(OPCODE_FIN_PROCESO, conexion_memoria);
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pcb->pid), sizeof(uint32_t));
     enviar_paquete(paquete, conexion_memoria);

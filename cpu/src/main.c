@@ -17,7 +17,7 @@ char *puerto_escucha_interrupt;
 
 int main(int argc, char *argv[])
 {
-    debug_logger = log_create("cpu_debug.log", "cpu_debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_INFO);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create("cpu.config");
@@ -156,7 +156,7 @@ void *servidor_interrupt(int *socket_escucha)
 
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
 {
-    enviar_int(MENSAJE_SOLICITAR_INSTRUCCION, conexion_memoria);
+    enviar_int(OPCODE_SOLICITAR_INSTRUCCION, conexion_memoria);
     // Enviar PID y PC para solicitar una instruccion.
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &pid, sizeof(uint32_t));

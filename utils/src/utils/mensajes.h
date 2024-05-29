@@ -11,17 +11,20 @@ typedef enum { // Enviados a memoria para dar a conocer quien se conecta
     MENSAJE_A_MEMORIA_IO
 } t_mensaje_identificacion_memoria;
 
-typedef enum { // Enviados a memoria por kernel
-    MENSAJE_INICIO_PROCESO,
-    MENSAJE_FIN_PROCESO
-} t_op_memoria_kernel;
-
-typedef enum { // Enviados a memoria por cpu
-    MENSAJE_SOLICITAR_INSTRUCCION
-} t_op_memoria_cpu;
+typedef enum {
+    OPCODE_INICIO_PROCESO,
+    OPCODE_FIN_PROCESO,
+    OPCODE_SOLICITAR_INSTRUCCION,
+    OPCODE_ACCESO_TABLA_PAGINAS,
+    OPCODE_AJUSTAR_TAMANIO_PROCESO,
+    OPCODE_ACCESO_ESPACIO_USUARIO
+} t_op_memoria;
 
 // Enviado a kernel por la interfaz para avisar que termino
 #define MENSAJE_FIN_IO 1
+
+// Enviado por la memoria cuando termina un pedido de escritura
+#define MENSAJE_FIN_ESCRITURA "OK"
 
 typedef enum { // Enviados a kernel por cpu al devolver un pcb
     FIN_QUANTUM,
