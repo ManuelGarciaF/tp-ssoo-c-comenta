@@ -30,13 +30,13 @@ static void enviar_instruccion(int socket_conexion)
     char *pid = string_itoa(*pid_int);
     int *pc = list_get(info_fetch, 1);
 
-    t_list *lineas_de_pid = dictionary_get(codigo_procesos, pid);
+    t_proceso *proceso = dictionary_get(procesos, pid);
 
-    if (*pc >= list_size(lineas_de_pid)) {
+    if (*pc >= list_size(proceso->codigo)) {
         log_error(debug_logger, "El PC: %d supera la cantidad de instrucciones del PID %s", *pc, pid);
     }
 
-    char *instruccion = list_get(lineas_de_pid, *pc);
+    char *instruccion = list_get(proceso->codigo, *pc);
     enviar_str(instruccion, socket_conexion);
 
     log_info(debug_logger, "Se envio la instruccion \"%s\", al PID: %d, con PC: %d", instruccion, *pid_int, *pc);

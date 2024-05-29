@@ -12,12 +12,9 @@
 #include <utils/mensajes.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
+#include "estructuras.h"
 
 #define LIMITE_LINEA_INSTRUCCION (sizeof(char) * 255)
-
-/*
-** Estructuras
-*/
 
 /*
 ** Variables globales
@@ -35,7 +32,7 @@ extern char *path_instrucciones;
 extern int retardo_respuesta;
 
 // Estructuras de memoria
-extern t_dictionary *codigo_procesos;
+extern t_dictionary *procesos; // Contiene t_procesos
 extern void *memoria_de_usuario;
 
 /*

@@ -11,7 +11,7 @@ int tam_pagina;
 char *path_instrucciones;
 int retardo_respuesta;
 
-t_dictionary *codigo_procesos;
+t_dictionary *procesos;
 void *memoria_usuario;
 
 int main(int argc, char *argv[])
@@ -55,11 +55,13 @@ void inicializar_globales()
     tam_memoria = config_get_int_or_exit(config, "TAM_MEMORIA");
     tam_pagina = config_get_int_or_exit(config, "TAM_PAGINA");
     path_instrucciones = config_get_string_or_exit(config, "PATH_INSTRUCCIONES");
-    ;
     retardo_respuesta = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
 
+    // El tamanio de memoria debe ser un multiplo del tamanio de pagina
+    assert(tam_memoria % tam_pagina == 0);
+
     // Diccionario con pseudocodigo de procesos
-    codigo_procesos = dictionary_create();
+    procesos = dictionary_create();
 
     // Inicializar memoria de usuario
     memoria_usuario = malloc(tam_memoria);
