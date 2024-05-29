@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
         if (pcb == NULL) {
             log_info(debug_logger, "Esperando PCB");
             pcb = pcb_receive(conexion_dispatch);
-            log_info(debug_logger, "Recibido PCB con PID: %ud", pcb->pid);
+            log_info(debug_logger, "Recibido PCB con PID: %u", pcb->pid);
         }
 
         /* pcb_debug_print(pcb); */
@@ -174,7 +174,7 @@ void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
     agregar_a_paquete(paquete, pcb, sizeof(t_pcb));
     agregar_a_paquete(paquete, &motivo, sizeof(t_motivo_desalojo));
     enviar_paquete(paquete, conexion_dispatch);
-    log_info(debug_logger, "PCB (PID: %ud) devuelto con motivo %d", pcb->pid, motivo);
+    log_info(debug_logger, "PCB (PID: %u) devuelto con motivo %d", pcb->pid, motivo);
     eliminar_paquete(paquete);
 
     // Luego de enviarlo, lo liberamos
