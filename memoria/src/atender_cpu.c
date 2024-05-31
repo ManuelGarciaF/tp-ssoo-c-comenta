@@ -13,10 +13,12 @@ void atender_cpu(int socket_conexion)
     while (true) {
         t_op_memoria op = recibir_int(socket_conexion);
 
+        // Esperar antes de responder.
+        usleep(retardo_respuesta * 1000);
+
         switch (op) {
         case OPCODE_SOLICITAR_INSTRUCCION:
             // Esperar el tiempo establecido por el config
-            usleep(retardo_respuesta * 1000); // Multiplicado por 1000 ya que toma microsegundos.
             enviar_instruccion(socket_conexion);
             break;
         default:
@@ -38,6 +40,7 @@ static void enviar_instruccion(int socket_conexion)
 
     if (*pc >= list_size(proceso->codigo)) {
         log_error(debug_logger, "El PC: %d supera la cantidad de instrucciones del PID %s", *pc, pid);
+        abort();
     }
 
     char *instruccion = list_get(proceso->codigo, *pc);

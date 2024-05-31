@@ -13,6 +13,9 @@ void atender_kernel(int socket_conexion)
         t_op_memoria op = recibir_int(socket_conexion);
         log_info(debug_logger, "Operacion enviada por el kernel: %d", op);
 
+        // Esperar antes de responder.
+        usleep(retardo_respuesta * 1000);
+
         switch (op) {
         case OPCODE_INICIO_PROCESO:
             recibir_crear_proceso(socket_conexion);
