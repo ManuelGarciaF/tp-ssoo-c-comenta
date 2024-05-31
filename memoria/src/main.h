@@ -3,7 +3,9 @@
 
 #include <assert.h>
 #include <commons/collections/list.h>
+#include <utils/sdictionary.h>
 #include <commons/log.h>
+#include <commons/bitarray.h>
 #include <commons/string.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -32,8 +34,9 @@ extern char *path_instrucciones;
 extern int retardo_respuesta;
 
 // Estructuras de memoria
-extern t_dictionary *procesos; // Contiene t_procesos
+extern t_sdictionary *procesos; // Contiene t_procesos
 extern void *memoria_de_usuario;
+extern t_bitarray *bitmap_marcos;
 
 /*
 ** Definiciones de funciones

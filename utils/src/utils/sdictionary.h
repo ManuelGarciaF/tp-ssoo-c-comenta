@@ -20,7 +20,7 @@ typedef struct {
 void *sdictionary_get(t_sdictionary *, char *key);
 void *sdictionary_remove(t_sdictionary *, char *key);
 void sdictionary_put(t_sdictionary *, char *key, void *element);
-t_sdictionary *sdictionary_create();
+t_sdictionary *sdictionary_create(void);
 void sdictionary_destroy(t_sdictionary *);
 void sdictionary_destroy_and_destroy_elements(t_sdictionary *, void (*element_destroyer)(void *));
 bool sdictionary_has_key(t_sdictionary *, char *key);

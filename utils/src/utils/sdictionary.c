@@ -1,6 +1,6 @@
 #include "sdictionary.h"
 
-t_sdictionary *sdictionary_create()
+t_sdictionary *sdictionary_create(void)
 {
     t_sdictionary *sd = malloc(sizeof(t_sdictionary));
     assert(sd != NULL);
@@ -57,7 +57,6 @@ bool sdictionary_has_key(t_sdictionary *sd, char *key)
 void sdictionary_destroy_and_destroy_elements(t_sdictionary *sd, void (*element_destroyer)(void *))
 {
     dictionary_clean_and_destroy_elements(sd->dict, element_destroyer);
-    pthread_mutex_destroy(sd->mutex);
     sdictionary_destroy(sd);
 }
 

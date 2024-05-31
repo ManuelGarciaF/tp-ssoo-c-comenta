@@ -1,6 +1,6 @@
 #include "slist.h"
 
-t_slist *slist_create()
+t_slist *slist_create(void)
 {
     t_slist *sl = malloc(sizeof(t_slist));
     assert(sl != NULL);
@@ -38,6 +38,15 @@ void *slist_get(t_slist *sl, int index)
     return elem;
 }
 
+int slist_size(t_slist *sl)
+{
+    pthread_mutex_lock(sl->mutex);
+    int size = list_size(sl->list);
+    pthread_mutex_unlock(sl->mutex);
+
+    return size;
+}
+
 void *slist_remove_by_condition(t_slist *sl, bool (*condition)(void *))
 {
     pthread_mutex_lock(sl->mutex);
@@ -47,10 +56,17 @@ void *slist_remove_by_condition(t_slist *sl, bool (*condition)(void *))
     return elem;
 }
 
+void slist_clean_and_destroy_elements(t_slist *sl, void (*element_destroyer)(void *))
+{
+    list_clean_and_destroy_elements(sl->list, element_destroyer);
+    slist_destroy(sl);
+}
+
 void slist_lock(t_slist *sl)
 {
     pthread_mutex_lock(sl->mutex);
 }
+
 void slist_unlock(t_slist *sl)
 {
     pthread_mutex_unlock(sl->mutex);

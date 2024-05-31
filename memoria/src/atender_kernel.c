@@ -4,7 +4,6 @@
 static void recibir_crear_proceso(int socket_conexion);
 static void recibir_liberar_proceso(int socket_conexion);
 static t_list *devolver_lineas(char *path_relativo);
-static void proceso_destroy_voidp(void *data);
 
 void atender_kernel(int socket_conexion)
 {
@@ -27,6 +26,9 @@ void atender_kernel(int socket_conexion)
             log_error(debug_logger, "Kernel envio una operación invalida");
             abort();
         }
+
+        // Avisar que se termino la operacion
+        enviar_int(MENSAJE_OP_TERMINADA, socket_conexion);
     }
 }
 
@@ -45,7 +47,7 @@ static void recibir_crear_proceso(int socket_conexion)
     t_proceso *proceso_nuevo = proceso_create(lineas);
 
     // Guardamos el proceso en el diccionario
-    dictionary_put(procesos, pid_str, proceso_nuevo);
+    sdictionary_put(procesos, pid_str, proceso_nuevo);
 
     free(pid_str);
     list_destroy_and_destroy_elements(paquete, free);
@@ -57,15 +59,14 @@ static void recibir_liberar_proceso(int socket_conexion)
     uint32_t *pid = list_get(paquete, 0);
     log_info(debug_logger, "Liberando proceso con pid: %u", *pid);
     char *pid_str = string_itoa(*pid);
-    dictionary_remove_and_destroy(procesos, pid_str, proceso_destroy_voidp);
+
+    t_proceso *proceso = sdictionary_remove(procesos, pid_str);
+    proceso_destroy(proceso);
+
+    // TODO liberar marcos
 
     free(pid_str);
     list_destroy_and_destroy_elements(paquete, free);
-}
-
-static void proceso_destroy_voidp(void *data)
-{
-    proceso_destroy((t_proceso *)data);
 }
 
 static t_list *devolver_lineas(char *path_relativo)

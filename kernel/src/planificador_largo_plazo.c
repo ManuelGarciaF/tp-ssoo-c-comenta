@@ -37,8 +37,16 @@ void *planificador_largo_plazo(void *param)
 
         log_info(debug_logger, "Se envió el path %s a memoria para el proceso %d", proceso->path, proceso->pid);
 
+        // Esperar que memoria nos avise que cargo el proceso.
+        pthread_mutex_lock(&mutex_conexion_memoria);
+        uint32_t respuesta_memoria = recibir_int(conexion_memoria);
+        pthread_mutex_unlock(&mutex_conexion_memoria);
+        if (respuesta_memoria != MENSAJE_OP_TERMINADA) {
+            log_error(debug_logger, "Memoria no pudo cargar el proceso");
+            abort();
+        }
+
         // Crear el PCB y agregarlo a READY
-        // TODO capaz hay que esperar que memoria nos avise que ya cargo el archivo
         t_pcb *pcb = pcb_create(proceso->pid);
         squeue_push(cola_ready, pcb);
 

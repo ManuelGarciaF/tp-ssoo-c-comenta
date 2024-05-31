@@ -16,12 +16,13 @@ typedef struct {
     pthread_mutex_t *mutex;
 } t_slist;
 
-t_slist *slist_create();
+t_slist *slist_create(void);
 void slist_destroy(t_slist *);
 int slist_add(t_slist *, void *element);
 void *slist_get(t_slist *, int index);
+int slist_size(t_slist *);
 void *slist_remove_by_condition(t_slist *, bool (*condition)(void *));
-
+void slist_clean_and_destroy_elements(t_slist *, void(*element_destroyer)(void*));
 
 void slist_lock(t_slist *);
 void slist_unlock(t_slist *);
