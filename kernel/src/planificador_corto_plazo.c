@@ -15,7 +15,7 @@ static pthread_mutex_t mutex_en_ejecucion_ultimo_reloj;
 
 // Definiciones locales
 static void *reloj_rr(void *param);
-static t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado);
+static t_motivo_desalojo recibir_pcb(t_pcb **pcb_actualizado);
 
 // Motivos de devolucion de pcb
 static void manejar_fin_quantum(t_pcb *pcb_recibido);
@@ -93,7 +93,7 @@ void *planificador_corto_plazo(void *vparams)
         // nos devuelvan el pcb actualizado y el motivo.
 
         t_pcb *pcb_recibido = NULL;
-        t_motivo_desalojo motivo = recibir_pcb(conexion_cpu_dispatch, &pcb_recibido); // Bloqueante
+        t_motivo_desalojo motivo = recibir_pcb(&pcb_recibido); // Bloqueante
         pid_en_ejecucion = -1;
 
         // Despues de recibir el pcb, cancelar el hilo del reloj, en caso de que siga corriendo.
@@ -189,7 +189,7 @@ static void *reloj_rr(void *param)
     return NULL;
 }
 
-static t_motivo_desalojo recibir_pcb(int conexion_cpu_dispatch, t_pcb **pcb_actualizado)
+static t_motivo_desalojo recibir_pcb(t_pcb **pcb_actualizado)
 {
     t_list *elementos = recibir_paquete(conexion_cpu_dispatch);
     *pcb_actualizado = list_get(elementos, 0);

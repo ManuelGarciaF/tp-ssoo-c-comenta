@@ -106,8 +106,8 @@ void asignar_recurso(uint32_t pid, char *recurso);
 // Elimina el pid de la lista de asignaciones de ese recurso
 void liberar_asignacion_recurso(uint32_t pid, char *recurso);
 
-void pausar_planificacion();
-void reanudar_planificacion();
+void pausar_planificacion(void);
+void reanudar_planificacion(void);
 
 // Interfaces
 bool existe_interfaz(char *nombre);

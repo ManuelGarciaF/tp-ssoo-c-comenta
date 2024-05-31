@@ -16,8 +16,8 @@ static bool buscar_y_eliminar_en_ready(uint32_t pid);
 static bool buscar_y_eliminar_en_blocked_recursos(uint32_t pid);
 static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid);
 
-static void imprimir_bloqueados_por_recursos(t_sdictionary *colas_blocked_recursos);
-static void imprimir_bloqueados_por_io(t_sdictionary *interfaces_conectadas);
+static void imprimir_bloqueados_por_recursos(void);
+static void imprimir_bloqueados_por_io(void);
 static void imprimir_bloqueados_recurso(char *nombre_recurso, void *puntero_cola);
 static void imprimir_bloqueados_interfaz(char *nombre_interfaz, void *puntero_interfaz);
 
@@ -228,9 +228,9 @@ static void imprimir_estado_procesos(void)
     // Procesos bloqueados:
     printf("BLOCKED:\n");
     printf(" ├Bloqueados por Recursos:\n");
-    imprimir_bloqueados_por_recursos(colas_blocked_recursos);
+    imprimir_bloqueados_por_recursos();
     printf(" └Bloqueados por I/O:\n");
-    imprimir_bloqueados_por_io(interfaces_conectadas);
+    imprimir_bloqueados_por_io();
 }
 
 static bool buscar_y_eliminar_en_new(uint32_t pid)
@@ -361,12 +361,12 @@ static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid)
     return encontrado;
 }
 
-static void imprimir_bloqueados_por_recursos(t_sdictionary *colas_blocked_recursos)
+static void imprimir_bloqueados_por_recursos(void)
 {
     sdictionary_iterator(colas_blocked_recursos, imprimir_bloqueados_recurso);
 }
 
-static void imprimir_bloqueados_por_io(t_sdictionary *interfaces_conectadas)
+static void imprimir_bloqueados_por_io(void)
 {
     sdictionary_iterator(interfaces_conectadas, imprimir_bloqueados_interfaz);
 }

@@ -211,7 +211,7 @@ t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str)
     exit(1);
 }
 
-void pausar_planificacion()
+void pausar_planificacion(void)
 {
     if (planificacion_pausada) {
         log_warning(debug_logger, "Se intento pausar la planificacion cuando ya esta pausada, ignorando la solicitud.");
@@ -228,7 +228,7 @@ void pausar_planificacion()
     planificacion_pausada = true;
 }
 
-void reanudar_planificacion()
+void reanudar_planificacion(void)
 {
     if (!planificacion_pausada) {
         log_warning(debug_logger,

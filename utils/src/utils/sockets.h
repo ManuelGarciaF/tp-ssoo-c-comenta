@@ -67,8 +67,7 @@ t_list *recibir_paquete(int socket_conexion);
 char *recibir_str(int socket_conexion);
 uint32_t recibir_int(int socket_conexion);
 
-/* Realiza un handshake con el servidor y devuelve true si el servidor devuelve
- * 1 */
+/* Realiza un handshake con el servidor y devuelve true si el servidor devuelve 1 */
 bool realizar_handshake(int socket_conexion);
 
 /* Retorna true y envia 1 al cliente si este envio un handshake valido */

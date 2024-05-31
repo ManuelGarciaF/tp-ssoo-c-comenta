@@ -59,6 +59,7 @@ typedef struct {
 */
 extern t_log *debug_logger;
 extern t_log *cpu_logger;
+extern t_config *config;
 
 extern t_pcb *pcb;
 extern t_slist *interrupts; // Contiene t_interrupcion
@@ -72,11 +73,11 @@ extern char *puerto_escucha_interrupt;
 /*
 ** Definiciones de funciones
 */
-void cargar_config(t_config *config);
+void inicializar_globales(void);
 
-void *servidor_dispatch(int *socket_escucha);
-void *servidor_interrupt(int *socket_escucha);
+void *servidor_interrupt(void *param);
 int aceptar_conexion_kernel(int socket_escucha);
+int conectar_a_memoria(uint32_t *tamanio_pagina);
 
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 t_instruccion decode(char *instruccion);

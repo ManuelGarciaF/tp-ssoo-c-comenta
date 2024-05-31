@@ -6,6 +6,10 @@ static void enviar_instruccion(int socket_conexion);
 void atender_cpu(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (cpu)");
+
+    // Enviar el tamanio de página
+    enviar_int(tam_pagina, socket_conexion);
+
     while (true) {
         t_op_memoria op = recibir_int(socket_conexion);
 

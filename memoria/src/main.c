@@ -14,7 +14,7 @@ int retardo_respuesta;
 t_dictionary *procesos;
 void *memoria_usuario;
 
-int main(int argc, char *argv[])
+int main(void)
 {
     inicializar_globales();
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void inicializar_globales()
+void inicializar_globales(void)
 {
     // Logs
     debug_logger = log_create("memoria_debug.log", "debug", true, LOG_LEVEL_INFO);

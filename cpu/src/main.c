@@ -5,6 +5,7 @@
 */
 t_log *debug_logger;
 t_log *cpu_logger;
+t_config *config;
 
 t_pcb *pcb = NULL;
 t_slist *interrupts;
@@ -17,35 +18,21 @@ char *puerto_escucha_interrupt;
 
 int main(int argc, char *argv[])
 {
-    debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_INFO);
-    cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
+    inicializar_globales();
 
-    t_config *config = config_create("cpu.config");
-    if (config == NULL) {
-        log_error(debug_logger, "No se pudo crear la config");
-        exit(1);
-    }
-    cargar_config(config);
-
-    interrupts = slist_create();
-
+    // Iniciar servidores
     int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
     int socket_escucha_interrupt = iniciar_servidor(puerto_escucha_interrupt);
 
-    pthread_t hilo_interrupt;
     // Crear hilo para interrupt
-    if (pthread_create(&hilo_interrupt, NULL, (void *)servidor_interrupt, &socket_escucha_interrupt) != 0) {
+    pthread_t hilo_interrupt;
+    if (pthread_create(&hilo_interrupt, NULL, servidor_interrupt, &socket_escucha_interrupt) != 0) {
         log_error(debug_logger, "No se pudo crear un hilo para el servidor de interrupt");
         exit(1);
     }
 
-    // Conectar con la memoria
-    int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
-
-    if (!realizar_handshake(conexion_memoria)) {
-        log_error(debug_logger, "No se pudo realizar un handshake con memoria");
-    }
-    enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
+    uint32_t tamanio_pagina;
+    int conexion_memoria = conectar_a_memoria(&tamanio_pagina);
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
@@ -105,32 +92,56 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/* Inicializa las variables globales */
-void cargar_config(t_config *config)
+void inicializar_globales(void)
 {
+    debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_INFO);
+    cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
+
+    config = config_create("cpu.config");
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo crear la config");
+        exit(1);
+    }
+
+    // Leer variables de config
     ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
     puerto_escucha_dispatch = config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
+
+    interrupts = slist_create();
 }
 
 int aceptar_conexion_kernel(int socket_escucha)
 {
     int socket_conexion = esperar_cliente(socket_escucha);
     if (!recibir_handshake(socket_conexion)) {
-        log_info(debug_logger, "Hubo un error al intentar hacer el handshake");
+        log_info(debug_logger, "Hubo un error al intentar hacer el handshake con kernel");
         return -1;
     }
     return socket_conexion;
 }
 
-void *servidor_interrupt(int *socket_escucha)
+int conectar_a_memoria(uint32_t *tamanio_pagina)
 {
-    int conexion_interrupt = esperar_cliente(*socket_escucha);
-    if (!recibir_handshake(conexion_interrupt)) {
-        log_info(debug_logger, "No se pudo realizar el handshake correctamente (interrupt)");
-        exit(1);
+    // Conectar con la memoria
+    int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+
+    if (!realizar_handshake(conexion_memoria)) {
+        log_error(debug_logger, "No se pudo realizar un handshake con memoria");
     }
+    enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
+
+    // Recibir el tamanio de pagina.
+    *tamanio_pagina = recibir_int(conexion_memoria);
+
+    return conexion_memoria;
+}
+
+void *servidor_interrupt(void *param)
+{
+    int *socket_escucha_interrupt = param;
+    int conexion_interrupt = aceptar_conexion_kernel(*socket_escucha_interrupt);
 
     while (true) {
         t_list *paquete = recibir_paquete(conexion_interrupt);
