@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    uint32_t tamanio_pagina;
-    int conexion_memoria = conectar_a_memoria(&tamanio_pagina);
+    uint32_t tam_pagina;
+    int conexion_memoria = conectar_a_memoria(&tam_pagina);
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
@@ -122,7 +122,7 @@ int aceptar_conexion_kernel(int socket_escucha)
     return socket_conexion;
 }
 
-int conectar_a_memoria(uint32_t *tamanio_pagina)
+int conectar_a_memoria(uint32_t *tam_pagina)
 {
     // Conectar con la memoria
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
@@ -133,7 +133,7 @@ int conectar_a_memoria(uint32_t *tamanio_pagina)
     enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
     // Recibir el tamanio de pagina.
-    *tamanio_pagina = recibir_int(conexion_memoria);
+    *tam_pagina = recibir_int(conexion_memoria);
 
     return conexion_memoria;
 }

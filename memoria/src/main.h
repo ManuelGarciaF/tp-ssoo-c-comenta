@@ -35,8 +35,13 @@ extern int retardo_respuesta;
 
 // Estructuras de memoria
 extern t_sdictionary *procesos; // Contiene t_procesos
+
 extern void *memoria_de_usuario;
+extern pthread_mutex_t mutex_memoria_de_usuario;
+
+extern int num_marcos;
 extern t_bitarray *bitmap_marcos;
+extern pthread_mutex_t mutex_bitmap_marcos;
 
 /*
 ** Definiciones de funciones

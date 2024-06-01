@@ -13,7 +13,11 @@ int retardo_respuesta;
 
 t_sdictionary *procesos;
 void *memoria_usuario;
+pthread_mutex_t mutex_memoria_de_usuario;
+
+int num_marcos;
 t_bitarray *bitmap_marcos;
+pthread_mutex_t mutex_bitmap_marcos;
 
 int main(void)
 {
@@ -58,7 +62,7 @@ void inicializar_globales(void)
 
     // El tamanio de memoria debe ser un multiplo del tamanio de pagina
     assert(tam_memoria % tam_pagina == 0);
-    int num_paginas = tam_memoria / tam_pagina;
+    num_marcos = tam_memoria / tam_pagina;
 
     // Diccionario con pseudocodigo de procesos
     procesos = sdictionary_create();
@@ -66,16 +70,16 @@ void inicializar_globales(void)
     // Inicializar memoria de usuario
     memoria_usuario = malloc(tam_memoria);
     assert(memoria_usuario != NULL);
+    pthread_mutex_init(&mutex_memoria_de_usuario, NULL);
 
     // Inicializar bitmap
-    // Si el numero no es multiplo de 8, necesitamos un byte extra.
-    int num_bytes = (num_paginas % 8 == 0) ? num_paginas / 8 : (num_paginas / 8) + 1;
-    printf("num_bytes: %d\n", num_bytes);
+    int num_bytes = ceil_div(num_marcos, 8);
     void *bitarray = malloc(num_bytes);
     assert(bitarray != NULL);
     // Settear la memoria a 0
     memset(bitarray, 0, num_bytes);
     bitmap_marcos = bitarray_create_with_mode(bitarray, num_bytes, LSB_FIRST);
+    pthread_mutex_init(&mutex_bitmap_marcos, NULL);
 }
 
 void *atender_conexion(void *param)

@@ -29,6 +29,11 @@ typedef enum {
 // Enviado a kernel por la memoria cuando termina su operacion
 #define MENSAJE_OP_TERMINADA 42
 
+typedef enum { // Enviados como respuesta a la operacion resize
+  R_RESIZE_OUT_OF_MEMORY,
+  R_RESIZE_SUCCESS
+} t_respuesta_resize;
+
 typedef enum { // Enviados a kernel por cpu al devolver un pcb
     FIN_QUANTUM,
     FIN_PROCESO,

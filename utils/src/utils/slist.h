@@ -21,6 +21,7 @@ void slist_destroy(t_slist *);
 int slist_add(t_slist *, void *element);
 void *slist_get(t_slist *, int index);
 int slist_size(t_slist *);
+void *slist_remove(t_slist *, int index);
 void *slist_remove_by_condition(t_slist *, bool (*condition)(void *));
 void slist_clean_and_destroy_elements(t_slist *, void(*element_destroyer)(void*));
 

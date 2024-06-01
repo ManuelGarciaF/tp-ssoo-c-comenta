@@ -17,6 +17,7 @@ void slist_destroy(t_slist *sl)
 {
     list_destroy(sl->list);
     pthread_mutex_destroy(sl->mutex);
+    free(sl->mutex);
     free(sl);
 }
 
@@ -45,6 +46,15 @@ int slist_size(t_slist *sl)
     pthread_mutex_unlock(sl->mutex);
 
     return size;
+}
+
+void *slist_remove(t_slist *sl, int index)
+{
+    pthread_mutex_lock(sl->mutex);
+    void *elem = list_remove(sl->list, index);
+    pthread_mutex_unlock(sl->mutex);
+
+    return elem;
 }
 
 void *slist_remove_by_condition(t_slist *sl, bool (*condition)(void *))
