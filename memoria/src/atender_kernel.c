@@ -61,9 +61,21 @@ static void recibir_liberar_proceso(int socket_conexion)
     char *pid_str = string_itoa(*pid);
 
     t_proceso *proceso = sdictionary_remove(procesos, pid_str);
-    proceso_destroy(proceso);
 
-    // TODO liberar marcos
+    // Marcar marcos como libres.
+    pthread_mutex_lock(&mutex_bitmap_marcos);
+    slist_lock(proceso->paginas);
+    t_list_iterator *it = list_iterator_create(proceso->paginas->list);
+    while (list_iterator_has_next(it)) {
+        int *num_marco = list_iterator_next(it);
+        bitarray_clean_bit(bitmap_marcos, *num_marco);
+    }
+    list_iterator_destroy(it);
+    slist_unlock(proceso->paginas);
+    pthread_mutex_unlock(&mutex_bitmap_marcos);
+
+    // Liberar el t_proceso
+    proceso_destroy(proceso);
 
     free(pid_str);
     list_destroy_and_destroy_elements(paquete, free);

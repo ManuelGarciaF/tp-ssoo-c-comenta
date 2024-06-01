@@ -30,6 +30,12 @@ void atender_cpu(int socket_conexion)
         case OPCODE_AJUSTAR_TAMANIO_PROCESO:
             responder_ajustar_tamanio_proceso(socket_conexion);
             break;
+        case OPCODE_LECTURA_ESPACIO_USUARIO:
+            responder_lectura_espacio_usuario(socket_conexion);
+            break;
+        case OPCODE_ESCRITURA_ESPACIO_USUARIO:
+            responder_escritura_espacio_usuario(socket_conexion);
+            break;
         default:
             log_error(debug_logger, "CPU envio una operacion invalida");
             abort();
@@ -106,14 +112,23 @@ static void responder_ajustar_tamanio_proceso(int socket_conexion)
     int dif_paginas = paginas_requeridas_tam_nuevo - paginas_en_uso;
 
     if (dif_paginas > 0) {
-        log_info(debug_logger, "PID: %u - Tamaño Actual: %d - Tamaño a Ampliar: %u", *pid_int, paginas_en_uso * tam_pagina, *tam_nuevo_bytes);
+        log_info(debug_logger,
+                 "PID: %u - Tamaño Actual: %d - Tamaño a Ampliar: %u",
+                 *pid_int,
+                 paginas_en_uso * tam_pagina,
+                 *tam_nuevo_bytes);
         ampliar_proceso(proceso, dif_paginas, socket_conexion);
     } else {
-        log_info(debug_logger, "PID: %u - Tamaño Actual: %d - Tamaño a Reducir: %u", *pid_int, paginas_en_uso * tam_pagina, *tam_nuevo_bytes);
+        log_info(debug_logger,
+                 "PID: %u - Tamaño Actual: %d - Tamaño a Reducir: %u",
+                 *pid_int,
+                 paginas_en_uso * tam_pagina,
+                 *tam_nuevo_bytes);
         reducir_proceso(proceso, -dif_paginas, socket_conexion);
     }
 
     list_destroy_and_destroy_elements(paquete, free);
+    free(pid);
 }
 
 static void ampliar_proceso(t_proceso *proceso, int paginas_a_agregar, int socket_conexion)

@@ -1,20 +1,20 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#include "estructuras.h"
 #include <assert.h>
-#include <commons/collections/list.h>
-#include <utils/sdictionary.h>
-#include <commons/log.h>
 #include <commons/bitarray.h>
+#include <commons/collections/list.h>
+#include <commons/log.h>
 #include <commons/string.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <utils/mensajes.h>
+#include <utils/sdictionary.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
-#include "estructuras.h"
 
 #define LIMITE_LINEA_INSTRUCCION (sizeof(char) * 255)
 
@@ -52,5 +52,8 @@ void *atender_conexion(void *param);
 void atender_io(int socket_conexion);
 void atender_kernel(int socket_conexion);
 void atender_cpu(int socket_conexion);
+
+void responder_lectura_espacio_usuario(int socket_conexion);
+void responder_escritura_espacio_usuario(int socket_conexion);
 
 #endif // MAIN_H_

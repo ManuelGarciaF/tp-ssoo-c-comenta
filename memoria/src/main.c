@@ -12,7 +12,7 @@ char *path_instrucciones;
 int retardo_respuesta;
 
 t_sdictionary *procesos;
-void *memoria_usuario;
+void *memoria_de_usuario;
 pthread_mutex_t mutex_memoria_de_usuario;
 
 int num_marcos;
@@ -68,8 +68,8 @@ void inicializar_globales(void)
     procesos = sdictionary_create();
 
     // Inicializar memoria de usuario
-    memoria_usuario = malloc(tam_memoria);
-    assert(memoria_usuario != NULL);
+    memoria_de_usuario = malloc(tam_memoria);
+    assert(memoria_de_usuario != NULL);
     pthread_mutex_init(&mutex_memoria_de_usuario, NULL);
 
     // Inicializar bitmap
