@@ -12,7 +12,7 @@ t_slist *interrupts;
 
 uint32_t tam_pagina;
 
-uint64_t num_instruccion = 0;
+uint64_t num_instruccion_actual = 0;
 
 // Variables de config
 char *ip_memoria;
@@ -34,6 +34,7 @@ static int conectar_a_memoria(void);
 int main(int argc, char *argv[])
 {
     inicializar_globales();
+    inicializar_mmu();
 
     // Iniciar servidores
     int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
@@ -83,7 +84,7 @@ int main(int argc, char *argv[])
         execute(instruccion, &incrementar_pc, conexion_dispatch);
 
         // Incrementamos el contador.
-        num_instruccion++;
+        num_instruccion_actual++;
 
         // El PCB pudo ser desalojado durante execute
         if (incrementar_pc && pcb != NULL) {

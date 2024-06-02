@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <commons/log.h>
 #include <commons/string.h>
+#include <commons/collections/queue.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,7 +72,7 @@ extern t_slist *interrupts; // Contiene t_interrupcion
 extern uint32_t tam_pagina;
 
 // Contador de instrucciones, usado para LRU
-extern uint64_t num_instruccion;
+extern uint64_t num_instruccion_actual;
 
 // Variables de config
 extern char *ip_memoria;
@@ -84,6 +85,8 @@ extern t_algoritmo_tlb algoritmo_tlb;
 /*
 ** Funciones compartidas
 */
+void inicializar_mmu(void);
+
 char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
 t_instruccion decode(char *instruccion);
 void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch);
