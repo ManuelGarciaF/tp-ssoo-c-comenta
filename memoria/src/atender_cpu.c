@@ -133,7 +133,7 @@ static void responder_ajustar_tamanio_proceso(int socket_conexion)
 
 static void ampliar_proceso(t_proceso *proceso, int paginas_a_agregar, int socket_conexion)
 {
-    // Ver si hay suficientes marcos libres disponibles y sus indices
+    // Ver si hay suficientes marcos libres disponibles y guardar sus indices
     t_list *marcos_a_asignar = list_create();
     pthread_mutex_lock(&mutex_bitmap_marcos);
     // Hasta haber pasado por todo el bitmap o haber obtenido suficientes marcos.

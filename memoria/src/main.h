@@ -44,11 +44,8 @@ extern t_bitarray *bitmap_marcos;
 extern pthread_mutex_t mutex_bitmap_marcos;
 
 /*
-** Definiciones de funciones
+** Funciones compartidas
 */
-
-void inicializar_globales(void);
-void *atender_conexion(void *param);
 void atender_io(int socket_conexion);
 void atender_kernel(int socket_conexion);
 void atender_cpu(int socket_conexion);

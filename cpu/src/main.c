@@ -10,11 +10,26 @@ t_config *config;
 t_pcb *pcb = NULL;
 t_slist *interrupts;
 
+uint32_t tam_pagina;
+
+uint64_t num_instruccion = 0;
+
 // Variables de config
 char *ip_memoria;
 char *puerto_memoria;
 char *puerto_escucha_dispatch;
 char *puerto_escucha_interrupt;
+int cantidad_entradas_tlb;
+t_algoritmo_tlb algoritmo_tlb;
+
+// Funciones locales
+static void inicializar_globales(void);
+static t_algoritmo_tlb parse_algoritmo_tlb(const char *str);
+
+static void *servidor_interrupt(void *param);
+static int aceptar_conexion_kernel(int socket_escucha);
+static int conectar_a_memoria(void);
+
 
 int main(int argc, char *argv[])
 {
@@ -31,14 +46,14 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    uint32_t tam_pagina;
-    int conexion_memoria = conectar_a_memoria(&tam_pagina);
+    int conexion_memoria = conectar_a_memoria();
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
 
-    bool incrementar_pc;
+
     // Ciclo de instruccion
+    bool incrementar_pc;
     while (true) {
         // Por defecto siempre se incrementa.
         incrementar_pc = true;
@@ -67,6 +82,9 @@ int main(int argc, char *argv[])
         // Excecute
         execute(instruccion, &incrementar_pc, conexion_dispatch);
 
+        // Incrementamos el contador.
+        num_instruccion++;
+
         // El PCB pudo ser desalojado durante execute
         if (incrementar_pc && pcb != NULL) {
             pcb->program_counter++;
@@ -75,24 +93,9 @@ int main(int argc, char *argv[])
         // Check interrupt
         check_interrupt(conexion_dispatch);
     }
-
-    // Esperar que los hilos terminen
-    pthread_join(hilo_interrupt, NULL);
-
-    // Cerrar sockets
-    close(conexion_memoria);
-    close(socket_escucha_dispatch);
-
-    // Liberar memoria
-    log_destroy(debug_logger);
-    log_destroy(cpu_logger);
-    config_destroy(config);
-
-    // Esperar
-    return 0;
 }
 
-void inicializar_globales(void)
+static void inicializar_globales(void)
 {
     debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_INFO);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
@@ -108,11 +111,24 @@ void inicializar_globales(void)
     puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
     puerto_escucha_dispatch = config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
+    cantidad_entradas_tlb = config_get_int_or_exit(config, "CANTIDAD_ENTRADAS_TLB");
+    algoritmo_tlb = parse_algoritmo_tlb(config_get_string_or_exit(config, "ALGORITMO_TLB"));
 
     interrupts = slist_create();
 }
 
-int aceptar_conexion_kernel(int socket_escucha)
+static t_algoritmo_tlb parse_algoritmo_tlb(const char *str)
+{
+    if (!strcmp(str, "FIFO")) {
+        return FIFO;
+    } else if (!strcmp(str, "LRU")) {
+        return LRU;
+    }
+    log_error(debug_logger, "El algoritmo de TLB en el config no es valido");
+    exit(1);
+}
+
+static int aceptar_conexion_kernel(int socket_escucha)
 {
     int socket_conexion = esperar_cliente(socket_escucha);
     if (!recibir_handshake(socket_conexion)) {
@@ -122,7 +138,7 @@ int aceptar_conexion_kernel(int socket_escucha)
     return socket_conexion;
 }
 
-int conectar_a_memoria(uint32_t *tam_pagina)
+static int conectar_a_memoria(void)
 {
     // Conectar con la memoria
     int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
@@ -133,12 +149,12 @@ int conectar_a_memoria(uint32_t *tam_pagina)
     enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
     // Recibir el tamanio de pagina.
-    *tam_pagina = recibir_int(conexion_memoria);
+    tam_pagina = recibir_int(conexion_memoria);
 
     return conexion_memoria;
 }
 
-void *servidor_interrupt(void *param)
+static void *servidor_interrupt(void *param)
 {
     int *socket_escucha_interrupt = param;
     int conexion_interrupt = aceptar_conexion_kernel(*socket_escucha_interrupt);

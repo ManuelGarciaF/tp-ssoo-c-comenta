@@ -19,6 +19,10 @@ int num_marcos;
 t_bitarray *bitmap_marcos;
 pthread_mutex_t mutex_bitmap_marcos;
 
+// Funciones locales
+static void inicializar_globales(void);
+static void *atender_conexion(void *param);
+
 int main(void)
 {
     inicializar_globales();
@@ -41,7 +45,7 @@ int main(void)
     }
 }
 
-void inicializar_globales(void)
+static void inicializar_globales(void)
 {
     // Logs
     debug_logger = log_create("memoria_debug.log", "debug", true, LOG_LEVEL_INFO);
@@ -82,7 +86,7 @@ void inicializar_globales(void)
     pthread_mutex_init(&mutex_bitmap_marcos, NULL);
 }
 
-void *atender_conexion(void *param)
+static void *atender_conexion(void *param)
 {
     int *socket_conexion = param;
     recibir_handshake(*socket_conexion);

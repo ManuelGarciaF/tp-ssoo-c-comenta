@@ -48,6 +48,11 @@ sem_t sem_entrada_a_exec;
 sem_t sem_manejo_desalojo_cpu;
 bool planificacion_pausada; // Para registrar el estado de la planificacion.
 
+// Funciones locales
+static void inicializar_globales(void);
+static void *esperar_conexiones_io(void *);
+static t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str);
+
 int main(int argc, char *argv[])
 {
     inicializar_globales();
@@ -105,7 +110,7 @@ int main(int argc, char *argv[])
     pthread_exit(NULL);
 }
 
-void inicializar_globales(void)
+static void inicializar_globales(void)
 {
     debug_logger = log_create("kernel_debug.log", "debug", true, LOG_LEVEL_INFO);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
@@ -178,7 +183,7 @@ void inicializar_globales(void)
     pthread_mutex_init(&mutex_conexion_memoria, NULL);
 }
 
-void *esperar_conexiones_io(void *param)
+static void *esperar_conexiones_io(void *param)
 {
     // Esperar constantemente conexiones de io
     int socket_escucha = iniciar_servidor(puerto_escucha);
@@ -198,7 +203,7 @@ void *esperar_conexiones_io(void *param)
     }
 }
 
-t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str)
+static t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str)
 {
     if (!strcmp(str, "FIFO")) {
         return FIFO;

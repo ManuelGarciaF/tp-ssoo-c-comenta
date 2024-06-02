@@ -43,7 +43,7 @@ extern int quantum;
 extern int pid_en_ejecucion;
 extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogramacion, los proximos procesos que
                                              // se eliminen no liberan espacio en el sem_multiprogramacion.
-                                             //
+
 extern int conexion_memoria;
 extern pthread_mutex_t mutex_conexion_memoria; // Necesitamos asegurar que solo un hilo puede comunicarse con la
                                                // memoria a la vez
@@ -78,20 +78,12 @@ extern sem_t sem_interrupcion_rr;
 extern bool planificacion_pausada; // Para registrar el estado de la planificacion.
 
 /*
-** Definiciones de funciones
+** Funciones compartidas
 */
-
-// Inicializa y libera las variables globales.
-void inicializar_globales(void);
-
-void *esperar_conexiones_io(void *);
-
 void correr_consola(void);
 
-// Maneja las conexiones de los dispositivos de I/O
+// Maneja la conexion de cada dispositivo de I/O
 void *atender_io(void *param);
-
-t_algoritmo_planificacion parse_algoritmo_planifiacion(const char *str);
 
 void *planificador_largo_plazo(void *param);
 void *planificador_corto_plazo(void *params);
