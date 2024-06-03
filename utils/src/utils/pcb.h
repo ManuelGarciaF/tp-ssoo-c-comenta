@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <utils/sockets.h>
 #include <commons/log.h>
+#include <string.h>
+#include <assert.h>
 
 // Debe estar definido
 extern t_log *debug_logger;
