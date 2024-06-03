@@ -46,7 +46,7 @@ typedef struct {
     t_opcode opcode;
     union {
         t_registro registro;
-        int valor_numerico;
+        int num;
         char str[255];
     } parametros[5]; // Las instrucciones pueden tener hasta 5 parametros
 } t_instruccion;
@@ -74,6 +74,8 @@ extern uint32_t tam_pagina;
 // Contador de instrucciones, usado para LRU
 extern uint64_t num_instruccion_actual;
 
+extern int conexion_memoria;
+
 // Variables de config
 extern char *ip_memoria;
 extern char *puerto_memoria;
@@ -87,14 +89,28 @@ extern t_algoritmo_tlb algoritmo_tlb;
 */
 void inicializar_mmu(void);
 
-char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria);
+// Ciclo de instruccion
+char *fetch(uint32_t pid, uint32_t program_counter);
 t_instruccion decode(char *instruccion);
 void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch);
+void check_interrupt(int conexion_dispatch);
 
 void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch);
 
-void check_interrupt(int conexion_dispatch);
+/*
+** MMU
+*/
 
-size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica, int conexion_memoria);
+// Devuelve la direccion fisica, consultando la tabla de páginas en memoria si es necesario
+size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica);
+// Devuelve si es posible guardar tamanio pagina a partir de dir_logica.
+bool entra_en_pagina(uint32_t pid, size_t dir_logica, size_t tamanio);
+// Devuelve el tamanio que queda en la pagina a partir de la direccion lógica
+size_t tam_restante_pag(uint32_t pid, size_t dir_logica);
+// Lee tamanio bytes (falla si se excede de la pagina) y devuelve el buffer.
+void *leer_esp_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
+// Escribe tamanio bytes del buffer datos (falla si se excede de la pagina).
+void escribir_esp_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
+
 
 #endif // MAIN_H_

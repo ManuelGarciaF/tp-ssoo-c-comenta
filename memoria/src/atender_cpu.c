@@ -137,7 +137,8 @@ static void ampliar_proceso(t_proceso *proceso, int paginas_a_agregar, int socke
     t_list *marcos_a_asignar = list_create();
     pthread_mutex_lock(&mutex_bitmap_marcos);
     // Hasta haber pasado por todo el bitmap o haber obtenido suficientes marcos.
-    for (int i = 0; i < num_marcos && list_size(marcos_a_asignar) >= paginas_a_agregar; i++) {
+    for (int i = 0; i < num_marcos && list_size(marcos_a_asignar) < paginas_a_agregar; i++) {
+
         // Si el marco esta libre
         if (bitarray_test_bit(bitmap_marcos, i) == false) {
             log_info(debug_logger, "El marco %u estaba libre", i);
@@ -190,4 +191,6 @@ static void reducir_proceso(t_proceso *proceso, int paginas_a_liberar, int socke
     }
 
     pthread_mutex_unlock(&mutex_bitmap_marcos);
+
+    enviar_int(R_RESIZE_SUCCESS, socket_conexion);
 }

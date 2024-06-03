@@ -14,6 +14,8 @@ uint32_t tam_pagina;
 
 uint64_t num_instruccion_actual = 0;
 
+int conexion_memoria;
+
 // Variables de config
 char *ip_memoria;
 char *puerto_memoria;
@@ -28,7 +30,7 @@ static t_algoritmo_tlb parse_algoritmo_tlb(const char *str);
 
 static void *servidor_interrupt(void *param);
 static int aceptar_conexion_kernel(int socket_escucha);
-static int conectar_a_memoria(void);
+static void conectar_a_memoria(void);
 
 
 int main(int argc, char *argv[])
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    int conexion_memoria = conectar_a_memoria();
+    conectar_a_memoria();
 
     // Espera a que se conecte con el kernel y devuelve la conexion
     int conexion_dispatch = aceptar_conexion_kernel(socket_escucha_dispatch);
@@ -69,7 +71,7 @@ int main(int argc, char *argv[])
         /* pcb_debug_print(pcb); */
 
         // Fetch
-        char *str_instruccion = fetch(pcb->pid, pcb->program_counter, conexion_memoria);
+        char *str_instruccion = fetch(pcb->pid, pcb->program_counter);
         log_info(cpu_logger, "PID: %d - FETCH - Program Counter: %d", pcb->pid, pcb->program_counter);
 
         // Decode
@@ -139,10 +141,10 @@ static int aceptar_conexion_kernel(int socket_escucha)
     return socket_conexion;
 }
 
-static int conectar_a_memoria(void)
+static void conectar_a_memoria(void)
 {
     // Conectar con la memoria
-    int conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
 
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con memoria");
@@ -151,8 +153,6 @@ static int conectar_a_memoria(void)
 
     // Recibir el tamanio de pagina.
     tam_pagina = recibir_int(conexion_memoria);
-
-    return conexion_memoria;
 }
 
 static void *servidor_interrupt(void *param)
@@ -182,7 +182,7 @@ static void *servidor_interrupt(void *param)
     return NULL;
 }
 
-char *fetch(uint32_t pid, uint32_t program_counter, int conexion_memoria)
+char *fetch(uint32_t pid, uint32_t program_counter)
 {
     enviar_int(OPCODE_SOLICITAR_INSTRUCCION, conexion_memoria);
     // Enviar PID y PC para solicitar una instruccion.

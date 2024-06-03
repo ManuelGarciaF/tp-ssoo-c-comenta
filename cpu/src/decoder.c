@@ -64,7 +64,7 @@ t_instruccion parsear_set(char *argumentos)
 
     instruccion.opcode = SET;
     instruccion.parametros[0].registro = registro;
-    instruccion.parametros[1].valor_numerico = valor;
+    instruccion.parametros[1].num = valor;
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -144,7 +144,7 @@ t_instruccion parsear_jnz(char *argumentos)
 
     instruccion.opcode = JNZ;
     instruccion.parametros[0].registro = registro;
-    instruccion.parametros[1].valor_numerico = numero_instruccion;
+    instruccion.parametros[1].num = numero_instruccion;
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -158,7 +158,7 @@ t_instruccion parsear_resize(char *argumentos)
     int tamanio = atoi(argumentos_separados[0]);
 
     instruccion.opcode = RESIZE;
-    instruccion.parametros[0].valor_numerico = tamanio;
+    instruccion.parametros[0].num = tamanio;
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -172,7 +172,7 @@ t_instruccion parsear_copy_string(char *argumentos)
     int tamanio = atoi(argumentos_separados[0]);
 
     instruccion.opcode = COPY_STRING;
-    instruccion.parametros[0].valor_numerico = tamanio;
+    instruccion.parametros[0].num = tamanio;
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -211,7 +211,7 @@ t_instruccion parsear_io_gen_sleep(char *argumentos)
 
     instruccion.opcode = IO_GEN_SLEEP;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
-    instruccion.parametros[1].valor_numerico = unidades_de_trabajo;
+    instruccion.parametros[1].num = unidades_de_trabajo;
 
     string_array_destroy(argumentos_separados);
     return instruccion;

@@ -20,6 +20,7 @@ static t_motivo_desalojo recibir_pcb(t_pcb **pcb_actualizado);
 // Motivos de devolucion de pcb
 static void manejar_fin_quantum(t_pcb *pcb_recibido);
 static void manejar_fin_proceso(t_pcb *pcb_recibido);
+static void manejar_out_of_memory(t_pcb *pcb_recibido);
 static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch);
 static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch);
 static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch);
@@ -125,6 +126,9 @@ void *planificador_corto_plazo(void *vparams)
         case FIN_PROCESO:
             manejar_fin_proceso(pcb_recibido);
             break;
+        case OUT_OF_MEMORY:
+            manejar_out_of_memory(pcb_recibido);
+            break;
         case WAIT_RECURSO:
             manejar_wait_recurso(pcb_recibido, conexion_cpu_dispatch);
             break;
@@ -219,6 +223,14 @@ static void manejar_fin_proceso(t_pcb *pcb_recibido)
 {
     log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
     log_info(kernel_logger, "Finaliza el proceso %d - Motivo: SUCCESS", pcb_recibido->pid);
+
+    eliminar_proceso(pcb_recibido);
+}
+
+static void manejar_out_of_memory(t_pcb *pcb_recibido)
+{
+    log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pcb_recibido->pid);
+    log_info(kernel_logger, "Finaliza el proceso %d - Motivo: OUT_OF_MEMORY", pcb_recibido->pid);
 
     eliminar_proceso(pcb_recibido);
 }

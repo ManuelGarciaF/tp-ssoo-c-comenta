@@ -248,13 +248,15 @@ static bool buscar_y_eliminar_en_new(uint32_t pid)
         if (pn->pid == pid) {
             encontrado = true;
             log_info(debug_logger, "Se encontro el proceso en la cola de NEW");
+
+            // Agregar el pid a exit
+            agregar_a_exit(pn->pid);
+
             // Eliminar y liberar pn
             list_iterator_remove(it);
             free(pn->path);
             free(pn);
 
-            // Agregar el pid a exit
-            agregar_a_exit(pn->pid);
         }
     }
 

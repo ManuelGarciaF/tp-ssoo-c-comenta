@@ -9,11 +9,11 @@ typedef struct {
 } t_tlb_entry;
 
 // Variables locales
-t_queue *tlb_entries; // Contiene t_tlb_entry
+static t_queue *tlb_entries; // Contiene t_tlb_entry
 
 // Funciones locales
 static bool tlb_get(uint32_t pid, uint32_t num_pagina, uint32_t *num_marco);
-static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina, int conexion_memoria);
+static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina);
 static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco);
 static void fifo_remover_victima(t_queue *entries);
 static void lru_remover_victima(t_queue *entries);
@@ -23,7 +23,7 @@ void inicializar_mmu(void)
     tlb_entries = queue_create();
 }
 
-size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica, int conexion_memoria)
+size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica)
 {
     uint32_t num_pagina = dir_logica / tam_pagina; // Division entera, se redondea hacia abajo
     uint32_t offset = dir_logica % tam_pagina;
@@ -35,7 +35,7 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica, int conexion_me
         log_info(cpu_logger, "PID: %u - TLB HIT - Pagina: %u", pid, num_pagina);
     } else {
         log_info(cpu_logger, "PID: %u - TLB MISS - Pagina: %u", pid, num_pagina);
-        num_marco = buscar_en_tabla_de_paginas(pid, num_pagina, conexion_memoria);
+        num_marco = buscar_en_tabla_de_paginas(pid, num_pagina);
         log_info(cpu_logger, "PID: %u OBTENER MARCO Página: %u Marco: %u", pid, num_pagina, num_marco);
         tlb_save(pid, num_pagina, num_marco);
     }
@@ -43,6 +43,34 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica, int conexion_me
     // Calcular la direccion fisica
     return (num_marco * tam_pagina) + offset;
 }
+
+bool entra_en_pagina(uint32_t pid, size_t dir_logica, size_t tamanio)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return offset + tamanio <= tam_pagina; // TODO checkear este calculo.
+}
+
+size_t tam_restante_pag(uint32_t pid, size_t dir_logica)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return tam_pagina - offset; // TODO checkear este calculo.
+}
+
+void *leer_esp_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
+{
+    // TODO
+    assert(false && "Not implemented");
+}
+
+void escribir_esp_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
+{
+    // TODO
+    assert(false && "Not implemented");
+}
+
+/*
+** Funciones privadas
+*/
 
 // Retorna true si fue encontrado, si lo encuentra guarda el numero de marco en num_marco.
 static bool tlb_get(uint32_t pid, uint32_t num_pagina, uint32_t *num_marco)
@@ -69,7 +97,7 @@ static bool tlb_get(uint32_t pid, uint32_t num_pagina, uint32_t *num_marco)
 }
 
 // Solicita a memoria el numero de marco correspondiente
-static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina, int conexion_memoria)
+static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina)
 {
     // Buscar la pagina en memoria.
     enviar_int(OPCODE_ACCESO_TABLA_PAGINAS, conexion_memoria);
