@@ -57,6 +57,7 @@ extern t_sdictionary *colas_blocked_recursos; // Contiene squeues de t_pcb
 extern t_sdictionary *interfaces_conectadas;  // Contiene t_interfaz, cada interfaz tiene una squeue de bloqueados
 extern t_slist *nombres_interfaces;           // Contiene strings de los nombres,
                                               // usado para poder iterar sobre los diccionarios.
+extern t_squeue *cola_exit;
 
 // Recursos
 extern t_sdictionary *instancias_recursos; // Contiene ints.
@@ -106,5 +107,7 @@ bool existe_interfaz(char *nombre);
 bool interfaz_soporta_operacion(char *nombre, t_operacion_io op);
 
 void log_cola_ready(void);
+
+void agregar_a_exit(uint32_t pid_val);
 
 #endif // MAIN_H_

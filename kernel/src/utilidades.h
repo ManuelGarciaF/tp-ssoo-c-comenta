@@ -14,4 +14,7 @@ char *obtener_lista_pids_pcb(t_squeue *cola);
 // Devuelve un string con los pids separados por comas a partir de una squeue de t_proceso_nuevo
 char *obtener_lista_pids_proceso_nuevo(t_squeue *cola);
 
+// Devuelve un string con los pids separados por comas a partir de una squeue de pids (uint32_t)
+char *obtener_lista_pids_exit(t_squeue *cola);
+
 #endif // UTILIDADES_KERNEL_H_

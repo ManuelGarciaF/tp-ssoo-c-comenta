@@ -231,6 +231,10 @@ static void imprimir_estado_procesos(void)
     imprimir_bloqueados_por_recursos();
     printf(" └Bloqueados por I/O:\n");
     imprimir_bloqueados_por_io();
+
+    char *pids_exit = obtener_lista_pids_exit(cola_exit);
+    printf("EXIT: [%s]\n", pids_exit);
+    free(pids_exit);
 }
 
 static bool buscar_y_eliminar_en_new(uint32_t pid)
@@ -248,6 +252,9 @@ static bool buscar_y_eliminar_en_new(uint32_t pid)
             list_iterator_remove(it);
             free(pn->path);
             free(pn);
+
+            // Agregar el pid a exit
+            agregar_a_exit(pn->pid);
         }
     }
 

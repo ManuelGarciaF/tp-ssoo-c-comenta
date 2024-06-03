@@ -3,6 +3,7 @@
 static void *pcb_to_pidstr(void *pcb);
 static void *proceso_nuevo_to_pidstr(void *proceso_nuevo);
 static char *str_list_to_csv(t_list *strs);
+static void *itoa_voidp(void *pid_int);
 
 char *obtener_lista_pids_pcb(t_squeue *cola)
 {
@@ -32,9 +33,22 @@ char *obtener_lista_pids_proceso_nuevo(t_squeue *cola)
     return str;
 }
 
+char *obtener_lista_pids_exit(t_squeue *cola)
+{
+    // Bloquear el mutex mientras se leen los elementos.
+    squeue_lock(cola);
+    t_list *pid_strs = list_map(cola->queue->elements, itoa_voidp);
+    squeue_unlock(cola);
+
+    char *str = str_list_to_csv(pid_strs);
+
+    list_destroy_and_destroy_elements(pid_strs, free);
+
+    return str;
+}
+
 static void *pcb_to_pidstr(void *pcb)
 {
-
     return (void *)string_itoa(((t_pcb *)pcb)->pid);
 }
 
@@ -42,6 +56,11 @@ static void *proceso_nuevo_to_pidstr(void *proceso_nuevo)
 {
     t_proceso_nuevo *pn = ((t_proceso_nuevo *)proceso_nuevo);
     return (void *)string_itoa(pn->pid);
+}
+
+static void *itoa_voidp(void *pid_int)
+{
+    return string_itoa(*(uint32_t *)pid_int);
 }
 
 static char *str_list_to_csv(t_list *strs)
@@ -63,4 +82,3 @@ static char *str_list_to_csv(t_list *strs)
 
     return str;
 }
-

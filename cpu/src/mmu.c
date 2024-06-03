@@ -31,8 +31,12 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica, int conexion_me
     uint32_t num_marco;
 
     // Si no esta en la tlb, buscarlo en memoria y guardarlo en la tlb.
-    if (tlb_get(pid, num_pagina, &num_marco) == false) {
+    if (tlb_get(pid, num_pagina, &num_marco) == true) {
+        log_info(cpu_logger, "PID: %u - TLB HIT - Pagina: %u", pid, num_pagina);
+    } else {
+        log_info(cpu_logger, "PID: %u - TLB MISS - Pagina: %u", pid, num_pagina);
         num_marco = buscar_en_tabla_de_paginas(pid, num_pagina, conexion_memoria);
+        log_info(cpu_logger, "PID: %u OBTENER MARCO Página: %u Marco: %u", pid, num_pagina, num_marco);
         tlb_save(pid, num_pagina, num_marco);
     }
 
@@ -55,6 +59,7 @@ static bool tlb_get(uint32_t pid, uint32_t num_pagina, uint32_t *num_marco)
 
             // Actualizar el ultimo acceso
             entry->ultimo_acceso = num_instruccion_actual;
+
             break;
         }
     }
@@ -99,11 +104,9 @@ static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
         case FIFO:
             fifo_remover_victima(tlb_entries);
             break;
-
         case LRU:
             lru_remover_victima(tlb_entries);
             break;
-
         default:
             abort(); // Unreachable
         }
@@ -115,7 +118,8 @@ static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
     queue_push(tlb_entries, entry);
 }
 
-static void fifo_remover_victima(t_queue *entries) {
+static void fifo_remover_victima(t_queue *entries)
+{
     // Removemos la entrada mas antigua.
     t_tlb_entry *victima = queue_pop(entries);
     free(victima);
