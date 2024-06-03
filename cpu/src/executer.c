@@ -1,4 +1,7 @@
-#include "executer.h"
+#include "main.h"
+
+static uint32_t get_registro(t_registro registro);
+static void set_registro(t_registro registro, int valor, bool *incrementar_pc);
 
 void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int conexion_dispatch)
 {
@@ -8,6 +11,16 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
         set_registro(instruccion_a_ejecutar.parametros[0].registro,
                      instruccion_a_ejecutar.parametros[1].valor_numerico,
                      incrementar_pc);
+        break;
+    }
+    case MOV_IN: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case MOV_OUT: {
+        // TODO
+        assert(false && "Not implemented");
         break;
     }
     case SUM: {
@@ -31,6 +44,26 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
         }
         break;
     }
+    case RESIZE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case COPY_STRING: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case WAIT: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case SIGNAL: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
     case IO_GEN_SLEEP: {
         char *nombre_interfaz = instruccion_a_ejecutar.parametros[0].str;
         uint32_t unidades_trabajo = instruccion_a_ejecutar.parametros[1].valor_numerico;
@@ -50,19 +83,52 @@ void execute(t_instruccion instruccion_a_ejecutar, bool *incrementar_pc, int con
 
         break;
     }
+    case IO_STDIN_READ: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_STDOUT_WRITE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_FS_CREATE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_FS_DELETE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_FS_TRUNCATE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_FS_WRITE: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
+    case IO_FS_READ: {
+        // TODO
+        assert(false && "Not implemented");
+        break;
+    }
     case EXIT: {
         devolver_pcb(FIN_PROCESO, conexion_dispatch);
         break;
     }
     default: {
-        log_error(debug_logger, "Funcion no implementada");
-        exit(1);
-        break;
+        abort(); // Unreachable
     }
     }
 }
 
-uint32_t get_registro(t_registro registro)
+static uint32_t get_registro(t_registro registro)
 {
     switch (registro) {
     case PC:
@@ -92,7 +158,7 @@ uint32_t get_registro(t_registro registro)
     }
 }
 
-void set_registro(t_registro registro, int valor, bool *incrementar_pc)
+static void set_registro(t_registro registro, int valor, bool *incrementar_pc)
 {
     switch (registro) {
     case PC:

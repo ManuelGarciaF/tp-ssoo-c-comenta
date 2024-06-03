@@ -48,7 +48,7 @@ typedef struct {
         t_registro registro;
         int valor_numerico;
         char str[255];
-    } parametros[5];
+    } parametros[5]; // Las instrucciones pueden tener hasta 5 parametros
 } t_instruccion;
 
 typedef struct {
