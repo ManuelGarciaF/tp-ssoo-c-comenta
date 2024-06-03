@@ -23,3 +23,18 @@ int ceil_div(int dividend, int divisor)
     assert(divisor != 0);
     return (dividend % divisor) == 0 ? dividend / divisor : (dividend / divisor) + 1;
 }
+
+char *print_hex(void *ptr, size_t size)
+{
+    char *str = string_new();
+
+    string_append(&str, "0x");
+    unsigned char *byte_ptr = (unsigned char *)ptr;
+    for (size_t i = 0; i < size; i++) {
+        char *bytes = string_from_format("%02x", byte_ptr[i]);
+        string_append(&str, bytes);
+        free(bytes);
+    }
+
+    return str;
+}

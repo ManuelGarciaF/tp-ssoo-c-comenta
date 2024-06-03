@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <stdlib.h>
 
 // Debe estar definido
@@ -15,5 +16,8 @@ int config_get_int_or_exit(t_config *config, char *key);
 
 // Redondea hacia arriba una division de ints.
 int ceil_div(int dividend, int divisor);
+
+// Devuelve un string con size bytes de ptr en hexa.
+char *print_hex(void *ptr, size_t size);
 
 #endif // UTILS_H_

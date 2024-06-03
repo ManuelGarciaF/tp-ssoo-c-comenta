@@ -74,6 +74,8 @@ static void inicializar_globales(void)
     // Inicializar memoria de usuario
     memoria_de_usuario = malloc(tam_memoria);
     assert(memoria_de_usuario != NULL);
+    // Settear la memoria a 0
+    memset(memoria_de_usuario, 0, tam_memoria);
     pthread_mutex_init(&mutex_memoria_de_usuario, NULL);
 
     // Inicializar bitmap

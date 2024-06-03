@@ -1,7 +1,7 @@
 #include "main.h"
 
 static uint32_t get_registro(t_registro registro);
-static void set_registro(t_registro registro, int valor, bool *incrementar_pc);
+static void set_registro(t_registro registro, uint32_t valor, bool *incrementar_pc);
 static size_t tam_registro(t_registro registro);
 
 // Funciones para ops
@@ -120,8 +120,13 @@ static uint32_t get_registro(t_registro registro)
     }
 }
 
-static void set_registro(t_registro registro, int valor, bool *incrementar_pc)
+static void set_registro(t_registro registro, uint32_t valor, bool *incrementar_pc)
 {
+    if (tam_registro(registro) < sizeof(uint32_t)) {
+        // Ver que no nos pasamos del tamanio maximo
+        assert(valor <= UINT8_MAX);
+    }
+
     switch (registro) {
     case PC:
         pcb->program_counter = valor;
@@ -198,27 +203,53 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
     t_registro reg_datos = instruccion.parametros[0].registro;
     size_t dir_logica = get_registro(instruccion.parametros[1].registro);
 
-    size_t tam_datos = tam_registro(reg_datos);
+    void *buffer_lectura = malloc(tam_registro(reg_datos));
+    assert(buffer_lectura != NULL);
+    void *buffer_next = buffer_lectura;
 
-    // En caso que las paginas sean mas chicas que un uint32, hay que checkear muchas veces
-    while (!entra_en_pagina(pcb->pid, dir_logica, tam_datos)) {
-        size_t tam_a_leer = tam_restante_pag(pcb->pid, dir_logica);
+    size_t tam_restante = tam_registro(reg_datos);
+    do {
+        size_t tam_a_leer = (tam_restante > tam_restante_pag(dir_logica)) ? tam_restante_pag(dir_logica) : tam_restante;
         // Leer el tamanio que entra
-        // TODO
+        void *bytes_leidos = leer_espacio_usuario(pcb->pid, dir_logica, tam_a_leer);
+
+        // Guardarlo en el buffer
+        memcpy(buffer_next, bytes_leidos, tam_a_leer);
+        // Mover el puntero al final de lo leido
+        buffer_next = (char *)buffer_next + tam_a_leer;
 
         // Avanzar al espacio a leer restante
         dir_logica += tam_a_leer;
-        tam_datos -= tam_a_leer;
-    }
+        tam_restante -= tam_a_leer;
+    } while (tam_restante > 0);
 
-    // TODO
-    assert(false && "Not implemented");
+    // Guardar el valor leido en el buffer en el registro
+    // Tener en cuenta que C lo parsea LSB
+    set_registro(reg_datos, *(uint32_t *)buffer_lectura, incrementar_pc);
 }
 
 static void exec_mov_out(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    t_registro reg_datos = instruccion.parametros[0].registro;
+    size_t dir_logica = get_registro(instruccion.parametros[1].registro);
+
+    uint32_t valor_datos = get_registro(reg_datos);
+    void *puntero_datos = &valor_datos;
+    size_t tam_restante = tam_registro(reg_datos);
+
+    do {
+        size_t tam_a_escribir =
+            (tam_restante > tam_restante_pag(dir_logica)) ? tam_restante_pag(dir_logica) : tam_restante;
+
+        escribir_espacio_usuario(pcb->pid, dir_logica, puntero_datos, tam_a_escribir);
+
+        // Avanzar el puntero_datos
+        puntero_datos = (char *)puntero_datos + tam_a_escribir;
+
+        // Avanzar al espacio a leer restante
+        dir_logica += tam_a_escribir;
+        tam_restante -= tam_a_escribir;
+    } while (tam_restante > 0);
 }
 
 static void exec_sum(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
@@ -257,6 +288,7 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
     agregar_a_paquete(p, &(pcb->pid), sizeof(uint32_t));
     agregar_a_paquete(p, &tamanio, sizeof(uint32_t));
     enviar_paquete(p, conexion_memoria);
+    eliminar_paquete(p);
 
     // Esperar la respuesta de memoria
     t_respuesta_resize respuesta = recibir_int(conexion_memoria);

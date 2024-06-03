@@ -2,18 +2,19 @@
 #define MAIN_H_
 
 #include <assert.h>
-#include <commons/log.h>
-#include <commons/string.h>
 #include <commons/collections/queue.h>
+#include <commons/log.h>
+#include <commons/memory.h>
+#include <commons/string.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <utils/mensajes.h>
 #include <utils/pcb.h>
 #include <utils/slist.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
-#include <string.h>
 
 /*
 ** Estructuras
@@ -104,13 +105,12 @@ void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch);
 // Devuelve la direccion fisica, consultando la tabla de páginas en memoria si es necesario
 size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica);
 // Devuelve si es posible guardar tamanio pagina a partir de dir_logica.
-bool entra_en_pagina(uint32_t pid, size_t dir_logica, size_t tamanio);
+bool entra_en_pagina(size_t dir_logica, size_t tamanio);
 // Devuelve el tamanio que queda en la pagina a partir de la direccion lógica
-size_t tam_restante_pag(uint32_t pid, size_t dir_logica);
+size_t tam_restante_pag(size_t dir_logica);
 // Lee tamanio bytes (falla si se excede de la pagina) y devuelve el buffer.
-void *leer_esp_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
+void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
 // Escribe tamanio bytes del buffer datos (falla si se excede de la pagina).
-void escribir_esp_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
-
+void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
 
 #endif // MAIN_H_

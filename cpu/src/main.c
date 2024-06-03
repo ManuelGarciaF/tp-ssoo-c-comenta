@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
             log_info(debug_logger, "Recibido PCB con PID: %u", pcb->pid);
         }
 
-        /* pcb_debug_print(pcb); */
+        pcb_debug_print(pcb);
 
         // Fetch
         char *str_instruccion = fetch(pcb->pid, pcb->program_counter);

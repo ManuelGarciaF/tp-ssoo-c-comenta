@@ -141,7 +141,7 @@ static void ampliar_proceso(t_proceso *proceso, int paginas_a_agregar, int socke
 
         // Si el marco esta libre
         if (bitarray_test_bit(bitmap_marcos, i) == false) {
-            log_info(debug_logger, "El marco %u estaba libre", i);
+            /* log_info(debug_logger, "El marco %u estaba libre", i); */
             // Guardamos el numero de marco
             int *marco_libre = malloc(sizeof(int));
             *marco_libre = i;

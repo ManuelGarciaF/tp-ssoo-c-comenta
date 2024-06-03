@@ -44,28 +44,73 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica)
     return (num_marco * tam_pagina) + offset;
 }
 
-bool entra_en_pagina(uint32_t pid, size_t dir_logica, size_t tamanio)
+bool entra_en_pagina(size_t dir_logica, size_t tamanio)
 {
     uint32_t offset = dir_logica % tam_pagina;
     return offset + tamanio <= tam_pagina; // TODO checkear este calculo.
 }
 
-size_t tam_restante_pag(uint32_t pid, size_t dir_logica)
+size_t tam_restante_pag(size_t dir_logica)
 {
     uint32_t offset = dir_logica % tam_pagina;
     return tam_pagina - offset; // TODO checkear este calculo.
 }
 
-void *leer_esp_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
+void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
 {
-    // TODO
-    assert(false && "Not implemented");
+    // Nunca deberiamos leer afuera de 1 pagina
+    assert(entra_en_pagina(dir_logica, tamanio));
+
+    size_t dir_fisica = obtener_direccion_fisica(pid, dir_logica);
+
+    // Enviar opcode
+    enviar_int(OPCODE_LECTURA_ESPACIO_USUARIO, conexion_memoria);
+
+    // Enviar pid, inicio y tamanio
+    t_paquete *p = crear_paquete();
+    agregar_a_paquete(p, &pid, sizeof(uint32_t));
+    agregar_a_paquete(p, &dir_fisica, sizeof(size_t));
+    agregar_a_paquete(p, &tamanio, sizeof(size_t));
+    enviar_paquete(p, conexion_memoria);
+
+    t_list *p_respuesta = recibir_paquete(conexion_memoria);
+    void *respuesta = list_get(p_respuesta, 0);
+    list_destroy(p_respuesta);
+
+    char *hexstring = print_hex(respuesta, tamanio);
+    log_info(debug_logger, "PID: %u Acción: LEER -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
+    free(hexstring);
+
+    return respuesta;
 }
 
-void escribir_esp_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
+void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
 {
-    // TODO
-    assert(false && "Not implemented");
+    // Nunca deberiamos escribir afuera de 1 pagina
+    assert(entra_en_pagina(dir_logica, tamanio));
+
+    size_t dir_fisica = obtener_direccion_fisica(pid, dir_logica);
+
+    // Enviar opcode
+    enviar_int(OPCODE_ESCRITURA_ESPACIO_USUARIO, conexion_memoria);
+
+    // Enviar pid, inicio y tamanio
+    t_paquete *p = crear_paquete();
+    agregar_a_paquete(p, &pid, sizeof(uint32_t));
+    agregar_a_paquete(p, &dir_fisica, sizeof(size_t));
+    agregar_a_paquete(p, &tamanio, sizeof(size_t));
+    agregar_a_paquete(p, (void *)datos, tamanio);
+    enviar_paquete(p, conexion_memoria);
+
+    // Esperar que responda memoria
+    if (recibir_int(conexion_memoria) != MENSAJE_FIN_ESCRITURA) {
+        log_error(debug_logger, "La memoria no devolvio MENSAJE_FIN_ESCRITURA");
+        abort();
+    }
+
+    char *hexstring = print_hex((void *)datos, tamanio);
+    log_info(debug_logger, "PID: %u Acción: ESCRIBIR -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
+    free(hexstring);
 }
 
 /*

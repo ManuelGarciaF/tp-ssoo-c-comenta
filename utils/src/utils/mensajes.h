@@ -25,7 +25,7 @@ typedef enum {
 #define MENSAJE_FIN_IO 1
 
 // Enviado por la memoria cuando termina un pedido de escritura
-#define MENSAJE_FIN_ESCRITURA "OK"
+#define MENSAJE_FIN_ESCRITURA 32
 
 // Enviado a kernel por la memoria cuando termina su operacion
 #define MENSAJE_OP_TERMINADA 42
