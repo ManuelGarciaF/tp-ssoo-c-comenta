@@ -1,8 +1,8 @@
 #ifndef DECODER_H_
 #define DECODER_H_
 
-#include <commons/string.h>
 #include "main.h"
+#include <commons/string.h>
 #include <string.h>
 
 /*
