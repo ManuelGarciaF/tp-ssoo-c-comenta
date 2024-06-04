@@ -108,9 +108,11 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica);
 bool entra_en_pagina(size_t dir_logica, size_t tamanio);
 // Devuelve el tamanio que queda en la pagina a partir de la direccion lógica
 size_t tam_restante_pag(size_t dir_logica);
-// Lee tamanio bytes (falla si se excede de la pagina) y devuelve el buffer.
+// Lee tamanio bytes y devuelve el buffer.
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
-// Escribe tamanio bytes del buffer datos (falla si se excede de la pagina).
+// Escribe tamanio bytes del buffer datos.
 void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
+
+
 
 #endif // MAIN_H_

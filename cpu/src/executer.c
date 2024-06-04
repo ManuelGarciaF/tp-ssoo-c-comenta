@@ -203,30 +203,8 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
     t_registro reg_datos = instruccion.parametros[0].registro;
     size_t dir_logica = get_registro(instruccion.parametros[1].registro);
 
-    void *buffer_lectura = malloc(tam_registro(reg_datos));
-    assert(buffer_lectura != NULL);
-    void *buffer_next = buffer_lectura;
+    void *buffer_lectura = leer_espacio_usuario(pcb->pid, dir_logica, tam_registro(reg_datos));
 
-    size_t tam_restante = tam_registro(reg_datos);
-    do {
-        size_t tam_a_leer = (tam_restante > tam_restante_pag(dir_logica)) ? tam_restante_pag(dir_logica) : tam_restante;
-        // Leer el tamanio que entra
-        void *bytes_leidos = leer_espacio_usuario(pcb->pid, dir_logica, tam_a_leer);
-
-        // Guardarlo en el buffer
-        memcpy(buffer_next, bytes_leidos, tam_a_leer);
-        // Mover el puntero al final de lo leido
-        buffer_next = (char *)buffer_next + tam_a_leer;
-
-        free(bytes_leidos);
-
-        // Avanzar al espacio a leer restante
-        dir_logica += tam_a_leer;
-        tam_restante -= tam_a_leer;
-    } while (tam_restante > 0);
-
-    // Guardar el valor leido en el buffer en el registro
-    // Tener en cuenta que C lo parsea LSB
     set_registro(reg_datos, *(uint32_t *)buffer_lectura, incrementar_pc);
 
     free(buffer_lectura);
@@ -238,24 +216,8 @@ static void exec_mov_out(t_instruccion instruccion, bool *incrementar_pc, int co
     size_t dir_logica = get_registro(instruccion.parametros[1].registro);
 
     uint32_t valor_datos = get_registro(reg_datos);
-    void *puntero_datos = &valor_datos;
-    size_t tam_restante = tam_registro(reg_datos);
 
-    do {
-        size_t tam_a_escribir =
-            (tam_restante > tam_restante_pag(dir_logica)) ? tam_restante_pag(dir_logica) : tam_restante;
-
-        escribir_espacio_usuario(pcb->pid, dir_logica, puntero_datos, tam_a_escribir);
-
-        // Avanzar el puntero_datos
-        puntero_datos = (char *)puntero_datos + tam_a_escribir;
-
-        // Avanzar al espacio a leer restante
-        dir_logica += tam_a_escribir;
-        tam_restante -= tam_a_escribir;
-    } while (tam_restante > 0);
-
-
+    escribir_espacio_usuario(pcb->pid, dir_logica, &valor_datos, tam_registro(reg_datos));
 }
 
 static void exec_sum(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)

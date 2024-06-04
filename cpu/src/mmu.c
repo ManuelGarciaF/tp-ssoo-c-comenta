@@ -17,6 +17,8 @@ static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina);
 static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco);
 static void fifo_remover_victima(t_queue *entries);
 static void lru_remover_victima(t_queue *entries);
+static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio);
+static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
 
 void inicializar_mmu(void)
 {
@@ -58,6 +60,62 @@ size_t tam_restante_pag(size_t dir_logica)
 
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
 {
+    void *buffer_lectura = malloc(tamanio);
+    assert(buffer_lectura != NULL);
+    void *buffer_next = buffer_lectura;
+
+    // Copias que van a ser modificadas
+    size_t tam_restante = tamanio;
+    size_t dir_a_leer = dir_logica;
+
+    do {
+        size_t tam_a_leer = (tam_restante > tam_restante_pag(dir_a_leer)) ? tam_restante_pag(dir_a_leer) : tam_restante;
+
+        void *bytes_leidos = leer_una_pagina(pid, dir_a_leer, tam_a_leer);
+
+        // Guardarlo en el buffer
+        memcpy(buffer_next, bytes_leidos, tam_a_leer);
+        // Mover el puntero al final de lo leido
+        buffer_next = (char *)buffer_next + tam_a_leer;
+
+        free(bytes_leidos);
+
+        // Avanzar al espacio a leer restante
+        dir_a_leer += tam_a_leer;
+        tam_restante -= tam_a_leer;
+    } while (tam_restante > 0);
+
+    return buffer_lectura;
+}
+
+void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
+{
+    // Copias que van a ser modificadas
+    const void *puntero_datos = datos;
+    size_t tam_restante = tamanio;
+    size_t dir_a_leer = dir_logica;
+
+    do {
+        size_t tam_a_escribir =
+            (tam_restante > tam_restante_pag(dir_a_leer)) ? tam_restante_pag(dir_a_leer) : tam_restante;
+
+        escribir_una_pagina(pid, dir_a_leer, puntero_datos, tam_a_escribir);
+
+        // Avanzar el puntero_datos
+        puntero_datos = (char *)puntero_datos + tam_a_escribir;
+
+        // Avanzar al espacio a leer restante
+        dir_a_leer += tam_a_escribir;
+        tam_restante -= tam_a_escribir;
+    } while (tam_restante > 0);
+}
+
+/*
+** Funciones privadas
+*/
+
+static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio)
+{
     // Nunca deberiamos leer afuera de 1 pagina
     assert(entra_en_pagina(dir_logica, tamanio));
 
@@ -85,7 +143,7 @@ void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
     return respuesta;
 }
 
-void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
+static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio)
 {
     // Nunca deberiamos escribir afuera de 1 pagina
     assert(entra_en_pagina(dir_logica, tamanio));
@@ -114,10 +172,6 @@ void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos
     log_info(debug_logger, "PID: %u Acción: ESCRIBIR -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
     free(hexstring);
 }
-
-/*
-** Funciones privadas
-*/
 
 // Retorna true si fue encontrado, si lo encuentra guarda el numero de marco en num_marco.
 static bool tlb_get(uint32_t pid, uint32_t num_pagina, uint32_t *num_marco)
