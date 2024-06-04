@@ -72,6 +72,7 @@ void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
     agregar_a_paquete(p, &dir_fisica, sizeof(size_t));
     agregar_a_paquete(p, &tamanio, sizeof(size_t));
     enviar_paquete(p, conexion_memoria);
+    eliminar_paquete(p);
 
     t_list *p_respuesta = recibir_paquete(conexion_memoria);
     void *respuesta = list_get(p_respuesta, 0);
@@ -101,6 +102,7 @@ void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos
     agregar_a_paquete(p, &tamanio, sizeof(size_t));
     agregar_a_paquete(p, (void *)datos, tamanio);
     enviar_paquete(p, conexion_memoria);
+    eliminar_paquete(p);
 
     // Esperar que responda memoria
     if (recibir_int(conexion_memoria) != MENSAJE_FIN_ESCRITURA) {

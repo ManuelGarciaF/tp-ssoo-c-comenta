@@ -218,6 +218,8 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
         // Mover el puntero al final de lo leido
         buffer_next = (char *)buffer_next + tam_a_leer;
 
+        free(bytes_leidos);
+
         // Avanzar al espacio a leer restante
         dir_logica += tam_a_leer;
         tam_restante -= tam_a_leer;
@@ -226,6 +228,8 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
     // Guardar el valor leido en el buffer en el registro
     // Tener en cuenta que C lo parsea LSB
     set_registro(reg_datos, *(uint32_t *)buffer_lectura, incrementar_pc);
+
+    free(buffer_lectura);
 }
 
 static void exec_mov_out(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
@@ -250,6 +254,8 @@ static void exec_mov_out(t_instruccion instruccion, bool *incrementar_pc, int co
         dir_logica += tam_a_escribir;
         tam_restante -= tam_a_escribir;
     } while (tam_restante > 0);
+
+
 }
 
 static void exec_sum(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
