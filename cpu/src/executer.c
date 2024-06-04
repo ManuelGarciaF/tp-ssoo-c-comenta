@@ -271,8 +271,14 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
 
 static void exec_copy_string(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    size_t tamanio = (size_t)instruccion.parametros[0].num;
+    size_t inicio_lectura = (size_t)get_registro(SI);
+    size_t inicio_escritura = (size_t)get_registro(DI);
+
+    void *buf_string = leer_espacio_usuario(pcb->pid, inicio_lectura, tamanio);
+    escribir_espacio_usuario(pcb->pid, inicio_escritura, buf_string, tamanio);
+
+    free(buf_string);
 }
 
 static void exec_wait(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
