@@ -263,9 +263,12 @@ static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispat
 
         // Devolver la ejecucion al proceso.
         pcb_send(pcb_recibido, socket_conexion_dispatch);
+        free(pcb_recibido);
         planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
 
     }
+
+    free(nombre_recurso);
 }
 
 static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
@@ -283,7 +286,10 @@ static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_disp
 
     // Devolver la ejecucion al proceso.
     pcb_send(pcb_recibido, socket_conexion_dispatch);
+    free(pcb_recibido);
     planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
+
+    free(nombre_recurso);
 }
 
 static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
