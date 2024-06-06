@@ -16,6 +16,9 @@
 #include <utils/sockets.h>
 #include <utils/utils.h>
 
+// Si imprimir los logs de debug por pantalla
+#define PRINT_DEBUG false
+
 /*
 ** Estructuras
 */

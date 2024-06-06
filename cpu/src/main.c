@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 static void inicializar_globales(void)
 {
-    debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("cpu_debug.log", "debug", PRINT_DEBUG, LOG_LEVEL_INFO);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
 
     config = config_create("cpu.config");

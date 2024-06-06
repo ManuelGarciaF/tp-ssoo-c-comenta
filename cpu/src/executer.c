@@ -283,14 +283,26 @@ static void exec_copy_string(t_instruccion instruccion, bool *incrementar_pc, in
 
 static void exec_wait(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *recurso = instruccion.parametros[0].str;
+
+    // Siempre antes de devolver el pcb hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(WAIT_RECURSO, conexion_dispatch);
+
+    // Enviar el nombre del recurso
+    enviar_str(recurso, conexion_dispatch);
 }
 
 static void exec_signal(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *recurso = instruccion.parametros[0].str;
+
+    // Siempre antes de devolver el pcb hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(SIGNAL_RECURSO, conexion_dispatch);
+
+    // Enviar el nombre del recurso
+    enviar_str(recurso, conexion_dispatch);
 }
 
 static void exec_io_gen_sleep(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
@@ -298,6 +310,8 @@ static void exec_io_gen_sleep(t_instruccion instruccion, bool *incrementar_pc, i
     char *nombre_interfaz = instruccion.parametros[0].str;
     uint32_t unidades_trabajo = instruccion.parametros[1].num;
 
+    // Siempre antes de devolver el pcb hay que incrementar el pc
+    pcb->program_counter++;
     devolver_pcb(IO, conexion_dispatch);
 
     // Enviar nombre de interfaz y unidades de trabajo.

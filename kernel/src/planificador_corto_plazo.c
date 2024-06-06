@@ -308,10 +308,6 @@ static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
         return;
     }
 
-    // Antes de agregarlo a la lista de bloqueados, incrementar el pc
-    // FIXME esto deberia hacerse en el cpu
-    (pcb_recibido->program_counter)++;
-
     // Agregarlo a la cola de bloqueados de la interfaz.
     t_bloqueado_io *tbi = malloc(sizeof(t_bloqueado_io));
     tbi->pcb = pcb_recibido;
