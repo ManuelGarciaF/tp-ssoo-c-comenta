@@ -93,11 +93,12 @@ void *planificador_corto_plazo(void *params);
 void eliminar_proceso(t_pcb *pcb);
 
 // Incrementa las instancias y desbloquea procesos.
-void liberar_recurso(char *recurso);
-// Agrega el pid a la lista de asignaciones de ese recurso
-void asignar_recurso(uint32_t pid, char *recurso);
-// Elimina el pid de la lista de asignaciones de ese recurso
-void liberar_asignacion_recurso(uint32_t pid, char *recurso);
+void liberar_recurso(uint32_t pid, char *recurso);
+// Baja las instancias y bloquea el proceso si no hay recursos disponibles.
+// Devuelve si el proceso fue bloqueado o no
+bool asignar_recurso(t_pcb *pcb, char *recurso);
+// Libera todas las asignaciones que tiene un proceso
+void liberar_asignaciones_recurso(uint32_t pid);
 
 void pausar_planificacion(void);
 void reanudar_planificacion(void);

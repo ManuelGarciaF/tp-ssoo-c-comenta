@@ -1,32 +1,62 @@
 #include "main.h"
 
+static void liberar_asignacion_recurso(uint32_t pid, char *recurso);
+static void guardar_asignacion_recurso(uint32_t pid, char *recurso);
+static void incrementar_recurso(uint32_t pid, char *recurso);
+
 // NOTE No necesito mirar los semaforos de permiso para agregar a ready, ya que estas
 // funciones solo se ejecutan como parte del pcp o en eliminar_proceso, en cuyo caso
 // tampoco quiero que bloquee.
 
-void liberar_recurso(char *recurso)
+void liberar_recurso(uint32_t pid, char *recurso)
 {
-    // NOTE No necesito mutexear esto ya que los recursos solo son modificados por el pcp.
-    int *cant_recurso = sdictionary_get(instancias_recursos, recurso);
-
-    // Si es <0, hay procesos bloqueados.
-    if (*cant_recurso < 0) {
-        // Sacar el primer proceso de la cola de bloqueados.
-        t_squeue *cola = sdictionary_get(colas_blocked_recursos, recurso);
-        t_pcb *pcb = squeue_pop(cola);
-
-        // Asignarle el recurso y agregarlo a ready.
-        asignar_recurso(pcb->pid, recurso);
-
-        squeue_push(cola_ready, pcb);
-        sem_post(&sem_elementos_en_ready);
-    }
-
-    // Incrementar el contador de instancias del recurso.
-    (*cant_recurso)++;
+    liberar_asignacion_recurso(pid, recurso);
+    incrementar_recurso(pid, recurso);
 }
 
-void asignar_recurso(uint32_t pid, char *recurso)
+bool asignar_recurso(t_pcb *pcb, char *recurso)
+{
+    int *cant_recurso = sdictionary_get(instancias_recursos, recurso);
+
+    log_warning(debug_logger, "PID: %d - Esperando recurso %s, valor: %d", pcb->pid, recurso, *cant_recurso);
+
+    // Reducir el contador del recurso.
+    (*cant_recurso)--;
+
+    // Si quedaban instancias del recurso (era >0 antes de reducir).
+    if (*cant_recurso >= 0) {
+        // Asignar el recurso, no bloquea
+        guardar_asignacion_recurso(pcb->pid, recurso);
+        return false;
+    }
+
+    // Si el contador quedo en un numero negativo, el proceso bloquea
+    return true;
+}
+
+void liberar_asignaciones_recurso(uint32_t pid)
+{
+    // Buscar asignaciones
+    slist_lock(asignaciones_recursos);
+    t_list_iterator *it = list_iterator_create(asignaciones_recursos->list);
+    while (list_iterator_has_next(it)) {
+        t_asignacion_recurso *ar = list_iterator_next(it);
+
+        if (ar->pid == pid) {
+            list_iterator_remove(it);
+
+            incrementar_recurso(pid, ar->nombre_recurso);
+
+            free(ar->nombre_recurso);
+            free(ar);
+        }
+    }
+    list_iterator_destroy(it);
+    slist_unlock(asignaciones_recursos);
+}
+
+// Guarda una asignacion de recurso
+static void guardar_asignacion_recurso(uint32_t pid, char *recurso)
 {
     t_asignacion_recurso *ar = malloc(sizeof(t_asignacion_recurso));
     assert(ar != NULL);
@@ -36,11 +66,11 @@ void asignar_recurso(uint32_t pid, char *recurso)
 }
 
 // Libera una sola asignacion.
-void liberar_asignacion_recurso(uint32_t pid, char *recurso)
+static void liberar_asignacion_recurso(uint32_t pid, char *recurso)
 {
     slist_lock(asignaciones_recursos);
     // Iterar hasta encontrar el pid y eliminarlo.
-    // NOTE si no hay asignaciones no se hace nada, esto es correcto.
+    // NOTE si no hay asignaciones no falla
     t_list_iterator *it = list_iterator_create(asignaciones_recursos->list);
     while (list_iterator_has_next(it)) {
         t_asignacion_recurso *ar = list_iterator_next(it);
@@ -55,4 +85,30 @@ void liberar_asignacion_recurso(uint32_t pid, char *recurso)
     }
     list_iterator_destroy(it);
     slist_unlock(asignaciones_recursos);
+}
+
+// Incrementa el recurso, desbloqueando procesos si es necesario
+static void incrementar_recurso(uint32_t pid, char *recurso)
+{
+    int *cant_recurso = sdictionary_get(instancias_recursos, recurso);
+
+    log_info(debug_logger, "PID: %u - Liberando recurso %s, cant. antes de incrementar: %d", pid, recurso, *cant_recurso);
+
+    // Si es <0, hay procesos bloqueados.
+    if (*cant_recurso < 0) {
+        // Sacar el primer proceso de la cola de bloqueados.
+        t_squeue *cola = sdictionary_get(colas_blocked_recursos, recurso);
+        t_pcb *pcb = squeue_pop(cola);
+
+        log_info(debug_logger, "Desbloqueando proceso %u", pcb->pid);
+
+        // Asignarle el recurso y agregarlo a ready.
+        guardar_asignacion_recurso(pcb->pid, recurso);
+
+        squeue_push(cola_ready, pcb);
+        sem_post(&sem_elementos_en_ready);
+    }
+
+    // Incrementar el contador de instancias del recurso.
+    (*cant_recurso)++;
 }

@@ -237,47 +237,40 @@ static void manejar_out_of_memory(t_pcb *pcb_recibido)
 
 static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
-    // El CPU, luego de hacer wait, envia el nombre del recurso en un mensaje.
+    // El CPU, luego de hacer wait, envia el nombre del recurso.
     char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
-    // Si el recurso no existe, enviarlo a EXIT
+    // Si el recurso no existe, enviarlo a EXIT.
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
         recurso_invalido(pcb_recibido);
         return;
     }
 
-    // NOTE No necesito mutexear esto ya que los recursos solo son modificados por el pcp.
-    int *cant_recurso = sdictionary_get(instancias_recursos, nombre_recurso);
+    bool proceso_bloquea = asignar_recurso(pcb_recibido, nombre_recurso);
 
-    log_info(debug_logger,
-             "PID: %d - Esperando recurso %s, valor: %d",
-             pcb_recibido->pid,
-             nombre_recurso,
-             *cant_recurso);
+    if (proceso_bloquea) {
 
-    // Si quedan instancias del recurso.
-    if (*cant_recurso > 0) {
-        // Asignarle el recurso y enviarlo al CPU.
-        asignar_recurso(pcb_recibido->pid, nombre_recurso);
-
-        pcb_send(pcb_recibido, socket_conexion_dispatch);
-        planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
-    } else {
-        // Agregarlo a la cola de bloqueados
+        // Agregarlo a la cola de bloqueados del recurso.
         t_squeue *cola = sdictionary_get(colas_blocked_recursos, nombre_recurso);
         squeue_push(cola, pcb_recibido);
 
         log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: BLOCKED", pcb_recibido->pid);
         log_info(kernel_logger, "PID: %d - Bloqueado por: %s", pcb_recibido->pid, nombre_recurso);
-    }
 
-    // Reducir el contador de instancias del recurso.
-    (*cant_recurso)--;
+        planificar_nuevo_proceso = true;
+
+    } else { // El proceso no bloqueo.
+
+        // Devolver la ejecucion al proceso.
+        pcb_send(pcb_recibido, socket_conexion_dispatch);
+        planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
+
+    }
 }
 
 static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
-    // El CPU, luego de hacer signal, envia el nombre del recurso en un mensaje.
+    // El CPU, luego de hacer signal, envia el nombre del recurso.
     char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT
@@ -286,9 +279,7 @@ static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_disp
         return;
     }
 
-    // Eliminar la asignacion
-    liberar_asignacion_recurso(pcb_recibido->pid, nombre_recurso);
-    liberar_recurso(nombre_recurso);
+    liberar_recurso(pcb_recibido->pid, nombre_recurso);
 
     // Devolver la ejecucion al proceso.
     pcb_send(pcb_recibido, socket_conexion_dispatch);

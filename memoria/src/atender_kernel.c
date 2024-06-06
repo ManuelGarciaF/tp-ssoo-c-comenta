@@ -55,10 +55,10 @@ static void recibir_crear_proceso(int socket_conexion)
 
 static void recibir_liberar_proceso(int socket_conexion)
 {
-    t_list *paquete = recibir_paquete(socket_conexion);
-    uint32_t *pid = list_get(paquete, 0);
-    log_info(debug_logger, "Liberando proceso con pid: %u", *pid);
-    char *pid_str = string_itoa(*pid);
+    // Recibir el pid
+    uint32_t pid = recibir_int(socket_conexion);
+    log_info(debug_logger, "Liberando proceso con pid: %u", pid);
+    char *pid_str = string_itoa(pid);
 
     t_proceso *proceso = sdictionary_remove(procesos, pid_str);
 
@@ -78,7 +78,6 @@ static void recibir_liberar_proceso(int socket_conexion)
     proceso_destroy(proceso);
 
     free(pid_str);
-    list_destroy_and_destroy_elements(paquete, free);
 }
 
 static t_list *devolver_lineas(char *path_relativo)
