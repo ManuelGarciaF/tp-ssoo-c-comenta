@@ -8,16 +8,16 @@ t_log *debug_logger;
 t_log *entradasalida_logger;
 
 // Variables de config
-t_tipo_interfaz tipo_interfaz;
-char *nombre_interfaz;
-int tiempo_unidad_trabajo;
-char *ip_kernel;
-char *puerto_kernel;
-char *ip_memoria;
-char *puerto_memoria;
-char *path_base_dialfs;
-int block_size;
-int block_count;
+t_tipo_interfaz TIPO_INTERFAZ;
+char *NOMBRE_INTERFAZ;
+int TIEMPO_UNIDAD_TRABAJO;
+char *IP_KERNEL;
+char *PUERTO_KERNEL;
+char *IP_MEMORIA;
+char *PUERTO_MEMORIA;
+char *PATH_BASE_DIALFS;
+int BLOCK_SIZE;
+int BLOCK_COUNT;
 
 int main(int argc, char *argv[])
 {
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    nombre_interfaz = argv[1];
+    NOMBRE_INTERFAZ = argv[1];
     char *archivo_config = argv[2];
     debug_logger = log_create("entradasalida_debug.log", "debug", true, LOG_LEVEL_INFO);
     entradasalida_logger = log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
@@ -42,15 +42,15 @@ int main(int argc, char *argv[])
     cargar_config(config);
 
     // Conexion con el kernel
-    int conexion_kernel = crear_conexion(ip_kernel, puerto_kernel);
+    int conexion_kernel = crear_conexion(IP_KERNEL, PUERTO_KERNEL);
     if (!realizar_handshake(conexion_kernel)) {
         log_error(debug_logger, "No se pudo realizar un handshake con el Kernel");
     }
 
     // Conexion con la memoria
     int conexion_memoria;
-    if (tipo_interfaz != GENERICA) {
-        conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    if (TIPO_INTERFAZ != GENERICA) {
+        conexion_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
         if (!realizar_handshake(conexion_memoria)) {
             log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
         }
@@ -59,12 +59,12 @@ int main(int argc, char *argv[])
 
     t_paquete *paquete = crear_paquete();
     // Enviar nombre_interfaz y tipo_interfaz
-    agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
-    agregar_a_paquete(paquete, &tipo_interfaz, sizeof(t_tipo_interfaz));
+    agregar_a_paquete(paquete, NOMBRE_INTERFAZ, strlen(NOMBRE_INTERFAZ) + 1);
+    agregar_a_paquete(paquete, &TIPO_INTERFAZ, sizeof(t_tipo_interfaz));
     enviar_paquete(paquete, conexion_kernel);
     eliminar_paquete(paquete);
 
-    switch (tipo_interfaz) {
+    switch (TIPO_INTERFAZ) {
     case GENERICA:
         generica(conexion_kernel);
         break;
@@ -79,8 +79,7 @@ int main(int argc, char *argv[])
         break;
     */
     default:
-        exit(1);
-        // Unreachable
+        exit(1); // Unreachable
     }
 
     // Liberar memoria
@@ -93,30 +92,30 @@ int main(int argc, char *argv[])
 void cargar_config(t_config *config)
 {
     // Propiedades Generales (van a estar en todos los tipos de interfaz)
-    tipo_interfaz = parsear_a_t_tipo_interfaz(config_get_string_or_exit(config, "TIPO_INTERFAZ"));
-    ip_kernel = config_get_string_or_exit(config, "IP_KERNEL");
-    puerto_kernel = config_get_string_or_exit(config, "PUERTO_KERNEL");
+    TIPO_INTERFAZ = parsear_a_t_tipo_interfaz(config_get_string_or_exit(config, "TIPO_INTERFAZ"));
+    IP_KERNEL = config_get_string_or_exit(config, "IP_KERNEL");
+    PUERTO_KERNEL = config_get_string_or_exit(config, "PUERTO_KERNEL");
 
-    switch (tipo_interfaz) {
+    switch (TIPO_INTERFAZ) {
     case GENERICA:
-        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         break;
     case STDIN:
-        ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-        puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+        IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
+        PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case STDOUT:
-        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
-        ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-        puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+        TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
+        PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case DIALFS:
-        tiempo_unidad_trabajo = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
-        ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-        puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-        path_base_dialfs = config_get_string_or_exit(config, "PATH_BASE_DIALFS");
-        block_size = config_get_int_or_exit(config, "BLOCK_SIZE");
-        block_count = config_get_int_or_exit(config, "BLOCK_COUNT");
+        TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
+        IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
+        PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+        PATH_BASE_DIALFS = config_get_string_or_exit(config, "PATH_BASE_DIALFS");
+        BLOCK_SIZE = config_get_int_or_exit(config, "BLOCK_SIZE");
+        BLOCK_COUNT = config_get_int_or_exit(config, "BLOCK_COUNT");
     }
 }
 

@@ -8,6 +8,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/temporal.h>
 #include <pthread.h>
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -30,15 +31,15 @@ extern t_log *kernel_logger;
 extern t_config *config;
 
 // Variables de config
-extern char *puerto_escucha;
-extern char *ip_memoria;
-extern char *puerto_memoria;
-extern char *ip_cpu;
-extern char *puerto_cpu_dispatch;
-extern char *puerto_cpu_interrupt;
-extern t_algoritmo_planificacion algoritmo_planificacion;
-extern int grado_multiprogramacion;
-extern int quantum;
+extern char *PUERTO_ESCUCHA;
+extern char *IP_MEMORIA;
+extern char *PUERTO_MEMORIA;
+extern char *IP_CPU;
+extern char *PUERTO_CPU_DISPATCH;
+extern char *PUERTO_CPU_INTERRUPT;
+extern t_algoritmo_planificacion ALGORITMO_PLANIFICACION;
+extern int QUANTUM;
+extern int grado_multiprogramacion; // Minuscula porque se modifica :)
 
 extern int pid_en_ejecucion;
 extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogramacion, los proximos procesos que

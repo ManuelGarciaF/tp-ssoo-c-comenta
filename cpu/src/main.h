@@ -81,12 +81,12 @@ extern uint64_t num_instruccion_actual;
 extern int conexion_memoria;
 
 // Variables de config
-extern char *ip_memoria;
-extern char *puerto_memoria;
-extern char *puerto_escucha_dispatch;
-extern char *puerto_escucha_interrupt;
-extern int cantidad_entradas_tlb;
-extern t_algoritmo_tlb algoritmo_tlb;
+extern char *IP_MEMORIA;
+extern char *PUERTO_MEMORIA;
+extern char *PUERTO_ESCUCHA_DISPATCH;
+extern char *PUERTO_ESCUCHA_INTERRUPT;
+extern int CANTIDAD_ENTRADAS_TLB;
+extern t_algoritmo_tlb ALGORITMO_TLB;
 
 /*
 ** Funciones compartidas

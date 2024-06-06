@@ -13,7 +13,7 @@ void atender_kernel(int socket_conexion)
         log_info(debug_logger, "Operacion enviada por el kernel: %d", op);
 
         // Esperar antes de responder.
-        usleep(retardo_respuesta * 1000);
+        usleep(RETARDO_RESPUESTA * 1000);
 
         switch (op) {
         case OPCODE_INICIO_PROCESO:
@@ -83,7 +83,7 @@ static void recibir_liberar_proceso(int socket_conexion)
 static t_list *devolver_lineas(char *path_relativo)
 {
     char *path_completo = string_new();
-    string_append(&path_completo, path_instrucciones);
+    string_append(&path_completo, PATH_INSTRUCCIONES);
     string_append(&path_completo, "/"); // Ya que es un directorio.
     string_append(&path_completo, path_relativo);
 

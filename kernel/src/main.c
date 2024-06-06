@@ -8,15 +8,15 @@ t_log *kernel_logger;
 t_config *config;
 
 // Variables de config
-char *puerto_escucha;
-char *ip_memoria;
-char *puerto_memoria;
-char *ip_cpu;
-char *puerto_cpu_dispatch;
-char *puerto_cpu_interrupt;
+char *PUERTO_ESCUCHA;
+char *IP_MEMORIA;
+char *PUERTO_MEMORIA;
+char *IP_CPU;
+char *PUERTO_CPU_DISPATCH;
+char *PUERTO_CPU_INTERRUPT;
 int grado_multiprogramacion;
-int quantum;
-t_algoritmo_planificacion algoritmo_planificacion;
+int QUANTUM;
+t_algoritmo_planificacion ALGORITMO_PLANIFICACION;
 
 int pid_en_ejecucion = -1; // -1 Cuando no hay ninguno
 int procesos_extra_multiprogramacion = 0;
@@ -59,19 +59,19 @@ int main(int argc, char *argv[])
     inicializar_globales();
 
     // Conexion con el cpu
-    conexion_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
+    conexion_cpu_dispatch = crear_conexion(IP_CPU, PUERTO_CPU_DISPATCH);
     if (!realizar_handshake(conexion_cpu_dispatch)) {
         log_error(debug_logger, "No Se pudo realizar un handshake con el CPU (dispatch)");
     }
 
-    conexion_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
+    conexion_cpu_interrupt = crear_conexion(IP_CPU, PUERTO_CPU_INTERRUPT);
     if (!realizar_handshake(conexion_cpu_interrupt)) {
         log_error(debug_logger, "No se pudo realizar un handshake con el CPU (interrupt)");
     }
 
     // Conexion con la memoria
     pthread_mutex_lock(&mutex_conexion_memoria);
-    conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    conexion_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con la memoria");
     }
@@ -122,16 +122,16 @@ static void inicializar_globales(void)
         exit(1);
     }
 
-    puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
-    ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-    puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-    ip_cpu = config_get_string_or_exit(config, "IP_CPU");
-    puerto_cpu_dispatch = config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
-    puerto_cpu_interrupt = config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
+    PUERTO_ESCUCHA = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+    IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
+    PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+    IP_CPU = config_get_string_or_exit(config, "IP_CPU");
+    PUERTO_CPU_DISPATCH = config_get_string_or_exit(config, "PUERTO_CPU_DISPATCH");
+    PUERTO_CPU_INTERRUPT = config_get_string_or_exit(config, "PUERTO_CPU_INTERRUPT");
     grado_multiprogramacion = config_get_int_or_exit(config, "GRADO_MULTIPROGRAMACION");
-    algoritmo_planificacion =
+    ALGORITMO_PLANIFICACION =
         parse_algoritmo_planifiacion(config_get_string_or_exit(config, "ALGORITMO_PLANIFICACION"));
-    quantum = config_get_int_or_exit(config, "QUANTUM");
+    QUANTUM = config_get_int_or_exit(config, "QUANTUM");
 
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
@@ -188,7 +188,7 @@ static void inicializar_globales(void)
 static void *esperar_conexiones_io(void *param)
 {
     // Esperar constantemente conexiones de io
-    int socket_escucha = iniciar_servidor(puerto_escucha);
+    int socket_escucha = iniciar_servidor(PUERTO_ESCUCHA);
     while (true) {
         // Guardo el socket en el heap para no perderlo
         int *conexion_io = malloc(sizeof(int));

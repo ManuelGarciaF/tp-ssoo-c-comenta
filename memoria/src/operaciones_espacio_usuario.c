@@ -17,9 +17,9 @@ void responder_lectura_espacio_usuario(int socket_conexion)
     }
 
     // Ver que no nos salimos de la pagina
-    int offset_inicio = *dir_inicio % tam_pagina;
+    int offset_inicio = *dir_inicio % TAM_PAGINA;
     int offset_fin = offset_inicio + *tam_leer; // No inclusivo
-    if (offset_fin > tam_pagina) {
+    if (offset_fin > TAM_PAGINA) {
         log_error(debug_logger,
                   "El proceso %u intento leer afuera de la pagina, DF: %zu, tam: %zu",
                   *pid,
@@ -63,9 +63,9 @@ void responder_escritura_espacio_usuario(int socket_conexion)
     }
 
     // Ver que no nos salimos de la pagina
-    int offset_inicio = *dir_inicio % tam_pagina;
+    int offset_inicio = *dir_inicio % TAM_PAGINA;
     int offset_fin = offset_inicio + *tam_a_escribir; // No inclusivo
-    if (offset_fin > tam_pagina) {
+    if (offset_fin > TAM_PAGINA) {
         log_error(debug_logger,
                   "El proceso %u intento escribir afuera de la pagina, DF: %zu, tam: %zu",
                   *pid,
@@ -90,7 +90,7 @@ void responder_escritura_espacio_usuario(int socket_conexion)
 
 static bool direccion_asignada_a_proceso(char *pid, size_t dir_inicio)
 {
-    int num_marco = dir_inicio / tam_pagina;
+    int num_marco = dir_inicio / TAM_PAGINA;
 
     t_proceso *proceso = sdictionary_get(procesos, pid);
 

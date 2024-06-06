@@ -5,11 +5,11 @@ t_log *debug_logger;
 t_log *memoria_logger;
 t_config *config;
 
-char *puerto_escucha;
-int tam_memoria;
-int tam_pagina;
-char *path_instrucciones;
-int retardo_respuesta;
+char *PUERTO_ESCUCHA;
+int TAM_MEMORIA;
+int TAM_PAGINA;
+char *PATH_INSTRUCCIONES;
+int RETARDO_RESPUESTA;
 
 t_sdictionary *procesos;
 void *memoria_de_usuario;
@@ -28,7 +28,7 @@ int main(void)
     inicializar_globales();
 
     // Esperar conexiones.
-    int socket_escucha = iniciar_servidor(puerto_escucha);
+    int socket_escucha = iniciar_servidor(PUERTO_ESCUCHA);
     while (true) {
         // Guardo el socket en el heap para no perderlo
         int *conexion = malloc(sizeof(int));
@@ -58,24 +58,24 @@ static void inicializar_globales(void)
         exit(1);
     }
     // Variables de config
-    puerto_escucha = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
-    tam_memoria = config_get_int_or_exit(config, "TAM_MEMORIA");
-    tam_pagina = config_get_int_or_exit(config, "TAM_PAGINA");
-    path_instrucciones = config_get_string_or_exit(config, "PATH_INSTRUCCIONES");
-    retardo_respuesta = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
+    PUERTO_ESCUCHA = config_get_string_or_exit(config, "PUERTO_ESCUCHA");
+    TAM_MEMORIA = config_get_int_or_exit(config, "TAM_MEMORIA");
+    TAM_PAGINA = config_get_int_or_exit(config, "TAM_PAGINA");
+    PATH_INSTRUCCIONES = config_get_string_or_exit(config, "PATH_INSTRUCCIONES");
+    RETARDO_RESPUESTA = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
 
     // El tamanio de memoria debe ser un multiplo del tamanio de pagina
-    assert(tam_memoria % tam_pagina == 0);
-    num_marcos = tam_memoria / tam_pagina;
+    assert(TAM_MEMORIA % TAM_PAGINA == 0);
+    num_marcos = TAM_MEMORIA / TAM_PAGINA;
 
     // Diccionario con pseudocodigo de procesos
     procesos = sdictionary_create();
 
     // Inicializar memoria de usuario
-    memoria_de_usuario = malloc(tam_memoria);
+    memoria_de_usuario = malloc(TAM_MEMORIA);
     assert(memoria_de_usuario != NULL);
     // Settear la memoria a 0
-    memset(memoria_de_usuario, 0, tam_memoria);
+    memset(memoria_de_usuario, 0, TAM_MEMORIA);
     pthread_mutex_init(&mutex_memoria_de_usuario, NULL);
 
     // Inicializar bitmap

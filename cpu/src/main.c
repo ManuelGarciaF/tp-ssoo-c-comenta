@@ -17,12 +17,12 @@ uint64_t num_instruccion_actual = 0;
 int conexion_memoria;
 
 // Variables de config
-char *ip_memoria;
-char *puerto_memoria;
-char *puerto_escucha_dispatch;
-char *puerto_escucha_interrupt;
-int cantidad_entradas_tlb;
-t_algoritmo_tlb algoritmo_tlb;
+char *IP_MEMORIA;
+char *PUERTO_MEMORIA;
+char *PUERTO_ESCUCHA_DISPATCH;
+char *PUERTO_ESCUCHA_INTERRUPT;
+int CANTIDAD_ENTRADAS_TLB;
+t_algoritmo_tlb ALGORITMO_TLB;
 
 // Funciones locales
 static void inicializar_globales(void);
@@ -39,8 +39,8 @@ int main(int argc, char *argv[])
     inicializar_mmu();
 
     // Iniciar servidores
-    int socket_escucha_dispatch = iniciar_servidor(puerto_escucha_dispatch);
-    int socket_escucha_interrupt = iniciar_servidor(puerto_escucha_interrupt);
+    int socket_escucha_dispatch = iniciar_servidor(PUERTO_ESCUCHA_DISPATCH);
+    int socket_escucha_interrupt = iniciar_servidor(PUERTO_ESCUCHA_INTERRUPT);
 
     // Crear hilo para interrupt
     pthread_t hilo_interrupt;
@@ -110,12 +110,12 @@ static void inicializar_globales(void)
     }
 
     // Leer variables de config
-    ip_memoria = config_get_string_or_exit(config, "IP_MEMORIA");
-    puerto_memoria = config_get_string_or_exit(config, "PUERTO_MEMORIA");
-    puerto_escucha_dispatch = config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
-    puerto_escucha_interrupt = config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
-    cantidad_entradas_tlb = config_get_int_or_exit(config, "CANTIDAD_ENTRADAS_TLB");
-    algoritmo_tlb = parse_algoritmo_tlb(config_get_string_or_exit(config, "ALGORITMO_TLB"));
+    IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
+    PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
+    PUERTO_ESCUCHA_DISPATCH = config_get_string_or_exit(config, "PUERTO_ESCUCHA_DISPATCH");
+    PUERTO_ESCUCHA_INTERRUPT = config_get_string_or_exit(config, "PUERTO_ESCUCHA_INTERRUPT");
+    CANTIDAD_ENTRADAS_TLB = config_get_int_or_exit(config, "CANTIDAD_ENTRADAS_TLB");
+    ALGORITMO_TLB = parse_algoritmo_tlb(config_get_string_or_exit(config, "ALGORITMO_TLB"));
 
     interrupts = slist_create();
 }
@@ -144,7 +144,7 @@ static int aceptar_conexion_kernel(int socket_escucha)
 static void conectar_a_memoria(void)
 {
     // Conectar con la memoria
-    conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+    conexion_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
 
     if (!realizar_handshake(conexion_memoria)) {
         log_error(debug_logger, "No se pudo realizar un handshake con memoria");

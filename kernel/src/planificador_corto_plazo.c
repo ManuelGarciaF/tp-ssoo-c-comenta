@@ -34,6 +34,7 @@ void *planificador_corto_plazo(void *vparams)
 {
     pthread_t hilo_reloj_rr;
     planificar_nuevo_proceso = true;
+    t_temporal *cronometro;
 
     pthread_mutex_init(&mutex_en_ejecucion_ultimo_reloj, NULL);
 
@@ -70,11 +71,16 @@ void *planificador_corto_plazo(void *vparams)
             log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
             // Si estamos en RR o VRR, iniciar el reloj.
-            if (algoritmo_planificacion == RR || algoritmo_planificacion == VRR) {
-                log_info(debug_logger, "Iniciando reloj RR con q=%d para pid=%u", quantum, pcb_a_ejecutar->pid);
+            // NOTE Solo iniciamos un reloj nuevo cuando se planifica un proceso nuevo, si un proceso volvio a
+            // ejecutarse (syscall), seguimos con el mismo.
+            if (ALGORITMO_PLANIFICACION == RR || ALGORITMO_PLANIFICACION == VRR) {
 
+                // Iniciar el cronometro.
+                cronometro = temporal_create();
+
+                log_info(debug_logger, "Iniciando reloj RR con q=%d para pid=%u", QUANTUM, pcb_a_ejecutar->pid);
                 t_parametros_reloj_rr *params_reloj = malloc(sizeof(t_parametros_reloj_rr));
-                params_reloj->ms_espera = quantum;
+                params_reloj->ms_espera = QUANTUM;
                 params_reloj->pid = pcb_a_ejecutar->pid;
                 params_reloj->cancelado = false;
 
@@ -265,7 +271,6 @@ static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispat
         pcb_send(pcb_recibido, socket_conexion_dispatch);
         free(pcb_recibido);
         planificar_nuevo_proceso = false; // No enviar otro proceso durante la proxima iteracion.
-
     }
 
     free(nombre_recurso);

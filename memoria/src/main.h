@@ -27,11 +27,11 @@ extern t_log *memoria_logger;
 extern t_config *config;
 
 // Variables de config
-extern char *puerto_escucha;
-extern int tam_memoria;
-extern int tam_pagina;
-extern char *path_instrucciones;
-extern int retardo_respuesta;
+extern char *PUERTO_ESCUCHA;
+extern int TAM_MEMORIA;
+extern int TAM_PAGINA;
+extern char *PATH_INSTRUCCIONES;
+extern int RETARDO_RESPUESTA;
 
 // Estructuras de memoria
 extern t_sdictionary *procesos; // Contiene t_procesos

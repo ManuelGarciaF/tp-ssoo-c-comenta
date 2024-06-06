@@ -214,7 +214,7 @@ static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina)
 
 static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
 {
-    if (cantidad_entradas_tlb == 0) {
+    if (CANTIDAD_ENTRADAS_TLB == 0) {
         return;
     }
 
@@ -227,9 +227,9 @@ static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
     entry->ultimo_acceso = num_instruccion_actual;
 
     // Si la tlb ya esta llena
-    if (queue_size(tlb_entries) >= cantidad_entradas_tlb) {
+    if (queue_size(tlb_entries) >= CANTIDAD_ENTRADAS_TLB) {
         // Sacar una entrada segun el algoritmo
-        switch (algoritmo_tlb) {
+        switch (ALGORITMO_TLB) {
         case FIFO:
             fifo_remover_victima(tlb_entries);
             break;
@@ -242,7 +242,7 @@ static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
     }
 
     // Deberia haber menos entradas que el limite antes de agregar una nueva
-    assert(queue_size(tlb_entries) < cantidad_entradas_tlb);
+    assert(queue_size(tlb_entries) < CANTIDAD_ENTRADAS_TLB);
 
     queue_push(tlb_entries, entry);
 }

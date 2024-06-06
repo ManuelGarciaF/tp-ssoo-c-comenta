@@ -12,13 +12,13 @@ void atender_cpu(int socket_conexion)
     log_info(debug_logger, "Se conecto correctamente (cpu)");
 
     // Enviar el tamanio de página
-    enviar_int(tam_pagina, socket_conexion);
+    enviar_int(TAM_PAGINA, socket_conexion);
 
     while (true) {
         t_op_memoria op = recibir_int(socket_conexion);
 
         // Esperar antes de responder.
-        usleep(retardo_respuesta * 1000);
+        usleep(RETARDO_RESPUESTA * 1000);
 
         switch (op) {
         case OPCODE_SOLICITAR_INSTRUCCION:
@@ -107,7 +107,7 @@ static void responder_ajustar_tamanio_proceso(int socket_conexion)
     t_proceso *proceso = sdictionary_get(procesos, pid);
     int paginas_en_uso = slist_size(proceso->paginas);
 
-    int paginas_requeridas_tam_nuevo = ceil_div(*tam_nuevo_bytes, tam_pagina);
+    int paginas_requeridas_tam_nuevo = ceil_div(*tam_nuevo_bytes, TAM_PAGINA);
 
     int dif_paginas = paginas_requeridas_tam_nuevo - paginas_en_uso;
 
@@ -115,14 +115,14 @@ static void responder_ajustar_tamanio_proceso(int socket_conexion)
         log_info(debug_logger,
                  "PID: %u - Tamaño Actual: %d - Tamaño a Ampliar: %u",
                  *pid_int,
-                 paginas_en_uso * tam_pagina,
+                 paginas_en_uso * TAM_PAGINA,
                  *tam_nuevo_bytes);
         ampliar_proceso(proceso, dif_paginas, socket_conexion);
     } else {
         log_info(debug_logger,
                  "PID: %u - Tamaño Actual: %d - Tamaño a Reducir: %u",
                  *pid_int,
-                 paginas_en_uso * tam_pagina,
+                 paginas_en_uso * TAM_PAGINA,
                  *tam_nuevo_bytes);
         reducir_proceso(proceso, -dif_paginas, socket_conexion);
     }

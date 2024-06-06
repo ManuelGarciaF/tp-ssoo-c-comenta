@@ -19,16 +19,16 @@ extern t_log *debug_logger;
 extern t_log *entradasalida_logger;
 
 // Variables de config
-extern t_tipo_interfaz tipo_interfaz;
-extern char *nombre_interfaz;
-extern int tiempo_unidad_trabajo;
-extern char *ip_kernel;
-extern char *puerto_kernel;
-extern char *ip_memoria;
-extern char *puerto_memoria;
-extern char *path_base_dialfs;
-extern int block_size;
-extern int block_count;
+extern t_tipo_interfaz TIPO_INTERFAZ;
+extern char *NOMBRE_INTERFAZ;
+extern int TIEMPO_UNIDAD_TRABAJO;
+extern char *IP_KERNEL;
+extern char *PUERTO_KERNEL;
+extern char *IP_MEMORIA;
+extern char *PUERTO_MEMORIA;
+extern char *PATH_BASE_DIALFS;
+extern int BLOCK_SIZE;
+extern int BLOCK_COUNT;
 
 /*
 ** Definiciones de funciones

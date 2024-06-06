@@ -48,6 +48,8 @@ void *planificador_largo_plazo(void *param)
 
         // Crear el PCB y agregarlo a READY
         t_pcb *pcb = pcb_create(proceso->pid);
+        // Poner el quantum inicial
+        pcb->quantum = QUANTUM;
         squeue_push(cola_ready, pcb);
 
         // Liberar el permiso para agregar procesos a ready
