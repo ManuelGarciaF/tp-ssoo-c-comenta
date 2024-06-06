@@ -104,7 +104,7 @@ void *planificador_corto_plazo(void *vparams)
             // sin segfaultear.
             *cancelar_ultimo_reloj = true;
             en_ejecucion_ultimo_reloj = false;
-            /* log_info(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele..."); */
+            log_debug(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele...");
         }
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
 
@@ -185,7 +185,7 @@ static void *reloj_rr(void *param)
         en_ejecucion_ultimo_reloj = false;
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
     } else {
-        /* log_info(debug_logger, "El reloj para pid=%u fue cancelado", pid); */
+        log_debug(debug_logger, "El reloj para pid=%u fue cancelado", pid);
     }
 
     free(param);

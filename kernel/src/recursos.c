@@ -18,7 +18,7 @@ bool asignar_recurso(t_pcb *pcb, char *recurso)
 {
     int *cant_recurso = sdictionary_get(instancias_recursos, recurso);
 
-    log_warning(debug_logger, "PID: %d - Esperando recurso %s, valor: %d", pcb->pid, recurso, *cant_recurso);
+    log_debug(debug_logger, "PID: %d - Esperando recurso %s, valor: %d", pcb->pid, recurso, *cant_recurso);
 
     // Reducir el contador del recurso.
     (*cant_recurso)--;
