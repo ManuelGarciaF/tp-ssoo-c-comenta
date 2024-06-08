@@ -1,4 +1,28 @@
-#include "decoder.h"
+#include "main.h"
+
+// Funciones para instrucciones
+static t_instruccion parsear_set(char *argumentos);
+static t_instruccion parsear_mov_in(char *argumentos);
+static t_instruccion parsear_mov_out(char *argumentos);
+static t_instruccion parsear_sum(char *argumentos);
+static t_instruccion parsear_sub(char *argumentos);
+static t_instruccion parsear_jnz(char *argumentos);
+static t_instruccion parsear_resize(char *argumentos);
+static t_instruccion parsear_copy_string(char *argumentos);
+static t_instruccion parsear_wait(char *argumentos);
+static t_instruccion parsear_signal(char *argumentos);
+static t_instruccion parsear_io_gen_sleep(char *argumentos);
+static t_instruccion parsear_io_stdin_read(char *argumentos);
+static t_instruccion parsear_io_stdout_write(char *argumentos);
+static t_instruccion parsear_io_fs_create(char *argumentos);
+static t_instruccion parsear_io_fs_delete(char *argumentos);
+static t_instruccion parsear_io_fs_truncate(char *argumentos);
+static t_instruccion parsear_io_fs_write(char *argumentos);
+static t_instruccion parsear_io_fs_read(char *argumentos);
+static t_instruccion parsear_exit(char *argumentos);
+static t_registro parsear_a_t_registro(char *str);
+
+
 
 t_instruccion decode(char *instruccion)
 {
@@ -54,7 +78,7 @@ t_instruccion decode(char *instruccion)
     return ret;
 }
 
-t_instruccion parsear_set(char *argumentos)
+static t_instruccion parsear_set(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -70,7 +94,7 @@ t_instruccion parsear_set(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_mov_in(char *argumentos)
+static t_instruccion parsear_mov_in(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -86,7 +110,7 @@ t_instruccion parsear_mov_in(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_mov_out(char *argumentos)
+static t_instruccion parsear_mov_out(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -102,7 +126,7 @@ t_instruccion parsear_mov_out(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_sum(char *argumentos)
+static t_instruccion parsear_sum(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -118,7 +142,7 @@ t_instruccion parsear_sum(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_sub(char *argumentos)
+static t_instruccion parsear_sub(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -134,7 +158,7 @@ t_instruccion parsear_sub(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_jnz(char *argumentos)
+static t_instruccion parsear_jnz(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -150,7 +174,7 @@ t_instruccion parsear_jnz(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_resize(char *argumentos)
+static t_instruccion parsear_resize(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -164,7 +188,7 @@ t_instruccion parsear_resize(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_copy_string(char *argumentos)
+static t_instruccion parsear_copy_string(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -178,7 +202,7 @@ t_instruccion parsear_copy_string(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_wait(char *argumentos)
+static t_instruccion parsear_wait(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -190,7 +214,7 @@ t_instruccion parsear_wait(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_signal(char *argumentos)
+static t_instruccion parsear_signal(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -202,7 +226,7 @@ t_instruccion parsear_signal(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_gen_sleep(char *argumentos)
+static t_instruccion parsear_io_gen_sleep(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -217,7 +241,7 @@ t_instruccion parsear_io_gen_sleep(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_stdin_read(char *argumentos)
+static t_instruccion parsear_io_stdin_read(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -234,7 +258,7 @@ t_instruccion parsear_io_stdin_read(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_stdout_write(char *argumentos)
+static t_instruccion parsear_io_stdout_write(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -251,7 +275,7 @@ t_instruccion parsear_io_stdout_write(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_fs_create(char *argumentos)
+static t_instruccion parsear_io_fs_create(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -264,7 +288,7 @@ t_instruccion parsear_io_fs_create(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_fs_delete(char *argumentos)
+static t_instruccion parsear_io_fs_delete(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -277,7 +301,7 @@ t_instruccion parsear_io_fs_delete(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_fs_truncate(char *argumentos)
+static t_instruccion parsear_io_fs_truncate(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -293,7 +317,7 @@ t_instruccion parsear_io_fs_truncate(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_fs_write(char *argumentos)
+static t_instruccion parsear_io_fs_write(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -309,7 +333,7 @@ t_instruccion parsear_io_fs_write(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_io_fs_read(char *argumentos)
+static t_instruccion parsear_io_fs_read(char *argumentos)
 {
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
@@ -325,7 +349,7 @@ t_instruccion parsear_io_fs_read(char *argumentos)
     return instruccion;
 }
 
-t_instruccion parsear_exit(char *argumentos)
+static t_instruccion parsear_exit(char *argumentos)
 {
     t_instruccion instruccion = {0};
 
@@ -334,7 +358,7 @@ t_instruccion parsear_exit(char *argumentos)
     return instruccion;
 }
 
-t_registro parsear_a_t_registro(char *str)
+static t_registro parsear_a_t_registro(char *str)
 {
     if (strcmp(str, "AX") == 0) {
         return AX;
