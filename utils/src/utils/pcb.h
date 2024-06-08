@@ -27,7 +27,7 @@ typedef struct {
 typedef struct {
     uint32_t pid;
     uint32_t program_counter;
-    uint32_t quantum; // Milisegundos restantes para VRR
+    int64_t quantum; // Milisegundos restantes para VRR, puede ser negativo
     t_registros registros;
 } t_pcb;
 

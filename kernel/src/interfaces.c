@@ -26,6 +26,7 @@ void *atender_io(void *param)
 
         // Agarramos el primer elemento bloqueado, dejandolo en la cola.
         t_bloqueado_io *proceso_bloqueado = (squeue_is_empty(self->bloqueados)) ? NULL : squeue_peek(self->bloqueados);
+        log_info(debug_logger, "PID %u solicitando op a %s", proceso_bloqueado->pcb->pid, self->nombre);
 
         // Checkear que enviar funciona y que el socket sigue abierto
         if (enviar_operacion(proceso_bloqueado, *conexion_io) <= 0 || !socket_sigue_abierto(*conexion_io)) {
@@ -38,6 +39,7 @@ void *atender_io(void *param)
             log_error(debug_logger, "La interfaz %s retorno un valor incorrecto, desconectandola", self->nombre);
             break;
         }
+        log_info(debug_logger, "PID %u termino su solicitud a %s", proceso_bloqueado->pcb->pid, self->nombre);
 
         // Tomar el permiso para agregar procesos a ready
         sem_wait(&sem_entrada_a_ready);
@@ -55,7 +57,14 @@ void *atender_io(void *param)
         squeue_pop(self->bloqueados);
 
         // Volver a agregar el proceso a READY
-        squeue_push(cola_ready, proceso_bloqueado->pcb);
+        // Si es VRR, lo agregamos a Ready+
+        if (ALGORITMO_PLANIFICACION == VRR) {
+            squeue_push(cola_ready_plus, proceso_bloqueado->pcb);
+            log_cola_ready_plus();
+        } else {
+            squeue_push(cola_ready, proceso_bloqueado->pcb);
+            log_cola_ready();
+        }
 
         // Liberar el permiso para agregar procesos a ready
         sem_post(&sem_entrada_a_ready);
