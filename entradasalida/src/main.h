@@ -10,6 +10,8 @@
 #include <utils/sockets.h>
 #include <utils/utils.h>
 #include <utils/mensajes.h>
+#include <utils/bloque.h>
+#include <readline/readline.h>
 
 /*
 ** Variables globales
@@ -36,6 +38,7 @@ extern int BLOCK_COUNT;
 
 void cargar_config(t_config *config);
 t_tipo_interfaz parsear_a_t_tipo_interfaz(char* str);
-void generica(int conexion_kernel);
+void manejar_generica(int conexion_kernel);
+void manejar_stdin(int conexion_kernel, int conexion_memoria);
 
 #endif // MAIN_H_

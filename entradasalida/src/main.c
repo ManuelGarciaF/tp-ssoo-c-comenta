@@ -66,13 +66,13 @@ int main(int argc, char *argv[])
 
     switch (TIPO_INTERFAZ) {
     case GENERICA:
-        generica(conexion_kernel);
+        manejar_generica(conexion_kernel);
         break;
-    /*case STDIN:
-        stdin();
+    case STDIN:
+        manejar_stdin(conexion_kernel, conexion_memoria);
         break;
-    case STDOUT:
-        stdout();
+    /*case STDOUT:
+        manejar_stdout(conexion_kernel, conexion_memoria);
         break;
     case DIALFS:
         dialfs();
