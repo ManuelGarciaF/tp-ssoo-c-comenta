@@ -114,8 +114,3 @@ static void *atender_conexion(void *param)
     free(socket_conexion);
     pthread_exit(NULL);
 }
-
-void atender_io(int socket_conexion)
-{
-    log_info(debug_logger, "Se Se conecto correctamente (io)");
-}
