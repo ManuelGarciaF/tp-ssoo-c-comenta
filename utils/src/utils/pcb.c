@@ -39,7 +39,7 @@ t_pcb *pcb_receive(int socket_conexion)
 void pcb_debug_print(t_pcb *pcb)
 {
     log_info(debug_logger,
-             "PCB: {PID: %u, PC %u, Q: %u, registros:{AX:%u, BX:%u, CX:%u, DX:%u, EAX:%u, EBX:%u, ECX:%u, "
+             "PCB: {PID: %u, PC %u, Q: %ld, registros:{AX:%u, BX:%u, CX:%u, DX:%u, EAX:%u, EBX:%u, ECX:%u, "
              "EDX:%u, SI:%u, DI:%u}}",
              pcb->pid,
              pcb->program_counter,

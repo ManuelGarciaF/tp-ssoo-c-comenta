@@ -12,7 +12,7 @@ static void ejecutar_script(const char *path);
 static void imprimir_estado_procesos(void);
 
 static bool buscar_y_eliminar_en_new(uint32_t pid);
-static bool buscar_y_eliminar_en_ready(uint32_t pid);
+static bool buscar_y_eliminar_en_squeue_pcb(t_squeue *cola, uint32_t pid);
 static bool buscar_y_eliminar_en_blocked_recursos(uint32_t pid);
 static bool buscar_y_eliminar_en_blocked_interfaces(uint32_t pid);
 
@@ -140,18 +140,39 @@ static void finalizar_proceso(const char *pid_str)
     } else {
         // Hay que buscarlo en todas las otras colas
         bool encontrado = buscar_y_eliminar_en_new(pid);
-        if (!encontrado) { // No estaba en new, buscar en ready
-            encontrado = buscar_y_eliminar_en_ready(pid);
+        if (encontrado) {
+            log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
         }
+
+        if (!encontrado) { // No estaba en new, buscar en ready
+            encontrado = buscar_y_eliminar_en_squeue_pcb(cola_ready, pid);
+            if (encontrado) {
+                log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
+            }
+        }
+
+        if (!encontrado) { // No estaba en ready, buscar en ready+
+            encontrado = buscar_y_eliminar_en_squeue_pcb(cola_ready_plus, pid);
+            if (encontrado) {
+                log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
+            }
+        }
+
         if (!encontrado) { // No estaba en ready, buscar en bloqueados por recurso
             encontrado = buscar_y_eliminar_en_blocked_recursos(pid);
+            if (encontrado) {
+                log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
+            }
         }
+
         if (!encontrado) { // No estaba bloqueado por recuros, buscar en bloqueados por io
             encontrado = buscar_y_eliminar_en_blocked_interfaces(pid);
+            if (encontrado) {
+                log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
+            }
         }
 
         if (encontrado) { // No se encontro el proceso en ninguna cola
-            log_info(kernel_logger, "PID: %d - Estado Anterior: EXEC - Estado Actual: EXIT", pid);
             log_info(kernel_logger, "Finaliza el proceso %d - Motivo: INTERRUPTED_BY_USER", pid);
         } else {
             printf("error: No se encontro el proceso con pid: %u\n", pid);
@@ -256,7 +277,6 @@ static bool buscar_y_eliminar_en_new(uint32_t pid)
             list_iterator_remove(it);
             free(pn->path);
             free(pn);
-
         }
     }
 
@@ -265,11 +285,11 @@ static bool buscar_y_eliminar_en_new(uint32_t pid)
     return encontrado;
 }
 
-static bool buscar_y_eliminar_en_ready(uint32_t pid)
+static bool buscar_y_eliminar_en_squeue_pcb(t_squeue *cola, uint32_t pid)
 {
     bool encontrado = false;
-    squeue_lock(cola_ready);
-    t_list_iterator *it = list_iterator_create(cola_ready->queue->elements);
+    squeue_lock(cola);
+    t_list_iterator *it = list_iterator_create(cola->queue->elements);
 
     while (list_iterator_has_next(it) && !encontrado) {
         t_pcb *pcb = list_iterator_next(it);
@@ -282,7 +302,7 @@ static bool buscar_y_eliminar_en_ready(uint32_t pid)
     }
 
     list_iterator_destroy(it);
-    squeue_unlock(cola_ready);
+    squeue_unlock(cola);
     return encontrado;
 }
 

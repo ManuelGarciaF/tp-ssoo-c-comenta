@@ -2,7 +2,7 @@
 
 // Estructuras
 typedef struct {
-    int ms_espera;
+    int64_t ms_espera;
     uint32_t pid;
     bool cancelado;
 } t_parametros_reloj_rr;
@@ -16,6 +16,8 @@ static pthread_mutex_t mutex_en_ejecucion_ultimo_reloj;
 // Definiciones locales
 static void *reloj_rr(void *param);
 static t_motivo_desalojo recibir_pcb(t_pcb **pcb_actualizado);
+static t_pcb *peek_siguiente_pcb(bool *rplus);
+static void pop_siguiente_pcb(void);
 
 // Motivos de devolucion de pcb
 static void manejar_fin_quantum(t_pcb *pcb_recibido);
@@ -34,7 +36,7 @@ void *planificador_corto_plazo(void *vparams)
 {
     pthread_t hilo_reloj_rr;
     planificar_nuevo_proceso = true;
-    t_temporal *cronometro;
+    t_temporal *cronometro = NULL;
 
     pthread_mutex_init(&mutex_en_ejecucion_ultimo_reloj, NULL);
 
@@ -42,15 +44,16 @@ void *planificador_corto_plazo(void *vparams)
         // No siempre hay que enviar un proceso nuevo segun el algoritmo de planificacion,
         // a veces devolvemos la ejecucion al proceso devuelto.
         if (planificar_nuevo_proceso) {
+            bool proceso_ready_plus;
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
-            t_pcb *pcb_inicial = (squeue_is_empty(cola_ready)) ? NULL : squeue_peek(cola_ready);
+            t_pcb *pcb_inicial = peek_siguiente_pcb(&proceso_ready_plus);
 
             // Tomar el permiso para agregar procesos a exec
             sem_wait(&sem_entrada_a_exec);
 
             // Ver que mientras esperabamos no nos hayan sacado el proceso en ready (eliminado por consola)
-            t_pcb *pcb_a_ejecutar = (squeue_is_empty(cola_ready)) ? NULL : squeue_peek(cola_ready);
+            t_pcb *pcb_a_ejecutar = peek_siguiente_pcb(&proceso_ready_plus);
             // Si cambio o no tenemos ningun proceso, no hacer nada
             if (pcb_inicial != pcb_a_ejecutar || pcb_inicial == NULL || pcb_a_ejecutar == NULL) {
                 // Liberar el permiso para agregar procesos a exec
@@ -59,14 +62,7 @@ void *planificador_corto_plazo(void *vparams)
             }
 
             // Sacar el pcb que vimos antes de la cola
-            squeue_pop(cola_ready);
-
-            // Enviamos el pcb a CPU.
-            pcb_send(pcb_a_ejecutar, conexion_cpu_dispatch);
-            pid_en_ejecucion = pcb_a_ejecutar->pid; // Registrar que proceso esta en ejecucion
-
-            // Liberar el permiso para agregar procesos a exec
-            sem_post(&sem_entrada_a_exec);
+            pop_siguiente_pcb();
 
             log_info(kernel_logger, "PID: %d - Estado Anterior: READY - Estado Actual: EXEC", pcb_a_ejecutar->pid);
 
@@ -75,12 +71,27 @@ void *planificador_corto_plazo(void *vparams)
             // ejecutarse (syscall), seguimos con el mismo.
             if (ALGORITMO_PLANIFICACION == RR || ALGORITMO_PLANIFICACION == VRR) {
 
-                // Iniciar el cronometro.
-                cronometro = temporal_create();
+                if (ALGORITMO_PLANIFICACION == VRR) {
+                    // Reiniciar el quantum del proceso si no lo sacamos de ready_plus,
+                    // o si su quantum restante es menor a 0.
+                    if (!proceso_ready_plus || pcb_a_ejecutar->quantum <= 0) {
+                        pcb_a_ejecutar->quantum = QUANTUM;
+                    }
 
-                log_info(debug_logger, "Iniciando reloj RR con q=%d para pid=%u", QUANTUM, pcb_a_ejecutar->pid);
+                    // (Re)iniciar el cronometro.
+                    if (cronometro != NULL) {
+                        temporal_destroy(cronometro);
+                    }
+                    cronometro = temporal_create();
+                }
+
+                log_info(debug_logger,
+                         "Iniciando reloj (V)RR con q=%ld para pid=%u",
+                         pcb_a_ejecutar->quantum,
+                         pcb_a_ejecutar->pid);
+
                 t_parametros_reloj_rr *params_reloj = malloc(sizeof(t_parametros_reloj_rr));
-                params_reloj->ms_espera = QUANTUM;
+                params_reloj->ms_espera = pcb_a_ejecutar->quantum;
                 params_reloj->pid = pcb_a_ejecutar->pid;
                 params_reloj->cancelado = false;
 
@@ -93,6 +104,13 @@ void *planificador_corto_plazo(void *vparams)
                 }
             }
 
+            // Enviamos el pcb a CPU.
+            pcb_send(pcb_a_ejecutar, conexion_cpu_dispatch);
+            pid_en_ejecucion = pcb_a_ejecutar->pid; // Registrar que proceso esta en ejecucion
+
+            // Liberar el permiso para agregar procesos a exec
+            sem_post(&sem_entrada_a_exec);
+
             pcb_destroy(pcb_a_ejecutar);
         }
 
@@ -103,6 +121,13 @@ void *planificador_corto_plazo(void *vparams)
         t_motivo_desalojo motivo = recibir_pcb(&pcb_recibido); // Bloqueante
         pid_en_ejecucion = -1;
 
+        if (ALGORITMO_PLANIFICACION == VRR) {
+            // Frenar el cronometro y reducir el quantum del proceso
+            int64_t tiempo_transcurrido_ms = temporal_gettime(cronometro);
+            pcb_recibido->quantum -= tiempo_transcurrido_ms;
+            log_info(debug_logger, "Pasaron %ldms, Q restante: %ldms", tiempo_transcurrido_ms, pcb_recibido->quantum);
+        }
+
         // Despues de recibir el pcb, cancelar el hilo del reloj, en caso de que siga corriendo.
         pthread_mutex_lock(&mutex_en_ejecucion_ultimo_reloj);
         if (en_ejecucion_ultimo_reloj) {
@@ -110,7 +135,7 @@ void *planificador_corto_plazo(void *vparams)
             // sin segfaultear.
             *cancelar_ultimo_reloj = true;
             en_ejecucion_ultimo_reloj = false;
-            log_debug(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele...");
+            log_info(debug_logger, "Se recibio un pcb y el reloj seguia en ejecucion, pidiendole que cancele...");
         }
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
 
@@ -154,10 +179,42 @@ void *planificador_corto_plazo(void *vparams)
     }
 }
 
+static t_pcb *peek_siguiente_pcb(bool *rplus)
+{
+    // El primer elemento de ready+, sino el primer elemento de ready, sino NULL
+
+    if (!squeue_is_empty(cola_ready_plus)) {
+        *rplus = true;
+        return squeue_peek(cola_ready_plus);
+    }
+
+    if (!squeue_is_empty(cola_ready)) {
+        *rplus = false;
+        return squeue_peek(cola_ready);
+    }
+
+    return NULL;
+}
+
+static void pop_siguiente_pcb(void)
+{
+    // Hace pop al elemento que vimos con peek_siguiente_pcb
+    if (!squeue_is_empty(cola_ready_plus)) {
+        squeue_pop(cola_ready_plus);
+        return;
+    }
+
+    if (!squeue_is_empty(cola_ready)) {
+        squeue_pop(cola_ready);
+        return;
+    }
+}
+
 static void *reloj_rr(void *param)
 {
-    int ms_espera = ((t_parametros_reloj_rr *)param)->ms_espera;
+    int64_t ms_espera = ((t_parametros_reloj_rr *)param)->ms_espera;
     uint32_t pid = ((t_parametros_reloj_rr *)param)->pid;
+    assert(ms_espera >= 0);
 
     // Esperar
     usleep(ms_espera * 1000);
@@ -166,7 +223,7 @@ static void *reloj_rr(void *param)
     bool cancelar_reloj = ((t_parametros_reloj_rr *)param)->cancelado;
     if (!cancelar_reloj) {
         log_info(debug_logger,
-                 "Reloj para pid=%u termino despues de esperar %dms, enviando interrupcion",
+                 "Reloj para pid=%u termino despues de esperar %ldms, enviando interrupcion",
                  pid,
                  ms_espera);
 
@@ -191,7 +248,7 @@ static void *reloj_rr(void *param)
         en_ejecucion_ultimo_reloj = false;
         pthread_mutex_unlock(&mutex_en_ejecucion_ultimo_reloj);
     } else {
-        log_debug(debug_logger, "El reloj para pid=%u fue cancelado", pid);
+        log_info(debug_logger, "El reloj para pid=%u fue cancelado", pid);
     }
 
     free(param);
@@ -243,7 +300,7 @@ static void manejar_out_of_memory(t_pcb *pcb_recibido)
 
 static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
-    // El CPU, luego de hacer wait, envia el nombre del recurso.
+    // El CPU,sasa luego de hacer wait, envia el nombre del recurso.
     char *nombre_recurso = recibir_str(socket_conexion_dispatch);
 
     // Si el recurso no existe, enviarlo a EXIT.

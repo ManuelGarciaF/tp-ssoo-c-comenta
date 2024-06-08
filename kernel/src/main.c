@@ -28,6 +28,7 @@ int conexion_cpu_interrupt;
 
 t_squeue *cola_new;
 t_squeue *cola_ready;
+t_squeue *cola_ready_plus;
 t_sdictionary *colas_blocked_recursos;
 t_slist *nombres_interfaces;
 t_squeue *cola_exit;
@@ -145,6 +146,7 @@ static void inicializar_globales(void)
 
     cola_new = squeue_create();
     cola_ready = squeue_create();
+    cola_ready_plus = squeue_create();
     colas_blocked_recursos = sdictionary_create();
     cola_exit = squeue_create();
 
@@ -277,9 +279,15 @@ void eliminar_proceso(t_pcb *pcb)
 void log_cola_ready(void)
 {
     char *lista_pids = obtener_lista_pids_pcb(cola_ready);
-    log_info(kernel_logger, "Cola Ready READY: [%s]", lista_pids);
+    log_info(kernel_logger, "Cola Ready: [%s]", lista_pids);
     free(lista_pids);
-    // TODO agregar READY+ cuando este hecho VRR
+}
+
+void log_cola_ready_plus(void)
+{
+    char *lista_pids = obtener_lista_pids_pcb(cola_ready_plus);
+    log_info(kernel_logger, "Cola Ready Prioridad: [%s]", lista_pids);
+    free(lista_pids);
 }
 
 void agregar_a_exit(uint32_t pid_val)
