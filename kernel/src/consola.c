@@ -204,7 +204,15 @@ static void actualizar_grado_multiprogramacion(int nuevo)
 
 static void ejecutar_script(const char *path)
 {
-    FILE *fp = fopen(path, "r");
+    // Agregamos el path de config
+    char *path_completo = string_duplicate(PATH_SCRIPT);
+    if (path[0] != '/') {
+        string_append(&path_completo, "/");
+    }
+    string_append(&path_completo, (char *)path);
+
+    FILE *fp = fopen(path_completo, "r");
+    free(path_completo);
     if (fp == NULL) {
         printf("error: No se pudo abrir el archivo de script.\n");
         return;

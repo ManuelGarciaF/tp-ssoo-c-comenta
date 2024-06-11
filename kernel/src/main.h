@@ -40,6 +40,7 @@ extern char *PUERTO_CPU_INTERRUPT;
 extern t_algoritmo_planificacion ALGORITMO_PLANIFICACION;
 extern int QUANTUM;
 extern int grado_multiprogramacion; // Minuscula porque se modifica :)
+extern char *PATH_SCRIPT;
 
 extern int pid_en_ejecucion;
 extern int procesos_extra_multiprogramacion; // Si se achico el grado_multiprogramacion, los proximos procesos que

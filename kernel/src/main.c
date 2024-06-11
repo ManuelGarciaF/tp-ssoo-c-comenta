@@ -17,6 +17,7 @@ char *PUERTO_CPU_INTERRUPT;
 int grado_multiprogramacion;
 int QUANTUM;
 t_algoritmo_planificacion ALGORITMO_PLANIFICACION;
+char *PATH_SCRIPT;
 
 int pid_en_ejecucion = -1; // -1 Cuando no hay ninguno
 int procesos_extra_multiprogramacion = 0;
@@ -133,6 +134,8 @@ static void inicializar_globales(void)
     ALGORITMO_PLANIFICACION =
         parse_algoritmo_planifiacion(config_get_string_or_exit(config, "ALGORITMO_PLANIFICACION"));
     QUANTUM = config_get_int_or_exit(config, "QUANTUM");
+    PATH_SCRIPT = config_get_string_or_exit(config, "PATH_SCRIPT");
+    log_debug(debug_logger, "PATH_SCRIPT: %s", PATH_SCRIPT);
 
     // sem_multiprogramacion es el numero de procesos nuevos que se pueden crear,
     // comienza en el grado de multiprogramacion.
