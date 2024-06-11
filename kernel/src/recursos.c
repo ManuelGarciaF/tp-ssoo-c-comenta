@@ -105,7 +105,9 @@ static void incrementar_recurso(uint32_t pid, char *recurso)
         // Asignarle el recurso y agregarlo a ready.
         guardar_asignacion_recurso(pcb->pid, recurso);
 
-        // TODO log de cambio de estado y de cola_ready
+        log_info(kernel_logger, "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY", pcb->pid);
+        log_cola_ready();
+
         squeue_push(cola_ready, pcb);
         sem_post(&sem_elementos_en_ready);
     }
