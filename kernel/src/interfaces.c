@@ -60,9 +60,11 @@ void *atender_io(void *param)
         // Si es VRR, lo agregamos a Ready+
         if (ALGORITMO_PLANIFICACION == VRR) {
             squeue_push(cola_ready_plus, proceso_bloqueado->pcb);
+            log_info(kernel_logger, "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY", proceso_bloqueado->pcb->pid);
             log_cola_ready_plus();
         } else {
             squeue_push(cola_ready, proceso_bloqueado->pcb);
+            log_info(kernel_logger, "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY", proceso_bloqueado->pcb->pid);
             log_cola_ready();
         }
 

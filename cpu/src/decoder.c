@@ -360,6 +360,9 @@ static t_instruccion parsear_exit(char *argumentos)
 
 static t_registro parsear_a_t_registro(char *str)
 {
+    if (strcmp(str, "PC") == 0) {
+        return PC;
+    }
     if (strcmp(str, "AX") == 0) {
         return AX;
     }

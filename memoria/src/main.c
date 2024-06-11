@@ -48,7 +48,7 @@ int main(void)
 static void inicializar_globales(void)
 {
     // Logs
-    debug_logger = log_create("memoria_debug.log", "debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("memoria_debug.log", "debug", true, LOG_LEVEL_DEBUG);
     memoria_logger = log_create("memoria.log", "memoria", true, LOG_LEVEL_INFO);
 
     // Config
