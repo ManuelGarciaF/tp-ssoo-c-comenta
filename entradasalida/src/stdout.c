@@ -6,6 +6,7 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
         t_list *paquete = recibir_paquete(conexion_kernel);
         uint32_t *pid = list_get(paquete, 0);
         t_operacion_io *instruccion = list_get(paquete, 1);
+        size_t *tamanio_total = list_get(paquete, 2);
 
         if (*instruccion != STDOUT_WRITE) {
             log_error(debug_logger, "Operacion invalida");
@@ -18,6 +19,11 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
         t_list_iterator *it = list_iterator_create(paquete);
         list_iterator_next(it);
         list_iterator_next(it);
+        list_iterator_next(it);
+
+        char *buffer = malloc(*tamanio_total+1);
+        assert(buffer != NULL);
+        size_t buffer_length = 0;
 
         while(list_iterator_has_next(it)){
             t_bloque *bloque = list_iterator_next(it);
@@ -28,18 +34,22 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
             agregar_a_paquete(p, pid, sizeof(uint32_t));
             agregar_a_paquete(p, &(bloque->base), sizeof(size_t));
             agregar_a_paquete(p, &(bloque->tamanio), sizeof(size_t));
-
             enviar_paquete(p, conexion_memoria);
             eliminar_paquete(p);
+
             t_list *paquete_respuesta = recibir_paquete(conexion_memoria);
 
             char *respuesta = list_get(paquete_respuesta, 0);
-            printf("%s",respuesta);
+            
+            memcpy(buffer + buffer_length, respuesta, bloque->tamanio);
+            buffer_length += bloque->tamanio;
 
             list_destroy_and_destroy_elements(paquete_respuesta, free);
         }
         
-        printf("\n");
+        buffer[buffer_length] = '\0';
+        printf("%s\n", buffer);
+        free(buffer);
         
         list_iterator_destroy(it);
             

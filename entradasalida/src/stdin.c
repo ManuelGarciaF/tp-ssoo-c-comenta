@@ -16,7 +16,6 @@ void manejar_stdin(int conexion_kernel, int conexion_memoria)
 
         log_info(entradasalida_logger, "PID: %u - Operacion: IO_STDIN_READ", *pid);
 
-
         char *buffer = readline("> ");
         size_t buffer_offset = 0;  // Para rastrear el offset en el buffer
         
