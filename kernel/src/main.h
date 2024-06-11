@@ -22,6 +22,7 @@
 #include <utils/sockets.h>
 #include <utils/squeue.h>
 #include <utils/utils.h>
+#include <utils/bloque.h>
 
 /*
 ** Variables globales
