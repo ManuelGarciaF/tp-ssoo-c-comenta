@@ -328,14 +328,64 @@ static void exec_io_gen_sleep(t_instruccion instruccion, bool *incrementar_pc, i
 
 static void exec_io_stdin_read(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    size_t dir_logica_inicio = get_registro(instruccion.parametros[1].registro);
+    size_t tamanio_total = get_registro(instruccion.parametros[2].registro);
+
+    t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio_total);
+
+    // Siempre antes de devolver el pcb hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    t_operacion_io op = STDIN_READ;
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+
+    // Agregar los bloques uno por uno
+    t_list_iterator *it = list_iterator_create(bloques);
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(p, bloque, sizeof(t_bloque));
+    }
+    list_iterator_destroy(it);
+
+    enviar_paquete(p, conexion_dispatch);
+    eliminar_paquete(p);
+
+    list_destroy_and_destroy_elements(bloques, free);
 }
 
 static void exec_io_stdout_write(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    size_t dir_logica_inicio = get_registro(instruccion.parametros[1].registro);
+    size_t tamanio_total = get_registro(instruccion.parametros[2].registro);
+
+    t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio_total);
+
+    // Siempre antes de devolver el pcb hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    t_operacion_io op = STDOUT_WRITE;
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+
+    // Agregar los bloques uno por uno
+    t_list_iterator *it = list_iterator_create(bloques);
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(p, bloque, sizeof(t_bloque));
+    }
+    list_iterator_destroy(it);
+
+    enviar_paquete(p, conexion_dispatch);
+    eliminar_paquete(p);
+
+    list_destroy_and_destroy_elements(bloques, free);
 }
 
 static void exec_io_fs_create(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)

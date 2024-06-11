@@ -30,13 +30,13 @@ int main(int argc, char *argv[])
 
     NOMBRE_INTERFAZ = argv[1];
     char *archivo_config = argv[2];
-    debug_logger = log_create("entradasalida_debug.log", "debug", true, LOG_LEVEL_INFO);
+    debug_logger = log_create("entradasalida_debug.log", "debug", true, LOG_LEVEL_DEBUG);
     entradasalida_logger = log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create(archivo_config);
     if (config == NULL) {
         log_error(debug_logger, "No se pudo crear la config");
-        exit(1);
+        abort();
     }
 
     cargar_config(config);
@@ -71,15 +71,14 @@ int main(int argc, char *argv[])
     case STDIN:
         manejar_stdin(conexion_kernel, conexion_memoria);
         break;
-    /*case STDOUT:
+    case STDOUT:
         manejar_stdout(conexion_kernel, conexion_memoria);
         break;
     case DIALFS:
-        dialfs();
-        break;
-    */
+        /* dialfs(); */
+        /* break; */
     default:
-        exit(1); // Unreachable
+        abort();
     }
 
     // Liberar memoria
@@ -143,5 +142,5 @@ t_tipo_interfaz parsear_a_t_tipo_interfaz(char *str)
         return DIALFS;
     }
     log_error(debug_logger, "Tipo de interfaz invalida");
-    exit(1);
+    abort();
 }

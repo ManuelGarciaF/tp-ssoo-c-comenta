@@ -13,7 +13,7 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
             list_destroy_and_destroy_elements(paquete, free);
             continue;
         }
-    
+
         log_info(entradasalida_logger, "PID: %u - Operacion: IO_STDOUT_WRITE", *pid);
 
         t_list_iterator *it = list_iterator_create(paquete);
@@ -21,11 +21,11 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
         list_iterator_next(it);
         list_iterator_next(it);
 
-        char *buffer = malloc(*tamanio_total+1);
+        char *buffer = malloc(*tamanio_total + 1);
         assert(buffer != NULL);
         size_t buffer_length = 0;
 
-        while(list_iterator_has_next(it)){
+        while (list_iterator_has_next(it)) {
             t_bloque *bloque = list_iterator_next(it);
 
             enviar_int(OPCODE_LECTURA_ESPACIO_USUARIO, conexion_memoria);
@@ -40,19 +40,19 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
             t_list *paquete_respuesta = recibir_paquete(conexion_memoria);
 
             char *respuesta = list_get(paquete_respuesta, 0);
-            
+
             memcpy(buffer + buffer_length, respuesta, bloque->tamanio);
             buffer_length += bloque->tamanio;
 
             list_destroy_and_destroy_elements(paquete_respuesta, free);
         }
-        
+
         buffer[buffer_length] = '\0';
         printf("%s\n", buffer);
         free(buffer);
-        
+
         list_iterator_destroy(it);
-            
+
         enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 
         list_destroy_and_destroy_elements(paquete, free);

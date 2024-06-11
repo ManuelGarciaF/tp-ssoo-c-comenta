@@ -110,6 +110,31 @@ void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos
     } while (tam_restante > 0);
 }
 
+t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio)
+{
+    t_list *bloques = list_create();
+
+    size_t dir_actual = dir_logica;
+    size_t tam_restante = tamanio;
+    while (tam_restante > 0) {
+        t_bloque *b = malloc(sizeof(t_bloque));
+        assert(b != NULL);
+
+        // TODO testear esto
+        size_t dir_fisica = obtener_direccion_fisica(pid, dir_actual);
+        b->base = dir_fisica;
+        // El tamanio del bloque es el minimo entre el restante y el restante en pagina
+        size_t tam_max = tam_restante_pag(dir_actual);
+        b->tamanio = (tam_restante < tam_max) ? tam_restante : tam_max;
+
+        dir_actual += b->tamanio;
+        tam_restante -= b->tamanio;
+        list_add(bloques, b);
+    }
+
+    return bloques;
+}
+
 /*
 ** Funciones privadas
 */

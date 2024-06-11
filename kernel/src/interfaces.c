@@ -62,11 +62,15 @@ void *atender_io(void *param)
         // Si es VRR, lo agregamos a Ready+
         if (ALGORITMO_PLANIFICACION == VRR) {
             squeue_push(cola_ready_plus, proceso_bloqueado->pcb);
-            log_info(kernel_logger, "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY", proceso_bloqueado->pcb->pid);
+            log_info(kernel_logger,
+                     "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY",
+                     proceso_bloqueado->pcb->pid);
             log_cola_ready_plus();
         } else {
             squeue_push(cola_ready, proceso_bloqueado->pcb);
-            log_info(kernel_logger, "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY", proceso_bloqueado->pcb->pid);
+            log_info(kernel_logger,
+                     "PID: %d - Estado Anterior: BLOCKED - Estado Actual: READY",
+                     proceso_bloqueado->pcb->pid);
             log_cola_ready();
         }
 
@@ -186,7 +190,7 @@ static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, &op, sizeof(int));
     uint32_t *unidades_trabajo = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, unidades_trabajo, sizeof(uint32_t));
-    
+
     int bytes = enviar_paquete(paquete, conexion_io);
     eliminar_paquete(paquete);
 
@@ -201,9 +205,8 @@ static int enviar_stdin_read(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, &op, sizeof(int));
     size_t *tamanio_total = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
-    
+
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
     list_iterator_next(it);
     list_iterator_next(it);
 
@@ -228,9 +231,8 @@ static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, &op, sizeof(int));
     size_t *tamanio_total = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
-    
+
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
     list_iterator_next(it);
     list_iterator_next(it);
 

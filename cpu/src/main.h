@@ -15,6 +15,7 @@
 #include <utils/slist.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
+#include <utils/bloque.h>
 
 // Si imprimir los logs de debug por pantalla
 #define PRINT_DEBUG false
@@ -115,6 +116,8 @@ size_t tam_restante_pag(size_t dir_logica);
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
 // Escribe tamanio bytes del buffer datos.
 void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
+// Devuelve una lista de bloques para realizar lecturas en más de una pagina en base a una direccion logica y un tamanio.
+t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio);
 
 
 

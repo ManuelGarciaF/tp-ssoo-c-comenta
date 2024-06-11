@@ -120,6 +120,7 @@ void *planificador_corto_plazo(void *vparams)
         t_pcb *pcb_recibido = NULL;
         t_motivo_desalojo motivo = recibir_pcb(&pcb_recibido); // Bloqueante
         pid_en_ejecucion = -1;
+        assert(pcb_recibido != NULL);
 
         if (ALGORITMO_PLANIFICACION == VRR) {
             // Frenar el cronometro y reducir el quantum del proceso
@@ -364,6 +365,7 @@ static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
     // Si no existe la interfaz, o no soporta la operacion, mandar el proceso a EXIT.
     if (!existe_interfaz(nombre_interfaz) || !interfaz_soporta_operacion(nombre_interfaz, *opcode)) {
         interfaz_invalida(pcb_recibido);
+        list_destroy_and_destroy_elements(operacion, free);
         return;
     }
 
