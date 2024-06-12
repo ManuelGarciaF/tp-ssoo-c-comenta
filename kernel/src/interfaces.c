@@ -209,6 +209,7 @@ static int enviar_stdin_read(t_bloqueado_io *pb, int conexion_io)
     t_list_iterator *it = list_iterator_create(pb->operacion);
     list_iterator_next(it);
     list_iterator_next(it);
+    list_iterator_next(it);
 
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
@@ -233,6 +234,7 @@ static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
 
     t_list_iterator *it = list_iterator_create(pb->operacion);
+    list_iterator_next(it);
     list_iterator_next(it);
     list_iterator_next(it);
 

@@ -212,8 +212,8 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
 
 static void exec_mov_out(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    t_registro reg_datos = instruccion.parametros[0].registro;
-    size_t dir_logica = get_registro(instruccion.parametros[1].registro);
+    size_t dir_logica = get_registro(instruccion.parametros[0].registro);
+    t_registro reg_datos = instruccion.parametros[1].registro;
 
     uint32_t valor_datos = get_registro(reg_datos);
 
@@ -264,9 +264,13 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
         log_info(debug_logger, "Out of memory, enviando proceso a exit");
         devolver_pcb(OUT_OF_MEMORY, conexion_dispatch);
         return;
+    } else if (respuesta == R_RESIZE_SUCCESS) {
+        log_info(debug_logger, "Se amplio el proceso a %u bytes", tamanio);
+    } else {
+        log_error(debug_logger, "Memoria no envio un msg correcto");
+        abort();
     }
 
-    log_info(debug_logger, "Se amplio el proceso a %u bytes", tamanio);
 }
 
 static void exec_copy_string(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
@@ -342,6 +346,7 @@ static void exec_io_stdin_read(t_instruccion instruccion, bool *incrementar_pc, 
     agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
     t_operacion_io op = STDIN_READ;
     agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+    agregar_a_paquete(p, &tamanio_total, sizeof(size_t)); // Tamanio Total
 
     // Agregar los bloques uno por uno
     t_list_iterator *it = list_iterator_create(bloques);
@@ -373,6 +378,7 @@ static void exec_io_stdout_write(t_instruccion instruccion, bool *incrementar_pc
     agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
     t_operacion_io op = STDOUT_WRITE;
     agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+    agregar_a_paquete(p, &tamanio_total, sizeof(size_t)); // Tamanio Total
 
     // Agregar los bloques uno por uno
     t_list_iterator *it = list_iterator_create(bloques);
