@@ -36,7 +36,8 @@ bool asignar_recurso(t_pcb *pcb, char *recurso)
 
 void liberar_asignaciones_recurso(uint32_t pid)
 {
-    // Buscar asignaciones
+    // Buscar asignaciones y guardarlas en una lista.
+    t_list *recursos_asignados = list_create();
     slist_lock(asignaciones_recursos);
     t_list_iterator *it = list_iterator_create(asignaciones_recursos->list);
     while (list_iterator_has_next(it)) {
@@ -45,14 +46,22 @@ void liberar_asignaciones_recurso(uint32_t pid)
         if (ar->pid == pid) {
             list_iterator_remove(it);
 
-            incrementar_recurso(pid, ar->nombre_recurso);
+            list_add(recursos_asignados, ar->nombre_recurso);
 
-            free(ar->nombre_recurso);
             free(ar);
         }
     }
     list_iterator_destroy(it);
     slist_unlock(asignaciones_recursos);
+
+    // Liberar las asignaciones que obtuvimos antes
+    it = list_iterator_create(recursos_asignados);
+    while (list_iterator_has_next(it)) {
+        char *nombre_recurso = list_iterator_next(it);
+        incrementar_recurso(pid, nombre_recurso);
+    }
+    list_iterator_destroy(it);
+    list_destroy_and_destroy_elements(recursos_asignados, free);
 }
 
 // Guarda una asignacion de recurso
