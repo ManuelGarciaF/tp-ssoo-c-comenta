@@ -49,6 +49,8 @@ static void recibir_crear_proceso(int socket_conexion)
     // Guardamos el proceso en el diccionario
     sdictionary_put(procesos, pid_str, proceso_nuevo);
 
+    log_info(memoria_logger, "PID: %u - Tamaño: 0", *pid);
+
     free(pid_str);
     list_destroy_and_destroy_elements(paquete, free);
 }
@@ -61,6 +63,8 @@ static void recibir_liberar_proceso(int socket_conexion)
     char *pid_str = string_itoa(pid);
 
     t_proceso *proceso = sdictionary_remove(procesos, pid_str);
+
+    log_info(memoria_logger, "PID: %u - Tamaño: %d", pid, slist_size(proceso->paginas));
 
     // Marcar marcos como libres.
     pthread_mutex_lock(&mutex_bitmap_marcos);

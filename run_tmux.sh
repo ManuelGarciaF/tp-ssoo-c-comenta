@@ -33,7 +33,7 @@ fi
 # Esperar que kernel inicie
 sleep 1.5
 # Correr IO
-tmux send-keys -t tp-ssoo:4 "valgrind --leak-check=full ./bin/entradasalida ESPERA ESPERA.config" C-m
+tmux send-keys -t tp-ssoo:4 "valgrind --leak-check=full ./bin/entradasalida IO_GEN_SLEEP IO_GEN_SLEEP.config" C-m
 
 tmux select-window -t tp-ssoo:3
 tmux attach-session -t tp-ssoo

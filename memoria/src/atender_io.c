@@ -11,7 +11,7 @@ void atender_io(int socket_conexion)
         usleep(RETARDO_RESPUESTA * 1000);
 
         switch (op) {
-            case OPCODE_LECTURA_ESPACIO_USUARIO:
+        case OPCODE_LECTURA_ESPACIO_USUARIO:
             responder_lectura_espacio_usuario(socket_conexion);
             break;
         case OPCODE_ESCRITURA_ESPACIO_USUARIO:

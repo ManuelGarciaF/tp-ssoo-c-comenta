@@ -11,7 +11,7 @@ void atender_cpu(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (cpu)");
 
-    // Enviar el tamanio de página
+    // CPU necesita saber el tamanio de pagina para las operaciones de la MMU.
     enviar_int(TAM_PAGINA, socket_conexion);
 
     while (true) {
@@ -50,6 +50,8 @@ static void enviar_instruccion(int socket_conexion)
     uint32_t *pid_int = list_get(info_fetch, 0);
     char *pid = string_itoa(*pid_int);
     uint32_t *pc = list_get(info_fetch, 1);
+    assert(pc != NULL);
+    assert(pid_int != NULL);
 
     t_proceso *proceso = sdictionary_get(procesos, pid);
 
@@ -111,18 +113,19 @@ static void responder_ajustar_tamanio_proceso(int socket_conexion)
 
     int dif_paginas = paginas_requeridas_tam_nuevo - paginas_en_uso;
 
+    int tam_actual_bytes = paginas_en_uso * TAM_PAGINA;
     if (dif_paginas > 0) {
-        log_info(debug_logger,
+        log_info(memoria_logger,
                  "PID: %u - Tamaño Actual: %d - Tamaño a Ampliar: %u",
                  *pid_int,
-                 paginas_en_uso * TAM_PAGINA,
+                 tam_actual_bytes,
                  *tam_nuevo_bytes);
         ampliar_proceso(proceso, dif_paginas, socket_conexion);
     } else {
-        log_info(debug_logger,
+        log_info(memoria_logger,
                  "PID: %u - Tamaño Actual: %d - Tamaño a Reducir: %u",
                  *pid_int,
-                 paginas_en_uso * TAM_PAGINA,
+                 tam_actual_bytes,
                  *tam_nuevo_bytes);
         reducir_proceso(proceso, -dif_paginas, socket_conexion);
     }
@@ -152,6 +155,7 @@ static void ampliar_proceso(t_proceso *proceso, int paginas_a_agregar, int socke
     // Si no encontramos suficientes marcos libres avisar OOM
     if (list_size(marcos_a_asignar) < paginas_a_agregar) {
         log_warning(debug_logger, "Fallo la ampliación, Out Of Memory");
+        list_clean_and_destroy_elements(marcos_a_asignar, free);
         enviar_int(R_RESIZE_OUT_OF_MEMORY, socket_conexion);
     } else {
         // Asignar marcos y avisar success
