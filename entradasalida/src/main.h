@@ -3,6 +3,7 @@
 
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/bitarray.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
