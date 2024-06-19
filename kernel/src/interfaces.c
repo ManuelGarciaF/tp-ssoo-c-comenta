@@ -7,6 +7,11 @@ static int enviar_operacion(t_bloqueado_io *pb, int conexion_io);
 static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io);
 static int enviar_stdin_read(t_bloqueado_io *pb, int conexion_io);
 static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io);
+static int enviar_fs_create(t_bloqueado_io *pb, int conexion_io);
+static int enviar_fs_delete(t_bloqueado_io *pb, int conexion_io);
+static int enviar_fs_truncate(t_bloqueado_io *pb, int conexion_io);
+static int enviar_fs_write(t_bloqueado_io *pb, int conexion_io);
+static int enviar_fs_read(t_bloqueado_io *pb, int conexion_io);
 
 static bool socket_sigue_abierto(int conexion);
 static void eliminar_procesos_bloqueados(t_squeue *bloqueados);
@@ -173,11 +178,15 @@ static int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
     case STDOUT_WRITE:
         return enviar_stdout_write(pb, conexion_io);
     case FS_CREATE:
+        return enviar_fs_create(pb, conexion_io);
     case FS_DELETE:
+        return enviar_fs_delete(pb, conexion_io);
     case FS_TRUNCATE:
+        return enviar_fs_truncate(pb, conexion_io);
     case FS_WRITE:
+        return enviar_fs_write(pb, conexion_io);
     case FS_READ:
-        assert(false && "Not implemented");
+        return enviar_fs_read(pb, conexion_io);
     }
     assert(false && "Operacion invalida");
 }
@@ -187,7 +196,7 @@ static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
     t_operacion_io op = GEN_SLEEP;
-    agregar_a_paquete(paquete, &op, sizeof(int));
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
     uint32_t *unidades_trabajo = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, unidades_trabajo, sizeof(uint32_t));
 
@@ -202,7 +211,7 @@ static int enviar_stdin_read(t_bloqueado_io *pb, int conexion_io)
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
     t_operacion_io op = STDIN_READ;
-    agregar_a_paquete(paquete, &op, sizeof(int));
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
     size_t *tamanio_total = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
 
@@ -229,7 +238,7 @@ static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io)
     t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
     t_operacion_io op = STDOUT_WRITE;
-    agregar_a_paquete(paquete, &op, sizeof(int));
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
     size_t *tamanio_total = list_get(pb->operacion, 2); // Es el 3er elemento, el 1er parametro.
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
 
@@ -243,6 +252,126 @@ static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io)
         agregar_a_paquete(paquete, bloque, sizeof(t_bloque));
     }
 
+    list_iterator_destroy(it);
+
+    int bytes = enviar_paquete(paquete, conexion_io);
+    eliminar_paquete(paquete);
+
+    return bytes;
+}
+
+static int enviar_fs_create(t_bloqueado_io *pb, int conexion_io)
+{
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
+    t_operacion_io op = FS_CREATE;
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
+
+    char *nombre_archivo = list_get(pb->operacion, 2);
+    agregar_a_paquete(paquete, nombre_archivo, strlen(nombre_archivo) + 1);
+
+    int bytes = enviar_paquete(paquete, conexion_io);
+    eliminar_paquete(paquete);
+
+    return bytes;
+}
+
+static int enviar_fs_delete(t_bloqueado_io *pb, int conexion_io)
+{
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
+    t_operacion_io op = FS_DELETE;
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
+
+    char *nombre_archivo = list_get(pb->operacion, 2);
+    agregar_a_paquete(paquete, nombre_archivo, strlen(nombre_archivo) + 1);
+
+    int bytes = enviar_paquete(paquete, conexion_io);
+    eliminar_paquete(paquete);
+
+    return bytes;
+}
+
+static int enviar_fs_truncate(t_bloqueado_io *pb, int conexion_io)
+{
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
+    t_operacion_io op = FS_TRUNCATE;
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
+
+    char *nombre_archivo = list_get(pb->operacion, 2);
+    agregar_a_paquete(paquete, nombre_archivo, strlen(nombre_archivo) + 1);
+
+    size_t *tamanio = list_get(pb->operacion, 3);
+    agregar_a_paquete(paquete, tamanio, sizeof(size_t));
+
+    int bytes = enviar_paquete(paquete, conexion_io);
+    eliminar_paquete(paquete);
+
+    return bytes;
+}
+
+static int enviar_fs_write(t_bloqueado_io *pb, int conexion_io)
+{
+    t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
+    t_operacion_io op = FS_WRITE;
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
+
+    char *nombre_archivo = list_get(pb->operacion, 2);
+    agregar_a_paquete(paquete, nombre_archivo, strlen(nombre_archivo) + 1);
+
+    size_t *dir_archivo_inicio = list_get(pb->operacion, 3);
+    agregar_a_paquete(paquete, dir_archivo_inicio, sizeof(size_t));
+
+    size_t *tamanio = list_get(pb->operacion, 4);
+    agregar_a_paquete(paquete, tamanio, sizeof(size_t));
+
+    t_list_iterator *it = list_iterator_create(pb->operacion);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(paquete, bloque, sizeof(t_bloque));
+    }
+    list_iterator_destroy(it);
+
+    int bytes = enviar_paquete(paquete, conexion_io);
+    eliminar_paquete(paquete);
+
+    return bytes;
+}
+
+static int enviar_fs_read(t_bloqueado_io *pb, int conexion_io)
+{t_paquete *paquete = crear_paquete();
+    agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
+    t_operacion_io op = FS_READ;
+    agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
+
+    char *nombre_archivo = list_get(pb->operacion, 2);
+    agregar_a_paquete(paquete, nombre_archivo, strlen(nombre_archivo) + 1);
+
+    size_t *dir_archivo_inicio = list_get(pb->operacion, 3);
+    agregar_a_paquete(paquete, dir_archivo_inicio, sizeof(size_t));
+
+    size_t *tamanio = list_get(pb->operacion, 4);
+    agregar_a_paquete(paquete, tamanio, sizeof(size_t));
+
+    t_list_iterator *it = list_iterator_create(pb->operacion);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+    list_iterator_next(it);
+
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(paquete, bloque, sizeof(t_bloque));
+    }
     list_iterator_destroy(it);
 
     int bytes = enviar_paquete(paquete, conexion_io);

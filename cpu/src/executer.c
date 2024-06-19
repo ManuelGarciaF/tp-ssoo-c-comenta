@@ -130,7 +130,7 @@ static void set_registro(t_registro registro, uint32_t valor, bool *incrementar_
     switch (registro) {
     case PC:
         pcb->program_counter = valor;
-        *incrementar_pc = false; // Si modificamos PC no hay que autoincrementarlo.
+        *incrementar_pc = false; // Si modificamos PC no por IO hay que autoincrementarlo.
         break;
     case AX:
         pcb->registros.ax = valor;
@@ -270,7 +270,6 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
         log_error(debug_logger, "Memoria no envio un msg correcto");
         abort();
     }
-
 }
 
 static void exec_copy_string(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
@@ -289,7 +288,7 @@ static void exec_wait(t_instruccion instruccion, bool *incrementar_pc, int conex
 {
     char *recurso = instruccion.parametros[0].str;
 
-    // Siempre antes de devolver el pcb hay que incrementar el pc
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
     pcb->program_counter++;
     devolver_pcb(WAIT_RECURSO, conexion_dispatch);
 
@@ -301,7 +300,7 @@ static void exec_signal(t_instruccion instruccion, bool *incrementar_pc, int con
 {
     char *recurso = instruccion.parametros[0].str;
 
-    // Siempre antes de devolver el pcb hay que incrementar el pc
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
     pcb->program_counter++;
     devolver_pcb(SIGNAL_RECURSO, conexion_dispatch);
 
@@ -314,7 +313,7 @@ static void exec_io_gen_sleep(t_instruccion instruccion, bool *incrementar_pc, i
     char *nombre_interfaz = instruccion.parametros[0].str;
     uint32_t unidades_trabajo = instruccion.parametros[1].num;
 
-    // Siempre antes de devolver el pcb hay que incrementar el pc
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
     pcb->program_counter++;
     devolver_pcb(IO, conexion_dispatch);
 
@@ -338,14 +337,14 @@ static void exec_io_stdin_read(t_instruccion instruccion, bool *incrementar_pc, 
 
     t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio_total);
 
-    // Siempre antes de devolver el pcb hay que incrementar el pc
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
     pcb->program_counter++;
     devolver_pcb(IO, conexion_dispatch);
 
     t_paquete *p = crear_paquete();
     agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
     t_operacion_io op = STDIN_READ;
-    agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));    // Operacion
     agregar_a_paquete(p, &tamanio_total, sizeof(size_t)); // Tamanio Total
 
     // Agregar los bloques uno por uno
@@ -370,14 +369,14 @@ static void exec_io_stdout_write(t_instruccion instruccion, bool *incrementar_pc
 
     t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio_total);
 
-    // Siempre antes de devolver el pcb hay que incrementar el pc
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
     pcb->program_counter++;
     devolver_pcb(IO, conexion_dispatch);
 
     t_paquete *p = crear_paquete();
     agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
     t_operacion_io op = STDOUT_WRITE;
-    agregar_a_paquete(p, &op, sizeof(t_operacion_io)); // Operacion
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));    // Operacion
     agregar_a_paquete(p, &tamanio_total, sizeof(size_t)); // Tamanio Total
 
     // Agregar los bloques uno por uno
@@ -396,33 +395,141 @@ static void exec_io_stdout_write(t_instruccion instruccion, bool *incrementar_pc
 
 static void exec_io_fs_create(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    char *nombre_archivo = instruccion.parametros[1].str;
 
-    // TODO
-    assert(false && "Not implemented");
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+
+    t_operacion_io op = FS_CREATE;
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));                  // Operacion
+    agregar_a_paquete(p, nombre_archivo, strlen(nombre_archivo) + 1);   // Nombre Archivo
+
+    enviar_paquete(p, conexion_dispatch);
+
+    eliminar_paquete(p);
 }
 
 static void exec_io_fs_delete(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    char *nombre_archivo = instruccion.parametros[1].str;
+
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+
+    t_operacion_io op = FS_DELETE;
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));                  // Operacion
+    agregar_a_paquete(p, nombre_archivo, strlen(nombre_archivo) + 1);   // Nombre Archivo
+
+    enviar_paquete(p, conexion_dispatch);
+
+    eliminar_paquete(p);
 }
 
 static void exec_io_fs_truncate(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    char *nombre_archivo = instruccion.parametros[1].str;
+    size_t tamanio = get_registro(instruccion.parametros[2].registro);
+
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+
+    t_operacion_io op = FS_TRUNCATE;
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));                  // Operacion
+    agregar_a_paquete(p, nombre_archivo, strlen(nombre_archivo) + 1);   // Nombre Archivo
+    agregar_a_paquete(p, &tamanio, sizeof(size_t));                     // Tamanio nuevo
+
+    enviar_paquete(p, conexion_dispatch);
+
+    eliminar_paquete(p);
 }
 
 static void exec_io_fs_write(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    char *nombre_archivo = instruccion.parametros[1].str;
+    size_t dir_logica_inicio = get_registro(instruccion.parametros[2].registro);
+    size_t tamanio = get_registro(instruccion.parametros[3].registro);
+    size_t dir_archivo_inicio = get_registro(instruccion.parametros[4].registro);
+
+    t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio);
+
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+
+    t_operacion_io op = FS_WRITE;
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));                  // Operacion
+    agregar_a_paquete(p, nombre_archivo, strlen(nombre_archivo) + 1);   // Nombre Archivo
+    agregar_a_paquete(p, &dir_archivo_inicio, sizeof(size_t));          // Direccion de inicio del archivo
+    agregar_a_paquete(p, &tamanio, sizeof(size_t));                     // Tamanio total
+
+    // Agregar los bloques uno por uno
+    t_list_iterator *it = list_iterator_create(bloques);
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(p, bloque, sizeof(t_bloque));
+    }
+    list_iterator_destroy(it);
+
+    enviar_paquete(p, conexion_dispatch);
+    eliminar_paquete(p);
+
+    list_destroy_and_destroy_elements(bloques, free);
 }
 
 static void exec_io_fs_read(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
 {
-    // TODO
-    assert(false && "Not implemented");
+    char *nombre_interfaz = instruccion.parametros[0].str;
+    char *nombre_archivo = instruccion.parametros[1].str;
+    size_t dir_logica_inicio = get_registro(instruccion.parametros[2].registro);
+    size_t tamanio = get_registro(instruccion.parametros[3].registro);
+    size_t dir_archivo_inicio = get_registro(instruccion.parametros[4].registro);
+
+    t_list *bloques = obtener_bloques(pcb->pid, dir_logica_inicio, tamanio);
+
+    // Siempre antes de devolver el pcb por IO hay que incrementar el pc
+    pcb->program_counter++;
+    devolver_pcb(IO, conexion_dispatch);
+
+    t_paquete *p = crear_paquete();
+
+    t_operacion_io op = FS_READ;
+    agregar_a_paquete(p, nombre_interfaz, strlen(nombre_interfaz) + 1); // Nombre Interfaz
+    agregar_a_paquete(p, &op, sizeof(t_operacion_io));                  // Operacion
+    agregar_a_paquete(p, nombre_archivo, strlen(nombre_archivo) + 1);   // Nombre Archivo
+    agregar_a_paquete(p, &dir_archivo_inicio, sizeof(size_t));          // Direccion de inicio del archivo
+    agregar_a_paquete(p, &tamanio, sizeof(size_t));                     // Tamanio total
+
+    // Agregar los bloques uno por uno
+    t_list_iterator *it = list_iterator_create(bloques);
+    while (list_iterator_has_next(it)) {
+        t_bloque *bloque = list_iterator_next(it);
+        agregar_a_paquete(p, bloque, sizeof(t_bloque));
+    }
+    list_iterator_destroy(it);
+
+    enviar_paquete(p, conexion_dispatch);
+    eliminar_paquete(p);
+
+    list_destroy_and_destroy_elements(bloques, free);
 }
 
 static void exec_exit(t_instruccion instruccion, bool *incrementar_pc, int conexion_dispatch)
