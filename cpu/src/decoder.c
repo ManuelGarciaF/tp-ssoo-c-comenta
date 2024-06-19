@@ -83,12 +83,9 @@ static t_instruccion parsear_set(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro registro = parsear_a_t_registro(argumentos_separados[0]);
-    int valor = atoi(argumentos_separados[1]);
-
     instruccion.opcode = SET;
-    instruccion.parametros[0].registro = registro;
-    instruccion.parametros[1].num = valor;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].num = atoi(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -99,12 +96,9 @@ static t_instruccion parsear_mov_in(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro datos = parsear_a_t_registro(argumentos_separados[0]);
-    t_registro direccion = parsear_a_t_registro(argumentos_separados[1]);
-
     instruccion.opcode = MOV_IN;
-    instruccion.parametros[0].registro = datos;
-    instruccion.parametros[1].registro = direccion;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -115,12 +109,9 @@ static t_instruccion parsear_mov_out(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro direccion = parsear_a_t_registro(argumentos_separados[0]);
-    t_registro datos = parsear_a_t_registro(argumentos_separados[1]);
-
     instruccion.opcode = MOV_OUT;
-    instruccion.parametros[0].registro = direccion;
-    instruccion.parametros[1].registro = datos;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -131,12 +122,9 @@ static t_instruccion parsear_sum(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro destino = parsear_a_t_registro(argumentos_separados[0]);
-    t_registro origen = parsear_a_t_registro(argumentos_separados[1]);
-
     instruccion.opcode = SUM;
-    instruccion.parametros[0].registro = destino;
-    instruccion.parametros[1].registro = origen;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -147,12 +135,9 @@ static t_instruccion parsear_sub(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro destino = parsear_a_t_registro(argumentos_separados[0]);
-    t_registro origen = parsear_a_t_registro(argumentos_separados[1]);
-
     instruccion.opcode = SUB;
-    instruccion.parametros[0].registro = destino;
-    instruccion.parametros[1].registro = origen;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -163,12 +148,9 @@ static t_instruccion parsear_jnz(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro registro = parsear_a_t_registro(argumentos_separados[0]);
-    int numero_instruccion = atoi(argumentos_separados[1]);
-
     instruccion.opcode = JNZ;
-    instruccion.parametros[0].registro = registro;
-    instruccion.parametros[1].num = numero_instruccion;
+    instruccion.parametros[0].registro = parsear_a_t_registro(argumentos_separados[0]);
+    instruccion.parametros[1].num = atoi(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -179,10 +161,8 @@ static t_instruccion parsear_resize(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    int tamanio = atoi(argumentos_separados[0]);
-
     instruccion.opcode = RESIZE;
-    instruccion.parametros[0].num = tamanio;
+    instruccion.parametros[0].num = atoi(argumentos_separados[0]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -193,10 +173,8 @@ static t_instruccion parsear_copy_string(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    int tamanio = atoi(argumentos_separados[0]);
-
     instruccion.opcode = COPY_STRING;
-    instruccion.parametros[0].num = tamanio;
+    instruccion.parametros[0].num = atoi(argumentos_separados[0]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -231,11 +209,9 @@ static t_instruccion parsear_io_gen_sleep(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    int unidades_de_trabajo = atoi(argumentos_separados[1]);
-
     instruccion.opcode = IO_GEN_SLEEP;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
-    instruccion.parametros[1].num = unidades_de_trabajo;
+    instruccion.parametros[1].num = atoi(argumentos_separados[1]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -246,13 +222,10 @@ static t_instruccion parsear_io_stdin_read(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro direccion = parsear_a_t_registro(argumentos_separados[1]);
-    t_registro tamanio = parsear_a_t_registro(argumentos_separados[2]);
-
     instruccion.opcode = IO_STDIN_READ;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
-    instruccion.parametros[1].registro = direccion;
-    instruccion.parametros[2].registro = tamanio;
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
+    instruccion.parametros[2].registro = parsear_a_t_registro(argumentos_separados[2]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -263,13 +236,10 @@ static t_instruccion parsear_io_stdout_write(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro direccion = parsear_a_t_registro(argumentos_separados[1]);
-    t_registro tamanio = parsear_a_t_registro(argumentos_separados[2]);
-
     instruccion.opcode = IO_STDOUT_WRITE;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
-    instruccion.parametros[1].registro = direccion;
-    instruccion.parametros[2].registro = tamanio;
+    instruccion.parametros[1].registro = parsear_a_t_registro(argumentos_separados[1]);
+    instruccion.parametros[2].registro = parsear_a_t_registro(argumentos_separados[2]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
@@ -306,12 +276,10 @@ static t_instruccion parsear_io_fs_truncate(char *argumentos)
     t_instruccion instruccion = {0};
     char **argumentos_separados = string_split(argumentos, " ");
 
-    t_registro tamanio = parsear_a_t_registro(argumentos_separados[2]);
-
     instruccion.opcode = IO_FS_TRUNCATE;
     strcpy(instruccion.parametros[0].str, argumentos_separados[0]);
     strcpy(instruccion.parametros[1].str, argumentos_separados[1]);
-    instruccion.parametros[2].registro = tamanio;
+    instruccion.parametros[2].registro = parsear_a_t_registro(argumentos_separados[2]);
 
     string_array_destroy(argumentos_separados);
     return instruccion;
