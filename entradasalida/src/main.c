@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
         manejar_stdout(conexion_kernel, conexion_memoria);
         break;
     case DIALFS:
-        /* dialfs(); */
-        /* break; */
+        manejar_dialfs(conexion_kernel, conexion_memoria);
+        break;
     default:
         abort();
     }
