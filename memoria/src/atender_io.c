@@ -10,8 +10,8 @@ void atender_io(int socket_conexion)
         bool err = false;
         t_op_memoria op = recibir_int(socket_conexion, &err);
         if (err) {
-            log_warning(debug_logger, "La conexion con la interfaz fue cerrada");
-            return;
+            log_warning(debug_logger, "La conexion con una interfaz fue cerrada");
+            return; // No queremos matar todo el proceso de memoria cuando una interfaz es desconectada
         }
 
         // Esperar antes de responder.

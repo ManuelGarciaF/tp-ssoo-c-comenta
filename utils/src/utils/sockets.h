@@ -16,7 +16,7 @@
 extern t_log *debug_logger;
 
 typedef enum {
-    OP_MENSAJE_STR,
+    OP_MENSAJE_STR = 0,
     OP_MENSAJE_INT,
     OP_PAQUETE, // Paquete compuesto de varios campos
 } op_code;
@@ -54,16 +54,17 @@ int iniciar_servidor(char *puerto);
 /* Bloqueante, espera un cliente y devuelve su socket */
 int esperar_cliente(int socket_escucha);
 
-/* Recibe el codigo de operacion al inicio de un paquete */
-op_code recibir_operacion(int socket_conexion, bool *error);
+/* Recibe el codigo de operacion al inicio de un paquete, devuelve -1 ante un error */
+op_code recibir_operacion(int socket_conexion);
 
 /* Lee size bytes del socket */
 void *recibir_buffer(int *size, int socket_conexion);
 
-/* Recibe el buffer de un paquete y devuelve una lista con sus elementos */
+/* Recibe el buffer de un paquete y devuelve una lista con sus elementos, pone true en error
+ * ante un error */
 t_list *recibir_paquete(int socket_conexion, bool *error);
 
-/* Recibe un mensaje simple y lo retorna */
+/* Recibe un mensaje simple y lo retorna, pone true en error ante un error */
 char *recibir_str(int socket_conexion, bool *error);
 uint32_t recibir_int(int socket_conexion, bool *error);
 

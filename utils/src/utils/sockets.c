@@ -1,5 +1,6 @@
 #include "sockets.h"
 
+#include <commons/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -200,13 +201,12 @@ int esperar_cliente(int socket_escucha)
     return socket_conexion;
 }
 
-op_code recibir_operacion(int socket_conexion, bool *error)
+op_code recibir_operacion(int socket_conexion)
 {
     int cod_op;
     if (recv(socket_conexion, &cod_op, sizeof(int), MSG_WAITALL) <= 0) {
-        log_error(debug_logger, "La conexion fue cerrada");
+        log_warning(debug_logger, "La conexion fue cerrada");
         close(socket_conexion);
-        *error = true;
         return -1;
     }
 
@@ -227,9 +227,8 @@ void *recibir_buffer(int *size, int socket_conexion)
 char *recibir_str(int socket_conexion, bool *error)
 {
     // Verificar que se envió un string
-    bool err_op = false;
-    if (recibir_operacion(socket_conexion, &err_op) != OP_MENSAJE_STR || err_op) {
-        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un string");
+    if (recibir_operacion(socket_conexion) != OP_MENSAJE_STR) {
+        log_warning(debug_logger, "recibir_str: Error al recibir la operacion");
         *error = true;
         return NULL;
     }
@@ -242,10 +241,9 @@ char *recibir_str(int socket_conexion, bool *error)
 
 uint32_t recibir_int(int socket_conexion, bool *error)
 {
-    bool err_op = false;
     // Verificar que se envió un int
-    if (recibir_operacion(socket_conexion, &err_op) != OP_MENSAJE_INT || err_op) {
-        log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un int");
+    if (recibir_operacion(socket_conexion) != OP_MENSAJE_INT) {
+        log_warning(debug_logger, "recibir_int: Error al recibir la operacion");
         *error = true;
         return -1;
     }
@@ -261,10 +259,9 @@ uint32_t recibir_int(int socket_conexion, bool *error)
 
 t_list *recibir_paquete(int socket_conexion, bool *error)
 {
-    bool err_op = false;
     // Verificar que se envió un paquete
-    if (recibir_operacion(socket_conexion, &err_op) != OP_PAQUETE || err_op ) {
-        log_error(debug_logger, "recibir_paquete: No se recibio un paquete");
+    if (recibir_operacion(socket_conexion) != OP_PAQUETE) {
+        log_warning(debug_logger, "recibir_paquete: Error al recibir la operacion");
         *error = true;
         return NULL;
     }
@@ -317,11 +314,13 @@ bool recibir_handshake(int socket_conexion)
     }
 
     // Si el mensaje recibido es correcto
-    uint32_t msg = (mensaje_recibido == MENSAJE_HANDSHAKE) ? RESPUESTA_HANDSHAKE_OK : RESPUESTA_HANDSHAKE_ERROR;
+    bool mensaje_correcto = mensaje_recibido == MENSAJE_HANDSHAKE;
+
+    uint32_t msg = mensaje_correcto ? RESPUESTA_HANDSHAKE_OK : RESPUESTA_HANDSHAKE_ERROR;
     bytes = send(socket_conexion, &msg, sizeof(uint32_t), 0);
     if (bytes <= 0) {
         log_error(debug_logger, "No se pudo enviar la respuesta al handshake");
         exit(1);
     }
-    return mensaje_recibido == MENSAJE_HANDSHAKE;
+    return mensaje_correcto;
 }
