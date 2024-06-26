@@ -259,7 +259,12 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
     eliminar_paquete(p);
 
     // Esperar la respuesta de memoria
-    t_respuesta_resize respuesta = recibir_int(conexion_memoria);
+    bool err = false;
+    t_respuesta_resize respuesta = recibir_int(conexion_memoria, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria");
+        abort();
+    }
     if (respuesta == R_RESIZE_OUT_OF_MEMORY) {
         log_info(debug_logger, "Out of memory, enviando proceso a exit");
         devolver_pcb(OUT_OF_MEMORY, conexion_dispatch);

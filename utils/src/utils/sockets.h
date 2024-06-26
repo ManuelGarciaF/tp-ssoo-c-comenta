@@ -55,17 +55,17 @@ int iniciar_servidor(char *puerto);
 int esperar_cliente(int socket_escucha);
 
 /* Recibe el codigo de operacion al inicio de un paquete */
-int recibir_operacion(int socket_conexion);
+op_code recibir_operacion(int socket_conexion, bool *error);
 
 /* Lee size bytes del socket */
 void *recibir_buffer(int *size, int socket_conexion);
 
 /* Recibe el buffer de un paquete y devuelve una lista con sus elementos */
-t_list *recibir_paquete(int socket_conexion);
+t_list *recibir_paquete(int socket_conexion, bool *error);
 
 /* Recibe un mensaje simple y lo retorna */
-char *recibir_str(int socket_conexion);
-uint32_t recibir_int(int socket_conexion);
+char *recibir_str(int socket_conexion, bool *error);
+uint32_t recibir_int(int socket_conexion, bool *error);
 
 /* Realiza un handshake con el servidor y devuelve true si el servidor devuelve 1 */
 bool realizar_handshake(int socket_conexion);

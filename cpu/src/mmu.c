@@ -1,4 +1,7 @@
 #include "main.h"
+#include "utils/sockets.h"
+#include <commons/log.h>
+#include <stdint.h>
 
 // Estructuras locales
 typedef struct {
@@ -157,7 +160,12 @@ static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio)
     enviar_paquete(p, conexion_memoria);
     eliminar_paquete(p);
 
-    t_list *p_respuesta = recibir_paquete(conexion_memoria);
+    bool err = false;
+    t_list *p_respuesta = recibir_paquete(conexion_memoria, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria");
+        abort();
+    }
     void *respuesta = list_get(p_respuesta, 0);
     list_destroy(p_respuesta);
 
@@ -188,7 +196,8 @@ static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *dat
     eliminar_paquete(p);
 
     // Esperar que responda memoria
-    if (recibir_int(conexion_memoria) != MENSAJE_FIN_ESCRITURA) {
+    bool err = false;
+    if (recibir_int(conexion_memoria, &err) != MENSAJE_FIN_ESCRITURA || err) {
         log_error(debug_logger, "La memoria no devolvio MENSAJE_FIN_ESCRITURA");
         abort();
     }
@@ -234,7 +243,13 @@ static uint32_t buscar_en_tabla_de_paginas(uint32_t pid, size_t num_pagina)
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
 
-    return recibir_int(conexion_memoria);
+    bool err = false;
+    uint32_t num_marco = recibir_int(conexion_memoria, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria");
+        abort();
+    }
+    return num_marco;
 }
 
 static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)

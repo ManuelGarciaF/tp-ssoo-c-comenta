@@ -39,9 +39,10 @@ void *planificador_largo_plazo(void *param)
 
         // Esperar que memoria nos avise que cargo el proceso.
         pthread_mutex_lock(&mutex_conexion_memoria);
-        uint32_t respuesta_memoria = recibir_int(conexion_memoria);
+        bool err = false;
+        uint32_t respuesta_memoria = recibir_int(conexion_memoria, &err);
         pthread_mutex_unlock(&mutex_conexion_memoria);
-        if (respuesta_memoria != MENSAJE_OP_TERMINADA) {
+        if (err || respuesta_memoria != MENSAJE_OP_TERMINADA) {
             log_error(debug_logger, "Memoria no pudo cargar el proceso");
             abort();
         }

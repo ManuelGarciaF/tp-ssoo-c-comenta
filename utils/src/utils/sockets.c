@@ -200,13 +200,14 @@ int esperar_cliente(int socket_escucha)
     return socket_conexion;
 }
 
-int recibir_operacion(int socket_conexion)
+op_code recibir_operacion(int socket_conexion, bool *error)
 {
     int cod_op;
     if (recv(socket_conexion, &cod_op, sizeof(int), MSG_WAITALL) <= 0) {
         log_error(debug_logger, "La conexion fue cerrada");
         close(socket_conexion);
-        abort();
+        *error = true;
+        return -1;
     }
 
     return cod_op;
@@ -223,25 +224,30 @@ void *recibir_buffer(int *size, int socket_conexion)
     return buffer;
 }
 
-char *recibir_str(int socket_conexion)
+char *recibir_str(int socket_conexion, bool *error)
 {
     // Verificar que se envió un string
-    if (recibir_operacion(socket_conexion) != OP_MENSAJE_STR) {
+    bool err_op = false;
+    if (recibir_operacion(socket_conexion, &err_op) != OP_MENSAJE_STR || err_op) {
         log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un string");
-        abort();
+        *error = true;
+        return NULL;
     }
 
     int size;
     char *buffer = recibir_buffer(&size, socket_conexion);
+    *error = false;
     return buffer;
 }
 
-uint32_t recibir_int(int socket_conexion)
+uint32_t recibir_int(int socket_conexion, bool *error)
 {
+    bool err_op = false;
     // Verificar que se envió un int
-    if (recibir_operacion(socket_conexion) != OP_MENSAJE_INT) {
+    if (recibir_operacion(socket_conexion, &err_op) != OP_MENSAJE_INT || err_op) {
         log_error(debug_logger, "recibir_mensaje: No se recibio un mensaje con un int");
-        exit(1);
+        *error = true;
+        return -1;
     }
 
     int size;
@@ -249,15 +255,18 @@ uint32_t recibir_int(int socket_conexion)
     uint32_t valor = *buffer;
     free(buffer);
 
+    *error = false;
     return valor;
 }
 
-t_list *recibir_paquete(int socket_conexion)
+t_list *recibir_paquete(int socket_conexion, bool *error)
 {
+    bool err_op = false;
     // Verificar que se envió un paquete
-    if (recibir_operacion(socket_conexion) != OP_PAQUETE) {
+    if (recibir_operacion(socket_conexion, &err_op) != OP_PAQUETE || err_op ) {
         log_error(debug_logger, "recibir_paquete: No se recibio un paquete");
-        exit(1);
+        *error = true;
+        return NULL;
     }
 
     int size;
@@ -276,6 +285,7 @@ t_list *recibir_paquete(int socket_conexion)
         list_add(valores, valor);
     }
     free(buffer);
+    *error = false;
     return valores;
 }
 

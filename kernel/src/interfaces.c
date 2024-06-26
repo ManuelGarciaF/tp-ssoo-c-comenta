@@ -1,4 +1,6 @@
 #include "main.h"
+#include "utils/sockets.h"
+#include <commons/log.h>
 
 // Definiciones locales
 static t_interfaz *registrar_interfaz(int conexion_io);
@@ -37,7 +39,8 @@ void *atender_io(void *param)
         }
 
         // Esperar la respuesta de la interfaz y ver que sea correcta
-        if (recibir_int(*conexion_io) != MENSAJE_FIN_IO) {
+        bool err = false;
+        if (recibir_int(*conexion_io, &err) != MENSAJE_FIN_IO || err) {
             log_error(debug_logger, "La interfaz %s retorno un valor incorrecto, desconectandola", self->nombre);
             break;
         }
@@ -114,7 +117,12 @@ bool interfaz_soporta_operacion(char *nombre, t_operacion_io op)
 static t_interfaz *registrar_interfaz(int conexion_io)
 {
     // Recibir la info de la interfaz
-    t_list *paquete_info_interfaz = recibir_paquete(conexion_io);
+    bool err = false;
+    t_list *paquete_info_interfaz = recibir_paquete(conexion_io, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexión con la interfaz");
+        abort();
+    }
     char *nombre_interfaz = list_get(paquete_info_interfaz, 0);
     t_tipo_interfaz *tipo_interfaz = list_get(paquete_info_interfaz, 1);
 

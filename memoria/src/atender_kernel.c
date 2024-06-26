@@ -1,4 +1,6 @@
 #include "main.h"
+#include "utils/slist.h"
+#include <commons/log.h>
 
 // Definiciones locales
 static void recibir_crear_proceso(int socket_conexion);
@@ -9,7 +11,12 @@ void atender_kernel(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (kernel)");
     while (true) {
-        t_op_memoria op = recibir_int(socket_conexion);
+        bool err = false;
+        t_op_memoria op = recibir_int(socket_conexion, &err);
+        if (err) {
+            log_error(debug_logger, "Hubo un error en la conexión con el kernel");
+            abort();
+        }
         log_info(debug_logger, "Operacion enviada por el kernel: %d", op);
 
         // Esperar antes de responder.
@@ -34,7 +41,12 @@ void atender_kernel(int socket_conexion)
 
 static void recibir_crear_proceso(int socket_conexion)
 {
-    t_list *paquete = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *paquete = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con el kernel");
+        abort();
+    }
     uint32_t *pid = list_get(paquete, 0);
     char *pid_str = string_itoa(*pid);
     char *path_relativo = list_get(paquete, 1);
@@ -58,7 +70,12 @@ static void recibir_crear_proceso(int socket_conexion)
 static void recibir_liberar_proceso(int socket_conexion)
 {
     // Recibir el pid
-    uint32_t pid = recibir_int(socket_conexion);
+    bool err = false;
+    uint32_t pid = recibir_int(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con el kernel");
+        abort();
+    }
     log_info(debug_logger, "Liberando proceso con pid: %u", pid);
     char *pid_str = string_itoa(pid);
 

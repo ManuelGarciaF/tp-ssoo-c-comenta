@@ -1,9 +1,17 @@
 #include "main.h"
+#include "utils/sockets.h"
+#include <commons/log.h>
 
 void manejar_generica(int conexion_kernel)
 {
     while (true) {
-        t_list *paquete = recibir_paquete(conexion_kernel);
+        bool err = false;
+        t_list *paquete = recibir_paquete(conexion_kernel, &err);
+        if (err) {
+            log_error(debug_logger, "Hubo un error en la conexion con kernel");
+            abort();
+        }
+
         uint32_t *pid = list_get(paquete, 0);
         t_operacion_io *instruccion = list_get(paquete, 1);
         uint32_t *unidades_de_trabajo = list_get(paquete, 2);

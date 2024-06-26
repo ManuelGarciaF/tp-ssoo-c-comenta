@@ -1,4 +1,5 @@
 #include "./main.h"
+#include <commons/log.h>
 
 /*
 ** Variables globales
@@ -152,7 +153,12 @@ static void conectar_a_memoria(void)
     enviar_int(MENSAJE_A_MEMORIA_CPU, conexion_memoria);
 
     // Recibir el tamanio de pagina.
-    tam_pagina = recibir_int(conexion_memoria);
+    bool err = false;
+    tam_pagina = recibir_int(conexion_memoria, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria");
+        abort();
+    }
 }
 
 static void *servidor_interrupt(void *param)
@@ -161,7 +167,12 @@ static void *servidor_interrupt(void *param)
     int conexion_interrupt = aceptar_conexion_kernel(*socket_escucha_interrupt);
 
     while (true) {
-        t_list *paquete = recibir_paquete(conexion_interrupt);
+        bool err = false;
+        t_list *paquete = recibir_paquete(conexion_interrupt, &err);
+        if (err) {
+            log_error(debug_logger, "Hubo un error en la conexion de interrupt con kernel");
+            abort();
+        }
         uint32_t *pid_recibido = list_get(paquete, 0);
         t_motivo_desalojo *motivo_desalojo = list_get(paquete, 1);
 
@@ -193,7 +204,13 @@ char *fetch(uint32_t pid, uint32_t program_counter)
     eliminar_paquete(paquete);
 
     // Recibir instruccion
-    return recibir_str(conexion_memoria);
+    bool err = false;
+    char *intruccion = recibir_str(conexion_memoria, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria");
+        abort();
+    }
+    return intruccion;
 }
 
 void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch)
