@@ -24,6 +24,13 @@ int ceil_div(int dividend, int divisor)
     return (dividend % divisor) == 0 ? dividend / divisor : (dividend / divisor) + 1;
 }
 
+// Innecesario, pero ayuda a ser mas explicito al querer redondear hacia abajo.
+int floor_div(int dividend, int divisor)
+{
+    assert(divisor != 0);
+    return dividend / divisor;
+}
+
 char *print_hex(void *ptr, size_t size)
 {
     char *str = string_new();

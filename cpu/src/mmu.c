@@ -52,13 +52,13 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica)
 bool entra_en_pagina(size_t dir_logica, size_t tamanio)
 {
     uint32_t offset = dir_logica % tam_pagina;
-    return offset + tamanio <= tam_pagina; // TODO checkear este calculo.
+    return offset + tamanio <= tam_pagina;
 }
 
 size_t tam_restante_pag(size_t dir_logica)
 {
     uint32_t offset = dir_logica % tam_pagina;
-    return tam_pagina - offset; // TODO checkear este calculo.
+    return tam_pagina - offset;
 }
 
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)

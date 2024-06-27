@@ -1,27 +1,115 @@
 #include "main.h"
-#include "utils/sockets.h"
+#include "utils.h"
 
+#include <assert.h>
 #include <commons/bitarray.h>
+#include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
+#include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <utils/sockets.h>
+#include <utils/utils.h>
+
+#define NOMBRE_MAX_LEN 512
+
+//
+// Estructuras
+//
+
+typedef struct {
+    char nombre[NOMBRE_MAX_LEN];
+    size_t bloque_inicial;
+    size_t tam_bytes;
+} t_metadata;
+
+//
+// Variables globales
+//
 
 static void *bloques = NULL;
-static t_bitarray *bitmap = NULL;
+static t_bitarray *bitmap = NULL; // 1 = ocupado, 0 = libre
+
+//
+// Funciones locales
+//
+
+// Devuelve el numero de bloques que ocupa una cantidad de bytes
+static inline size_t tam_bloques(size_t bytes)
+{
+    return ceil_div(bytes, BLOCK_SIZE);
+}
+
+// Devuelve un puntero a la posicion dentro del espacio de memoria de bloques, que corresponde al numero de bloque.
+static inline void *puntero_bloque(size_t numero_bloque)
+{
+    return (char *)bloques + (numero_bloque * BLOCK_SIZE);
+}
+
+static void create_file(char *nombre_archivo);
+static void delete_file(char *nombre_archivo);
+static void truncate_file(char *nombre_archivo, size_t tamanio_nuevo);
 
 static void inicializar_dialfs(void);
-static void create(char *nombre_archivo);
-static void delete(char *nombre_archivo);
-static size_t devolver_primer_bloque_libre(void);
-static void asignar_bloque_en_bitmap(size_t bloque);
-static void liberar_bloque_en_bitmap(size_t bloque);
+static t_list *cargar_archivos_metadata(void);
+static bool cmp_bloque_inicial_metadata(void *m1, void *m2);
+static t_metadata leer_metadata(char *nombre_archivo);
+static void actualizar_metadata(t_metadata metadata);
+static size_t encontrar_primer_bloque_libre(void);
+static char *obtener_path_archivo(char *nombre);
+static size_t bloques_contiguos_disponibles(t_metadata metadata);
+static void *leer_archivo_entero(t_metadata metadata);
+static void compactar(char *nombre_archivo_a_mover);
+static void sync_files(void);
+static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial);
 
+//
+// Funcion principal
+//
 void manejar_dialfs(int conexion_kernel, int conexion_memoria)
 {
     inicializar_dialfs();
+
+    // FIXME borrar despues
+    /* log_debug(debug_logger, "Archivos encontrados:"); */
+    /* t_list *ms = cargar_archivos_metadata(); */
+
+    /* t_list_iterator *i = list_iterator_create(ms); */
+    /* while (list_iterator_has_next(i)) { */
+    /*     t_metadata *m = list_iterator_next(i); */
+    /*     log_debug(debug_logger, */
+    /*               "\tNombre: %s, BI: %zu, TA %zu Bytes (%zu bloques)", */
+    /*               m->nombre, */
+    /*               m->bloque_inicial, */
+    /*               m->tam_bytes, */
+    /*               tam_bloques(m->tam_bytes)); */
+    /* } */
+    /* list_iterator_destroy(i); */
+    /* list_clean_and_destroy_elements(ms, free); */
+
+    /* compactar("report.doc"); */
+
+    /* log_debug(debug_logger, "Archivos encontrados:"); */
+    /* ms = cargar_archivos_metadata(); */
+    /* i = list_iterator_create(ms); */
+    /* while (list_iterator_has_next(i)) { */
+    /*     t_metadata *m = list_iterator_next(i); */
+    /*     log_debug(debug_logger, */
+    /*               "\tNombre: %s, BI: %zu, TA %zu Bytes (%zu bloques)", */
+    /*               m->nombre, */
+    /*               m->bloque_inicial, */
+    /*               m->tam_bytes, */
+    /*               tam_bloques(m->tam_bytes)); */
+    /* } */
+    /* list_iterator_destroy(i); */
+    /* list_clean_and_destroy_elements(ms, free); */
+    // FIXME borrar despues
 
     while (true) {
         bool err = false;
@@ -34,38 +122,127 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
         uint32_t *pid = list_get(paquete, 0);
         t_operacion_io *instruccion = list_get(paquete, 1);
         char *nombre_archivo = list_get(paquete, 2);
+        assert(strlen(nombre_archivo) < NOMBRE_MAX_LEN); // Por las dudas
 
         switch (*instruccion) {
-        case FS_CREATE:
-            create(nombre_archivo);
+        case FS_CREATE: {
+            create_file(nombre_archivo);
+            log_info(entradasalida_logger, "PID: %u - Operacion: FS_CREATE", *pid);
             log_info(entradasalida_logger, "PID: %u - Crear Archivo: %s", *pid, nombre_archivo);
             break;
-        case FS_DELETE:
-            delete (nombre_archivo);
+        }
+        case FS_DELETE: {
+            delete_file(nombre_archivo);
+            log_info(entradasalida_logger, "PID: %u - Operacion: FS_DELETE", *pid);
             log_info(entradasalida_logger, "PID: %u - Eliminar Archivo: %s", *pid, nombre_archivo);
             break;
-        case FS_TRUNCATE:
-            // truncate();
+        }
+        case FS_TRUNCATE: {
+            size_t *tamanio_nuevo = list_get(paquete, 3);
+            truncate_file(nombre_archivo, *tamanio_nuevo);
+            log_info(entradasalida_logger, "PID: %u - Operacion: FS_TRUNCATE", *pid);
+            log_info(entradasalida_logger,
+                     "PID: %u - Truncar Archivo: %s - Tamaño: %zu",
+                     *pid,
+                     nombre_archivo,
+                     *tamanio_nuevo);
             break;
-        case FS_WRITE:
-            // write();
+        }
+        case FS_WRITE: {
+            // write_file();
             break;
-        case FS_READ:
-            // read();
+        }
+        case FS_READ: {
+            // read_file();
             break;
-        default:
+        }
+        default: {
             log_error(debug_logger, "Operacion invalida");
             list_destroy_and_destroy_elements(paquete, free); // TODO maybe innecesario
             continue;
+        }
         }
 
         list_destroy_and_destroy_elements(paquete, free);
     }
 }
 
+static void create_file(char *nombre_archivo)
+{
+    size_t bloque_inicial = encontrar_primer_bloque_libre();
+
+    // Creamos un config vacio
+    t_config *config = malloc(sizeof(t_config));
+    config->path = NULL;
+    config->properties = dictionary_create();
+
+    char *str_bloque_inicial = string_itoa(bloque_inicial);
+    config_set_value(config, "BLOQUE_INICIAL", str_bloque_inicial);
+    config_set_value(config, "TAMANIO_ARCHIVO", "0");
+    free(str_bloque_inicial);
+
+    // Guardamos el metadata en disco
+    char *path = obtener_path_archivo(nombre_archivo);
+    config_save_in_file(config, path);
+    config_destroy(config);
+    free(path);
+
+    // Marcar el bloque inicial como usado
+    bitarray_set_bit(bitmap, bloque_inicial);
+    sync_files();
+}
+
+static void delete_file(char *nombre_archivo)
+{
+    // Sacar el archivo del diccionario.
+    t_metadata metadata = leer_metadata(nombre_archivo);
+
+    // Eliminar el archivo.
+    char *path = obtener_path_archivo(nombre_archivo);
+    int ret = remove(path);
+    assert(ret == 0);
+    free(path);
+
+    // Marcar los bloques como libres en el bitmap
+    bitarray_clean_range(bitmap,
+                         metadata.bloque_inicial,
+                         metadata.bloque_inicial + tam_bloques(metadata.bloque_inicial) - 1);
+    sync_files();
+}
+
+static void truncate_file(char *nombre_archivo, size_t tamanio_nuevo)
+{
+    t_metadata metadata = leer_metadata(nombre_archivo);
+    if (metadata.tam_bytes == tamanio_nuevo) { // Si no cambia no hacer nada
+        return;
+    }
+
+    size_t actual_cantidad_bloques = tam_bloques(metadata.tam_bytes);
+    size_t nueva_cantidad_bloques = tam_bloques(tamanio_nuevo);
+
+    // Si hay que achicar.
+    if (nueva_cantidad_bloques < actual_cantidad_bloques) {
+        size_t index_bloque_final_original = metadata.bloque_inicial + actual_cantidad_bloques - 1;
+        size_t index_bloque_final_nuevo = metadata.bloque_inicial + nueva_cantidad_bloques - 1;
+        // Solo hay que marcar los bloques libres.
+        bitarray_clean_range(bitmap, index_bloque_final_original + 1, index_bloque_final_nuevo);
+
+    } else if (nueva_cantidad_bloques > actual_cantidad_bloques) { // Hay que agrandar.
+        // Si no hay suficientes bloques libres compactar.
+        if (bloques_contiguos_disponibles(metadata) < nueva_cantidad_bloques) {
+            compactar(nombre_archivo);
+        }
+        // TODO agrandar el tamanio y marcar los bloques ocupados
+    }
+
+    // Actualizar el tamanio
+    metadata.tam_bytes = tamanio_nuevo;
+    actualizar_metadata(metadata);
+}
+
 static void inicializar_dialfs(void)
 {
-    // Abrir archivo de bloques
+    // Abrir archivo de bloques.
     size_t tam_archivo_bloques = BLOCK_SIZE * BLOCK_COUNT;
     char *path_archivo_bloques = string_duplicate(PATH_BASE_DIALFS);
     string_append(&path_archivo_bloques, "/bloques.dat");
@@ -75,16 +252,16 @@ static void inicializar_dialfs(void)
 
     free(path_archivo_bloques);
 
-    // Truncarlo al tamaño correcto (en caso que lo estemos creando)
+    // Truncarlo al tamaño correcto (en caso que lo estemos creando).
     int ret = ftruncate(fd_bloques, tam_archivo_bloques);
     assert(ret != -1);
 
-    // Mapearlo a memoria
+    // Mapearlo a memoria.
     bloques = mmap(NULL, tam_archivo_bloques, PROT_READ | PROT_WRITE, MAP_SHARED, fd_bloques, 0);
     assert(bloques != MAP_FAILED);
 
-    // Abrir el archivo de bitmap
-    size_t tam_archivo_bitmap = ceil_div(BLOCK_COUNT, 8); // Un bit por bloque => 8 bloques por byte
+    // Abrir el archivo de bitmap.
+    size_t tam_archivo_bitmap = ceil_div(BLOCK_COUNT, 8); // Un bit por bloque => 8 bloques por byte.
     char *path_archivo_bitmap = string_duplicate(PATH_BASE_DIALFS);
     string_append(&path_archivo_bitmap, "/bitmap.dat");
 
@@ -93,62 +270,95 @@ static void inicializar_dialfs(void)
 
     free(path_archivo_bitmap);
 
-    // Truncarlo al tamaño correcto
+    // Truncarlo al tamaño correcto.
     ret = ftruncate(fd_bitmap, tam_archivo_bitmap);
     assert(ret != -1);
 
-    // Mapearlo a memoria y wrappearlo en un t_bitarray
+    // Mapearlo a memoria y wrappearlo en un t_bitarray.
     void *memoria_bitmap = mmap(NULL, tam_archivo_bitmap, PROT_READ | PROT_WRITE, MAP_SHARED, fd_bitmap, 0);
     assert(memoria_bitmap != MAP_FAILED);
     bitmap = bitarray_create_with_mode(memoria_bitmap, BLOCK_COUNT, LSB_FIRST);
 }
 
-void create(char *nombre_archivo)
+// Devuelve una lista con t_metadata para cada archivo, ordenados por bloque inicial.
+static t_list *cargar_archivos_metadata(void)
 {
-    size_t bloque_inicial;
-    bloque_inicial = devolver_primer_bloque_libre();
+    t_list *list = list_create();
 
-    // Creamos un config vacio
-    t_config *config = malloc(sizeof(t_config));
-    config->path = NULL;
-    config->properties = dictionary_create();
+    DIR *dir = opendir(PATH_BASE_DIALFS);
+    assert(dir != NULL);
 
-    config_set_value(config, "BLOQUE_INICIAL", string_itoa(bloque_inicial));
-    config_set_value(config, "TAMANIO_ARCHIVO", "0");
+    // Iterar sobre los archivos en el directorio.
+    struct dirent *entrada;
+    while ((entrada = readdir(dir)) != NULL) {
+        // Saltear subdirectorios, "bitmap.dat" y "bloques.dat".
+        if (entrada->d_type != DT_REG || strcmp(entrada->d_name, "bitmap.dat") == 0 ||
+            strcmp(entrada->d_name, "bloques.dat") == 0) {
+            continue;
+        }
 
-    char *file_path = string_duplicate(PATH_BASE_DIALFS);
-    string_append(&file_path, "/");
-    string_append(&file_path, nombre_archivo);
+        t_metadata metadata = leer_metadata(entrada->d_name);
+        // Necesitamos guardarlo en el heap.
+        t_metadata *p = malloc(sizeof(t_metadata));
+        assert(p != NULL);
+        memcpy(p, &metadata, sizeof(t_metadata));
 
-    // Guardamos el metadata
-    config_save_in_file(config, file_path);
-    config_destroy(config);
+        list_add(list, p);
+    }
+    closedir(dir);
 
-    asignar_bloque_en_bitmap(bloque_inicial);
+    // Ordenar los archivos por bloque inicial para facilitar la compactacion.
+    list_sort(list, cmp_bloque_inicial_metadata);
+
+    return list;
 }
 
-void delete(char *nombre_archivo)
+static bool cmp_bloque_inicial_metadata(void *m1, void *m2)
 {
-    char *file_path = string_duplicate(PATH_BASE_DIALFS);
-    string_append(&file_path, "/");
-    string_append(&file_path, nombre_archivo);
+    // Si el primero tiene un bloque inicial anterior, va primero.
+    return ((t_metadata *)m1)->bloque_inicial < ((t_metadata *)m2)->bloque_inicial;
+}
 
-    t_config *config = config_create(file_path);
+static t_metadata leer_metadata(char *nombre_archivo)
+{
+    char *path = obtener_path_archivo(nombre_archivo);
+    t_config *config = config_create(path);
+    assert(config != NULL);
+    free(path);
+
     size_t bloque_inicial = config_get_int_value(config, "BLOQUE_INICIAL");
+    size_t tamanio_archivo = config_get_int_value(config, "TAMANIO_ARCHIVO");
     config_destroy(config);
 
-    remove(file_path);
+    t_metadata metadata = {.bloque_inicial = bloque_inicial, .tam_bytes = tamanio_archivo};
+    strcpy(metadata.nombre, nombre_archivo); // Guardar el nombre.
 
-    liberar_bloque_en_bitmap(bloque_inicial);
+    return metadata;
 }
 
-static size_t devolver_primer_bloque_libre(void)
+static void actualizar_metadata(t_metadata metadata)
+{
+    char *path = obtener_path_archivo(metadata.nombre);
+    t_config *config = config_create(path);
+    free(path);
+
+    char *str_bloque_inicial = string_itoa(metadata.bloque_inicial);
+    config_set_value(config, "BLOQUE_INICIAL", str_bloque_inicial);
+    free(str_bloque_inicial);
+
+    char *str_tam_bytes = string_itoa(metadata.tam_bytes);
+    config_set_value(config, "TAMANIO_ARCHIVO", str_tam_bytes);
+    free(str_tam_bytes);
+
+    config_save(config);
+    config_destroy(config);
+}
+
+static size_t encontrar_primer_bloque_libre(void)
 {
     size_t index = 0;
-    bool found = false;
-    while (!found) {
+    while (index < (size_t)BLOCK_COUNT) {
         if (bitarray_test_bit(bitmap, index) == false) {
-            found = true;
             break;
         }
         index++;
@@ -156,12 +366,125 @@ static size_t devolver_primer_bloque_libre(void)
     return index;
 }
 
-static void asignar_bloque_en_bitmap(size_t bloque)
+static char *obtener_path_archivo(char *nombre)
 {
-    bitarray_set_bit(bitmap, bloque);
+    char *file_path = string_duplicate(PATH_BASE_DIALFS);
+    string_append(&file_path, "/");
+    string_append(&file_path, nombre);
+    return file_path;
 }
 
-static void liberar_bloque_en_bitmap(size_t bloque)
+// Devuelve los bloques vacios a partir de un punto
+static size_t bloques_contiguos_disponibles(t_metadata metadata)
 {
-    bitarray_clean_bit(bitmap, bloque);
+    size_t tam = tam_bloques(metadata.tam_bytes);
+    size_t tam_max = tam;
+    for (size_t i = metadata.bloque_inicial + tam; i < (size_t)BLOCK_COUNT; i++) {
+        if (bitarray_test_bit(bitmap, i)) {
+            break;
+        }
+        tam_max++;
+    }
+
+    return tam_max;
+}
+
+// Crea una copia de los contenidos de un archivo
+static void *leer_archivo_entero(t_metadata metadata)
+{
+    void *contenido = malloc(metadata.tam_bytes);
+    assert(contenido != NULL);
+    void *inicio_archivo = puntero_bloque(metadata.bloque_inicial);
+
+    return memcpy(contenido, inicio_archivo, metadata.tam_bytes);
+}
+
+// Mueve el archivo pasado por parametro al final
+static void compactar(char *nombre_archivo_a_mover)
+{
+    void *contenidos_archivo_a_mover;
+    t_metadata m_archivo_a_mover;
+
+    // Recorremos el archivo de bloques con un puntero, para saber el proximo lugar vacio.
+    size_t bloque_actual = 0;
+
+    t_list *archivos = cargar_archivos_metadata(); // Los archivos ya estan ordenados.
+    t_list_iterator *it = list_iterator_create(archivos);
+    while (list_iterator_has_next(it)) {
+        t_metadata *m = list_iterator_next(it);
+        assert(m->bloque_inicial >= bloque_actual); // Checkear que si esten ordenados.
+
+        // Si encontramos el archivo a mover.
+        if (strcmp(m->nombre, nombre_archivo_a_mover) == 0) {
+            // Guardarlo en memoria
+            contenidos_archivo_a_mover = leer_archivo_entero(*m);
+            m_archivo_a_mover = *m;
+
+            // Sacarlo del bitmap
+            size_t index_bloque_final = m->bloque_inicial + tam_bloques(m->tam_bytes) - 1;
+            bitarray_clean_range(bitmap, m->bloque_inicial, index_bloque_final);
+
+            continue; // No queremos incrementar el puntero.
+        }
+
+        // Mover el archivo si queda espacio vacio en el medio
+        if (bloque_actual < m->bloque_inicial) {
+            mover_archivo(*m, bloque_actual);
+        }
+
+        // Avanzar el puntero
+        bloque_actual += tam_bloques(m->tam_bytes);
+    }
+    list_iterator_destroy(it);
+
+    // Mover el archivo que sacamos al final.
+    // Mover los datos.
+    void *nueva_pos = puntero_bloque(bloque_actual);
+    memcpy(nueva_pos, contenidos_archivo_a_mover, m_archivo_a_mover.tam_bytes);
+
+    // Actualizar el bitmap.
+    bitarray_set_range(bitmap, bloque_actual, bloque_actual + tam_bloques(m_archivo_a_mover.tam_bytes) - 1);
+
+    // Actualizar la metadata.
+    m_archivo_a_mover.bloque_inicial = bloque_actual;
+    actualizar_metadata(m_archivo_a_mover);
+
+    list_clean_and_destroy_elements(archivos, free);
+    free(contenidos_archivo_a_mover);
+
+    sync_files();
+}
+
+// Asegura que los cambios a los archivos mapeados son guardados en disco.
+static void sync_files(void)
+{
+    size_t tam_archivo_bloques = BLOCK_SIZE * BLOCK_COUNT;
+    size_t tam_archivo_bitmap = ceil_div(BLOCK_COUNT, 8);
+
+    msync(bloques, tam_archivo_bloques, MS_SYNC);
+    msync(bitmap->bitarray, tam_archivo_bitmap, MS_SYNC);
+}
+
+static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial)
+{
+    log_debug(debug_logger,
+              "Moviendo el archivo %s, bloque inicial %zu -> %zu",
+              metadata.nombre,
+              metadata.bloque_inicial,
+              nuevo_bloque_inicial);
+
+    // Mover los datos.
+    void *nueva_pos = puntero_bloque(nuevo_bloque_inicial);
+    void *actual_pos = puntero_bloque(metadata.bloque_inicial);
+    memmove(nueva_pos, actual_pos, metadata.tam_bytes);
+
+    // Actualizar el bitmap.
+    size_t index_bloque_final_original = metadata.bloque_inicial + tam_bloques(metadata.tam_bytes) - 1;
+    size_t index_bloque_final_nuevo = nuevo_bloque_inicial + tam_bloques(metadata.tam_bytes) - 1;
+    bitarray_clean_range(bitmap, metadata.bloque_inicial, index_bloque_final_original);
+    bitarray_set_range(bitmap, nuevo_bloque_inicial, index_bloque_final_nuevo);
+
+    // Actualizar la metadata.
+    metadata.bloque_inicial = nuevo_bloque_inicial;
+    actualizar_metadata(metadata);
 }

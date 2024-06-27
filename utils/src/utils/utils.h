@@ -17,6 +17,9 @@ int config_get_int_or_exit(t_config *config, char *key);
 // Redondea hacia arriba una division de ints.
 int ceil_div(int dividend, int divisor);
 
+// Redondea hacia abajo una division de ints.
+int floor_div(int dividend, int divisor);
+
 // Devuelve un string con size bytes de ptr en hexa.
 char *print_hex(void *ptr, size_t size);
 
