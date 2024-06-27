@@ -91,7 +91,7 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
     /*               tam_bloques(m->tam_bytes)); */
     /* } */
     /* list_iterator_destroy(i); */
-    /* list_clean_and_destroy_elements(ms, free); */
+    /* list_destroy_and_destroy_elements(ms, free); */
 
     /* compactar("report.doc"); */
 
@@ -108,7 +108,7 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
     /*               tam_bloques(m->tam_bytes)); */
     /* } */
     /* list_iterator_destroy(i); */
-    /* list_clean_and_destroy_elements(ms, free); */
+    /* list_destroy_and_destroy_elements(ms, free); */
     // FIXME borrar despues
 
     while (true) {
@@ -449,7 +449,7 @@ static void compactar(char *nombre_archivo_a_mover)
     m_archivo_a_mover.bloque_inicial = bloque_actual;
     actualizar_metadata(m_archivo_a_mover);
 
-    list_clean_and_destroy_elements(archivos, free);
+    list_destroy_and_destroy_elements(archivos, free);
     free(contenidos_archivo_a_mover);
 
     sync_files();
