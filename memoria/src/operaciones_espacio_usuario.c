@@ -4,7 +4,12 @@ static bool direccion_asignada_a_proceso(char *pid, size_t dir_inicio);
 
 void responder_lectura_espacio_usuario(int socket_conexion)
 {
-    t_list *params = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *params = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion");
+        abort();
+    }
 
     uint32_t *pid_int = list_get(params, 0);
     char *pid = string_itoa(*pid_int);
@@ -41,7 +46,11 @@ void responder_lectura_espacio_usuario(int socket_conexion)
     enviar_paquete(p, socket_conexion);
     eliminar_paquete(p);
 
-    log_info(memoria_logger, "PID: %u - Accion: LEER - Direccion fisica: %zu - Tamaño %zu", *pid_int, *dir_inicio, *tam_leer);
+    log_info(memoria_logger,
+             "PID: %u - Accion: LEER - Direccion fisica: %zu - Tamaño %zu",
+             *pid_int,
+             *dir_inicio,
+             *tam_leer);
 
     list_destroy_and_destroy_elements(params, free);
     free(pid);
@@ -49,7 +58,12 @@ void responder_lectura_espacio_usuario(int socket_conexion)
 
 void responder_escritura_espacio_usuario(int socket_conexion)
 {
-    t_list *params = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *params = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion");
+        abort();
+    }
 
     uint32_t *pid_int = list_get(params, 0);
     char *pid = string_itoa(*pid_int);
@@ -80,7 +94,11 @@ void responder_escritura_espacio_usuario(int socket_conexion)
     memcpy(inicio_memoria_a_escribir, datos_a_escribir, *tam_a_escribir);
     pthread_mutex_unlock(&mutex_memoria_de_usuario);
 
-    log_info(memoria_logger, "PID: %u - Accion: ESCRIBIR - Direccion fisica: %zu - Tamaño %zu", *pid_int, *dir_inicio, *tam_a_escribir);
+    log_info(memoria_logger,
+             "PID: %u - Accion: ESCRIBIR - Direccion fisica: %zu - Tamaño %zu",
+             *pid_int,
+             *dir_inicio,
+             *tam_a_escribir);
 
     list_destroy_and_destroy_elements(params, free);
     free(pid);

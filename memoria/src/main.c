@@ -93,21 +93,24 @@ static void *atender_conexion(void *param)
     int *socket_conexion = param;
     recibir_handshake(*socket_conexion);
 
-    t_mensaje_identificacion_memoria modulo = recibir_int(*socket_conexion);
+    bool err = false;
+    t_mensaje_identificacion_memoria modulo = recibir_int(*socket_conexion, &err);
 
-    switch (modulo) {
-    case MENSAJE_A_MEMORIA_CPU:
-        atender_cpu(*socket_conexion);
-        break;
-    case MENSAJE_A_MEMORIA_KERNEL:
-        atender_kernel(*socket_conexion);
-        break;
-    case MENSAJE_A_MEMORIA_IO:
-        atender_io(*socket_conexion);
-        break;
-    default:
-        log_error(debug_logger, "El cliente no informo su identidad correctamente");
-        break;
+    if (!err) {
+        switch (modulo) {
+        case MENSAJE_A_MEMORIA_CPU:
+            atender_cpu(*socket_conexion);
+            break;
+        case MENSAJE_A_MEMORIA_KERNEL:
+            atender_kernel(*socket_conexion);
+            break;
+        case MENSAJE_A_MEMORIA_IO:
+            atender_io(*socket_conexion);
+            break;
+        default:
+            log_error(debug_logger, "El cliente no informo su identidad correctamente");
+            break;
+        }
     }
 
     close(*socket_conexion);

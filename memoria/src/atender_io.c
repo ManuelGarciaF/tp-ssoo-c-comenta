@@ -1,11 +1,18 @@
 #include "./main.h"
+#include "utils/slist.h"
+#include <commons/log.h>
 
 void atender_io(int socket_conexion)
 {
     log_info(debug_logger, "Se conecto correctamente (io)");
 
     while (true) {
-        t_op_memoria op = recibir_int(socket_conexion);
+        bool err = false;
+        t_op_memoria op = recibir_int(socket_conexion, &err);
+        if (err) {
+            log_warning(debug_logger, "La conexion con una interfaz fue cerrada");
+            return; // No queremos matar todo el proceso de memoria cuando una interfaz es desconectada
+        }
 
         // Esperar antes de responder.
         usleep(RETARDO_RESPUESTA * 1000);

@@ -15,7 +15,12 @@ void atender_cpu(int socket_conexion)
     enviar_int(TAM_PAGINA, socket_conexion);
 
     while (true) {
-        t_op_memoria op = recibir_int(socket_conexion);
+        bool err = false;
+        t_op_memoria op = recibir_int(socket_conexion, &err);
+        if (err) {
+            log_error(debug_logger, "Hubo un error en la conexion con el CPU");
+            abort();
+        }
 
         // Esperar antes de responder.
         usleep(RETARDO_RESPUESTA * 1000);
@@ -45,7 +50,12 @@ void atender_cpu(int socket_conexion)
 
 static void enviar_instruccion(int socket_conexion)
 {
-    t_list *info_fetch = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *info_fetch = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con el CPU");
+        abort();
+    }
 
     uint32_t *pid_int = list_get(info_fetch, 0);
     char *pid = string_itoa(*pid_int);
@@ -72,7 +82,12 @@ static void enviar_instruccion(int socket_conexion)
 static void responder_acceso_tabla_paginas(int socket_conexion)
 {
     // Obtener los parametros de la operacion
-    t_list *paquete = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *paquete = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con el CPU");
+        abort();
+    }
 
     uint32_t *pid_int = list_get(paquete, 0);
     char *pid = string_itoa(*pid_int);
@@ -100,7 +115,12 @@ static void responder_acceso_tabla_paginas(int socket_conexion)
 static void responder_ajustar_tamanio_proceso(int socket_conexion)
 {
     // Obtener los parametros de la operacion
-    t_list *paquete = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *paquete = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con el CPU");
+        abort();
+    }
 
     uint32_t *pid_int = list_get(paquete, 0);
     char *pid = string_itoa(*pid_int);

@@ -259,7 +259,12 @@ static void *reloj_rr(void *param)
 
 static t_motivo_desalojo recibir_pcb(t_pcb **pcb_actualizado)
 {
-    t_list *elementos = recibir_paquete(conexion_cpu_dispatch);
+    bool err = false;
+    t_list *elementos = recibir_paquete(conexion_cpu_dispatch, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con CPU");
+        abort();
+    }
     *pcb_actualizado = list_get(elementos, 0);
     t_motivo_desalojo *motivo = list_get(elementos, 1);
     t_motivo_desalojo motivo_ret = *motivo;
@@ -302,7 +307,12 @@ static void manejar_out_of_memory(t_pcb *pcb_recibido)
 static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
     // El CPU,sasa luego de hacer wait, envia el nombre del recurso.
-    char *nombre_recurso = recibir_str(socket_conexion_dispatch);
+    bool err = false;
+    char *nombre_recurso = recibir_str(socket_conexion_dispatch, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con CPU");
+        abort();
+    }
 
     // Si el recurso no existe, enviarlo a EXIT.
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
@@ -337,7 +347,12 @@ static void manejar_wait_recurso(t_pcb *pcb_recibido, int socket_conexion_dispat
 static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_dispatch)
 {
     // El CPU, luego de hacer signal, envia el nombre del recurso.
-    char *nombre_recurso = recibir_str(socket_conexion_dispatch);
+    bool err = false;
+    char *nombre_recurso = recibir_str(socket_conexion_dispatch, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con CPU");
+        abort();
+    }
 
     // Si el recurso no existe, enviarlo a EXIT
     if (!sdictionary_has_key(instancias_recursos, nombre_recurso)) {
@@ -358,7 +373,12 @@ static void manejar_signal_recurso(t_pcb *pcb_recibido, int socket_conexion_disp
 static void manejar_io(t_pcb *pcb_recibido, int conexion_dispatch)
 {
     // Recibir los parametros enviados por la cpu luego de desalojar
-    t_list *operacion = recibir_paquete(conexion_dispatch);
+    bool err = false;
+    t_list *operacion = recibir_paquete(conexion_dispatch, &err);
+    if (err) {
+        log_error(debug_logger, "Hubo un error en la conexion con CPU");
+        abort();
+    }
     char *nombre_interfaz = list_get(operacion, 0);
     t_operacion_io *opcode = list_get(operacion, 1);
 

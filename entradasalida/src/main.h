@@ -3,6 +3,7 @@
 
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/bitarray.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,5 +42,6 @@ t_tipo_interfaz parsear_a_t_tipo_interfaz(char* str);
 void manejar_generica(int conexion_kernel);
 void manejar_stdin(int conexion_kernel, int conexion_memoria);
 void manejar_stdout(int conexion_kernel, int conexion_memoria);
+void manejar_dialfs(int conexion_kernel, int conexion_memoria);
 
 #endif // MAIN_H_

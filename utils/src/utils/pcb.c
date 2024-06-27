@@ -30,7 +30,12 @@ void pcb_send(t_pcb *pcb, int socket_conexion)
 
 t_pcb *pcb_receive(int socket_conexion)
 {
-    t_list *contenido = recibir_paquete(socket_conexion);
+    bool err = false;
+    t_list *contenido = recibir_paquete(socket_conexion, &err);
+    if (err) {
+        return NULL;
+    }
+
     t_pcb *pcb = list_get(contenido, 0);
     list_destroy(contenido);
     return pcb;

@@ -5,7 +5,7 @@ tmux kill-session -t tp-ssoo 2> /dev/null
 tmux new-session -d -s tp-ssoo
 
 # Compilar todo
-tmux rename-window "Memoria"
+tmux new-window -t tp-ssoo:1 -k -n "Memoria"
 tmux send-keys -t tp-ssoo:1 "cd memoria && make && make memcheck" C-m
 
 tmux new-window -t tp-ssoo:2 -n "CPU"
