@@ -1,5 +1,8 @@
 #include "main.h"
 #include "utils/bloque.h"
+#include <commons/log.h>
+#include <stdio.h>
+#include <string.h>
 
 static void stdin_read(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_memoria);
 
@@ -36,6 +39,16 @@ void manejar_stdin(int conexion_kernel, int conexion_memoria)
 static void stdin_read(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_memoria)
 {
     char *buffer = readline("> ");
+
+    // Asegurarse que el tamanio sea correcto
+    while (strlen(buffer) < tamanio_total) {
+        printf("El texto ingresado no alcanza el tamaño esperado. Esperado: %zu, recibido: %zu.\n",
+               tamanio_total,
+               strlen(buffer));
+        free(buffer);
+        buffer = readline("> ");
+    }
+
     size_t buffer_offset = 0; // Para rastrear el offset en el buffer
 
     t_list_iterator *it = list_iterator_create(paquete);
@@ -46,10 +59,7 @@ static void stdin_read(t_list *paquete, uint32_t pid, size_t tamanio_total, int 
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
 
-        if (buffer_offset + bloque->tamanio > tamanio_total) {
-            log_error(debug_logger, "El tamaño del bloque excede el tamaño total del buffer");
-            abort();
-        }
+        assert(buffer_offset + bloque->tamanio <= tamanio_total);
 
         char *sub_string = strndup(buffer + buffer_offset, bloque->tamanio);
         escribir_bloque_a_memoria(pid, *bloque, sub_string, conexion_memoria);
