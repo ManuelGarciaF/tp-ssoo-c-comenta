@@ -1,4 +1,5 @@
 #include "./main.h"
+#include <commons/log.h>
 
 /*
 ** Variables globales
@@ -18,6 +19,7 @@ char *PUERTO_MEMORIA;
 char *PATH_BASE_DIALFS;
 int BLOCK_SIZE;
 int BLOCK_COUNT;
+int RETRASO_COMPACTACION;
 
 int main(int argc, char *argv[])
 {
@@ -97,24 +99,29 @@ void cargar_config(t_config *config)
 
     switch (TIPO_INTERFAZ) {
     case GENERICA:
+        log_debug(debug_logger, "Interfaz generica");
         TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         break;
     case STDIN:
+        log_debug(debug_logger, "Interfaz stdin");
         IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
         PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case STDOUT:
+        log_debug(debug_logger, "Interfaz stdout");
         TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
         PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         break;
     case DIALFS:
+        log_debug(debug_logger, "Interfaz dialfs");
         TIEMPO_UNIDAD_TRABAJO = config_get_int_or_exit(config, "TIEMPO_UNIDAD_TRABAJO");
         IP_MEMORIA = config_get_string_or_exit(config, "IP_MEMORIA");
         PUERTO_MEMORIA = config_get_string_or_exit(config, "PUERTO_MEMORIA");
         PATH_BASE_DIALFS = config_get_string_or_exit(config, "PATH_BASE_DIALFS");
         BLOCK_SIZE = config_get_int_or_exit(config, "BLOCK_SIZE");
         BLOCK_COUNT = config_get_int_or_exit(config, "BLOCK_COUNT");
+        RETRASO_COMPACTACION = config_get_int_or_exit(config, "RETRASO_COMPACTACION");
     }
 }
 

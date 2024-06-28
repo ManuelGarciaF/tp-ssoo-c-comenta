@@ -26,6 +26,7 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
         log_info(entradasalida_logger, "PID: %u - Operacion: IO_STDOUT_WRITE", *pid);
 
         stdout_write(paquete, *pid, *tamanio_total, conexion_kernel, conexion_memoria);
+        enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 
         list_destroy_and_destroy_elements(paquete, free);
     }
@@ -74,6 +75,4 @@ static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, in
     free(buffer);
 
     list_iterator_destroy(it);
-
-    enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 }

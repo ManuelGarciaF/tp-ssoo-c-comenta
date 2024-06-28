@@ -26,6 +26,7 @@ void manejar_stdin(int conexion_kernel, int conexion_memoria)
         log_info(entradasalida_logger, "PID: %u - Operacion: IO_STDIN_READ", *pid);
 
         stdin_read(paquete, *pid, *tamanio_total, conexion_kernel, conexion_memoria);
+        enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 
         list_destroy_and_destroy_elements(paquete, free);
     }
@@ -69,6 +70,4 @@ static void stdin_read(t_list *paquete, uint32_t pid, size_t tamanio_total, int 
     list_iterator_destroy(it);
 
     free(buffer);
-
-    enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 }

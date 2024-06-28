@@ -43,6 +43,9 @@ static t_bitarray *bitmap = NULL; // 1 = ocupado, 0 = libre
 // Devuelve el numero de bloques que ocupa una cantidad de bytes
 static inline size_t tam_bloques(size_t bytes)
 {
+    if (bytes == 0)
+        return 1; // Caso especial, un archivo de 0 bytes tambien ocupa 1 bloque
+
     return ceil_div(bytes, BLOCK_SIZE);
 }
 
@@ -54,7 +57,7 @@ static inline void *puntero_bloque(size_t numero_bloque)
 
 static void create_file(char *nombre_archivo);
 static void delete_file(char *nombre_archivo);
-static void truncate_file(char *nombre_archivo, size_t tamanio_nuevo);
+static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nuevo);
 
 static void inicializar_dialfs(void);
 static t_list *cargar_archivos_metadata(void);
@@ -65,7 +68,7 @@ static size_t encontrar_primer_bloque_libre(void);
 static char *obtener_path_archivo(char *nombre);
 static size_t bloques_contiguos_disponibles(t_metadata metadata);
 static void *leer_archivo_entero(t_metadata metadata);
-static void compactar(char *nombre_archivo_a_mover);
+static t_metadata compactar(char *nombre_archivo_a_mover);
 static void sync_files(void);
 static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial);
 
@@ -139,7 +142,7 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
         }
         case FS_TRUNCATE: {
             size_t *tamanio_nuevo = list_get(paquete, 3);
-            truncate_file(nombre_archivo, *tamanio_nuevo);
+            truncate_file(*pid, nombre_archivo, *tamanio_nuevo);
             log_info(entradasalida_logger, "PID: %u - Operacion: FS_TRUNCATE", *pid);
             log_info(entradasalida_logger,
                      "PID: %u - Truncar Archivo: %s - Tamaño: %zu",
@@ -158,12 +161,14 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
         }
         default: {
             log_error(debug_logger, "Operacion invalida");
-            list_destroy_and_destroy_elements(paquete, free); // TODO maybe innecesario
-            continue;
+            abort();
+            break;
         }
         }
 
         list_destroy_and_destroy_elements(paquete, free);
+
+        enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
     }
 }
 
@@ -186,6 +191,8 @@ static void create_file(char *nombre_archivo)
     config_save_in_file(config, path);
     config_destroy(config);
     free(path);
+
+    log_debug(debug_logger, "Creando el archivo %s en el bloque %zu", nombre_archivo, bloque_inicial);
 
     // Marcar el bloque inicial como usado
     bitarray_set_bit(bitmap, bloque_inicial);
@@ -210,7 +217,7 @@ static void delete_file(char *nombre_archivo)
     sync_files();
 }
 
-static void truncate_file(char *nombre_archivo, size_t tamanio_nuevo)
+static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nuevo)
 {
     t_metadata metadata = leer_metadata(nombre_archivo);
     if (metadata.tam_bytes == tamanio_nuevo) { // Si no cambia no hacer nada
@@ -219,25 +226,30 @@ static void truncate_file(char *nombre_archivo, size_t tamanio_nuevo)
 
     size_t actual_cantidad_bloques = tam_bloques(metadata.tam_bytes);
     size_t nueva_cantidad_bloques = tam_bloques(tamanio_nuevo);
+    size_t index_bloque_final_original = metadata.bloque_inicial + actual_cantidad_bloques - 1;
+    size_t index_bloque_final_nuevo = metadata.bloque_inicial + nueva_cantidad_bloques - 1;
 
     // Si hay que achicar.
     if (nueva_cantidad_bloques < actual_cantidad_bloques) {
-        size_t index_bloque_final_original = metadata.bloque_inicial + actual_cantidad_bloques - 1;
-        size_t index_bloque_final_nuevo = metadata.bloque_inicial + nueva_cantidad_bloques - 1;
         // Solo hay que marcar los bloques libres.
-        bitarray_clean_range(bitmap, index_bloque_final_original + 1, index_bloque_final_nuevo);
+        bitarray_clean_range(bitmap, index_bloque_final_nuevo + 1, index_bloque_final_original);
 
     } else if (nueva_cantidad_bloques > actual_cantidad_bloques) { // Hay que agrandar.
         // Si no hay suficientes bloques libres compactar.
         if (bloques_contiguos_disponibles(metadata) < nueva_cantidad_bloques) {
-            compactar(nombre_archivo);
+            log_info(entradasalida_logger, "PID: %u - Inicio Compactación.", pid);
+            metadata = compactar(nombre_archivo);
+            log_info(entradasalida_logger, "PID: %u - Fin Compactación.", pid);
+            usleep(RETRASO_COMPACTACION * 1000); // Retraso en milisegundos
         }
-        // TODO agrandar el tamanio y marcar los bloques ocupados
+        // Marcar los bloques ocupados.
+        bitarray_set_range(bitmap, index_bloque_final_original + 1, index_bloque_final_nuevo);
     }
 
     // Actualizar el tamanio
     metadata.tam_bytes = tamanio_nuevo;
     actualizar_metadata(metadata);
+    sync_files();
 }
 
 static void inicializar_dialfs(void)
@@ -399,8 +411,8 @@ static void *leer_archivo_entero(t_metadata metadata)
     return memcpy(contenido, inicio_archivo, metadata.tam_bytes);
 }
 
-// Mueve el archivo pasado por parametro al final
-static void compactar(char *nombre_archivo_a_mover)
+// Mueve el archivo pasado por parametro al final. Retorna la metadata actualizada del archivo movido.
+static t_metadata compactar(char *nombre_archivo_a_mover)
 {
     void *contenidos_archivo_a_mover;
     t_metadata m_archivo_a_mover;
@@ -453,6 +465,8 @@ static void compactar(char *nombre_archivo_a_mover)
     free(contenidos_archivo_a_mover);
 
     sync_files();
+
+    return m_archivo_a_mover;
 }
 
 // Asegura que los cambios a los archivos mapeados son guardados en disco.
