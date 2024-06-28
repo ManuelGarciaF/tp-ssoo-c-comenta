@@ -45,6 +45,10 @@ void eliminar_paquete(t_paquete *paquete);
 /* Agrega tamanio bytes a un paquete */
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
 
+/* Agrega todos los elementos de una lista del al paquete.
+ * Deben tener todos el mismo tamanio */
+void agregar_lista_homogenea_a_paquete(t_paquete *paquete, t_list *list, size_t tamanio);
+
 /* Envia paquete */
 int enviar_paquete(t_paquete *paquete, int socket_conexion);
 

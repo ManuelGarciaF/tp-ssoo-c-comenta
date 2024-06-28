@@ -1,5 +1,6 @@
 #include "sockets.h"
 
+#include <commons/collections/list.h>
 #include <commons/log.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,6 +117,17 @@ void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio)
     memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
 
     paquete->buffer->size += tamanio + sizeof(int);
+}
+
+void agregar_lista_homogenea_a_paquete(t_paquete *paquete, t_list *list, size_t tamanio)
+{
+    log_debug(debug_logger, "Agregando una lista con %d elementos", list_size(list));
+    t_list_iterator *it = list_iterator_create(list);
+    while (list_iterator_has_next(it)) {
+        void *elem = list_iterator_next(it);
+        agregar_a_paquete(paquete, elem, tamanio);
+    }
+    list_iterator_destroy(it);
 }
 
 int enviar_paquete(t_paquete *paquete, int socket_conexion)

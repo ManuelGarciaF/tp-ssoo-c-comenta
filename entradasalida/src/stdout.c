@@ -1,7 +1,7 @@
 #include "main.h"
+#include "utils/bloque.h"
 
-static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_kernel,
-                         int conexion_memoria);
+static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_memoria);
 
 void manejar_stdout(int conexion_kernel, int conexion_memoria)
 {
@@ -25,16 +25,15 @@ void manejar_stdout(int conexion_kernel, int conexion_memoria)
 
         log_info(entradasalida_logger, "PID: %u - Operacion: IO_STDOUT_WRITE", *pid);
 
-        stdout_write(paquete, *pid, *tamanio_total, conexion_kernel, conexion_memoria);
+        stdout_write(paquete, *pid, *tamanio_total, conexion_memoria);
         enviar_int(MENSAJE_FIN_IO, conexion_kernel); // Avisar que terminamos
 
         list_destroy_and_destroy_elements(paquete, free);
     }
 }
 
-static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_kernel, int conexion_memoria)
+static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, int conexion_memoria)
 {
-
     t_list_iterator *it = list_iterator_create(paquete);
     list_iterator_next(it);
     list_iterator_next(it);
@@ -47,27 +46,11 @@ static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, in
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
 
-        enviar_int(OPCODE_LECTURA_ESPACIO_USUARIO, conexion_memoria);
-
-        t_paquete *p = crear_paquete();
-        agregar_a_paquete(p, &pid, sizeof(uint32_t));
-        agregar_a_paquete(p, &(bloque->base), sizeof(size_t));
-        agregar_a_paquete(p, &(bloque->tamanio), sizeof(size_t));
-        enviar_paquete(p, conexion_memoria);
-        eliminar_paquete(p);
-
-        bool err = false;
-        t_list *paquete_respuesta = recibir_paquete(conexion_memoria, &err);
-        if (err) {
-            log_error(debug_logger, "Hubo un error en la conexion con memoria");
-        }
-
-        char *respuesta = list_get(paquete_respuesta, 0);
-
+        char *respuesta = leer_bloque_de_memoria(pid, *bloque, conexion_memoria);
+        assert(respuesta != NULL);
         memcpy(buffer + buffer_length, respuesta, bloque->tamanio);
+        free(respuesta);
         buffer_length += bloque->tamanio;
-
-        list_destroy_and_destroy_elements(paquete_respuesta, free);
     }
 
     buffer[buffer_length] = '\0';

@@ -224,9 +224,9 @@ static int enviar_stdin_read(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
 
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
+    list_iterator_next(it); // Saltear nombre interfaz
+    list_iterator_next(it); // Saltear operacion
+    list_iterator_next(it); // Saltear tamanio total
 
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
@@ -251,9 +251,9 @@ static int enviar_stdout_write(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, tamanio_total, sizeof(size_t));
 
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
+    list_iterator_next(it); // Saltear nombre interfaz
+    list_iterator_next(it); // Saltear operacion
+    list_iterator_next(it); // Saltear tamanio total
 
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
@@ -336,12 +336,13 @@ static int enviar_fs_write(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, tamanio, sizeof(size_t));
 
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
+    list_iterator_next(it); // Saltear nombre interfaz
+    list_iterator_next(it); // Saltear operacion
+    list_iterator_next(it); // Saltear nombre archivo
+    list_iterator_next(it); // Saltear dir inicio
+    list_iterator_next(it); // Saltear tamanio
 
+    // Agregar bloques
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
         agregar_a_paquete(paquete, bloque, sizeof(t_bloque));
@@ -355,7 +356,8 @@ static int enviar_fs_write(t_bloqueado_io *pb, int conexion_io)
 }
 
 static int enviar_fs_read(t_bloqueado_io *pb, int conexion_io)
-{t_paquete *paquete = crear_paquete();
+{
+    t_paquete *paquete = crear_paquete();
     agregar_a_paquete(paquete, &(pb->pcb->pid), sizeof(uint32_t));
     t_operacion_io op = FS_READ;
     agregar_a_paquete(paquete, &op, sizeof(t_operacion_io));
@@ -370,12 +372,13 @@ static int enviar_fs_read(t_bloqueado_io *pb, int conexion_io)
     agregar_a_paquete(paquete, tamanio, sizeof(size_t));
 
     t_list_iterator *it = list_iterator_create(pb->operacion);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
-    list_iterator_next(it);
+    list_iterator_next(it); // Saltear nombre interfaz
+    list_iterator_next(it); // Saltear operacion
+    list_iterator_next(it); // Saltear nombre archivo
+    list_iterator_next(it); // Saltear dir inicio
+    list_iterator_next(it); // Saltear tamanio
 
+    // Agregar bloques
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
         agregar_a_paquete(paquete, bloque, sizeof(t_bloque));

@@ -10,10 +10,9 @@
 #include <commons/string.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
 
@@ -40,24 +39,11 @@ static t_bitarray *bitmap = NULL; // 1 = ocupado, 0 = libre
 // Funciones locales
 //
 
-// Devuelve el numero de bloques que ocupa una cantidad de bytes
-static inline size_t tam_bloques(size_t bytes)
-{
-    if (bytes == 0)
-        return 1; // Caso especial, un archivo de 0 bytes tambien ocupa 1 bloque
-
-    return ceil_div(bytes, BLOCK_SIZE);
-}
-
-// Devuelve un puntero a la posicion dentro del espacio de memoria de bloques, que corresponde al numero de bloque.
-static inline void *puntero_bloque(size_t numero_bloque)
-{
-    return (char *)bloques + (numero_bloque * BLOCK_SIZE);
-}
-
 static void create_file(char *nombre_archivo);
 static void delete_file(char *nombre_archivo);
 static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nuevo);
+static void write_file(t_list *paquete);
+static void read_file(t_list *paquete);
 
 static void inicializar_dialfs(void);
 static t_list *cargar_archivos_metadata(void);
@@ -72,47 +58,16 @@ static t_metadata compactar(char *nombre_archivo_a_mover);
 static void sync_files(void);
 static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial);
 
+static inline size_t tam_bloques(size_t bytes);
+static inline void *puntero_bloque(size_t numero_bloque);
+static inline void *puntero_dir_archivo(t_metadata metadata, size_t dir_archivo);
+
 //
 // Funcion principal
 //
 void manejar_dialfs(int conexion_kernel, int conexion_memoria)
 {
     inicializar_dialfs();
-
-    // FIXME borrar despues
-    /* log_debug(debug_logger, "Archivos encontrados:"); */
-    /* t_list *ms = cargar_archivos_metadata(); */
-
-    /* t_list_iterator *i = list_iterator_create(ms); */
-    /* while (list_iterator_has_next(i)) { */
-    /*     t_metadata *m = list_iterator_next(i); */
-    /*     log_debug(debug_logger, */
-    /*               "\tNombre: %s, BI: %zu, TA %zu Bytes (%zu bloques)", */
-    /*               m->nombre, */
-    /*               m->bloque_inicial, */
-    /*               m->tam_bytes, */
-    /*               tam_bloques(m->tam_bytes)); */
-    /* } */
-    /* list_iterator_destroy(i); */
-    /* list_destroy_and_destroy_elements(ms, free); */
-
-    /* compactar("report.doc"); */
-
-    /* log_debug(debug_logger, "Archivos encontrados:"); */
-    /* ms = cargar_archivos_metadata(); */
-    /* i = list_iterator_create(ms); */
-    /* while (list_iterator_has_next(i)) { */
-    /*     t_metadata *m = list_iterator_next(i); */
-    /*     log_debug(debug_logger, */
-    /*               "\tNombre: %s, BI: %zu, TA %zu Bytes (%zu bloques)", */
-    /*               m->nombre, */
-    /*               m->bloque_inicial, */
-    /*               m->tam_bytes, */
-    /*               tam_bloques(m->tam_bytes)); */
-    /* } */
-    /* list_iterator_destroy(i); */
-    /* list_destroy_and_destroy_elements(ms, free); */
-    // FIXME borrar despues
 
     while (true) {
         bool err = false;
@@ -152,11 +107,13 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
             break;
         }
         case FS_WRITE: {
-            // write_file();
+            // Logs dentro de la funcion.
+            write_file(paquete);
             break;
         }
         case FS_READ: {
-            // read_file();
+            // Logs dentro de la funcion.
+            read_file(paquete);
             break;
         }
         default: {
@@ -501,4 +458,27 @@ static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial)
     // Actualizar la metadata.
     metadata.bloque_inicial = nuevo_bloque_inicial;
     actualizar_metadata(metadata);
+}
+
+// Devuelve el numero de bloques que ocupa una cantidad de bytes
+static inline size_t tam_bloques(size_t bytes)
+{
+    if (bytes == 0) {
+        return 1; // Caso especial, un archivo de 0 bytes tambien ocupa 1 bloque
+    }
+    return ceil_div(bytes, BLOCK_SIZE);
+}
+
+// Devuelve un puntero a la posicion dentro del espacio de memoria de bloques, que corresponde al numero de bloque.
+static inline void *puntero_bloque(size_t numero_bloque)
+{
+    return (char *)bloques + (numero_bloque * BLOCK_SIZE);
+}
+
+// Devuelve un puntero a la posicion dentro del espacio de memoria de bloques,
+// que corresponde a la direccion dentro del archivo pasado.
+static inline void *puntero_dir_archivo(t_metadata metadata, size_t dir_archivo)
+{
+    assert(dir_archivo < metadata.tam_bytes); // Asegurarse de que esta dentro del archivo
+    return ((char *)puntero_bloque(metadata.bloque_inicial)) + dir_archivo;
 }

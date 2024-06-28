@@ -45,3 +45,8 @@ char *print_hex(void *ptr, size_t size)
 
     return str;
 }
+
+size_t smin(size_t a, size_t b)
+{
+    return (a < b) ? a : b;
+}

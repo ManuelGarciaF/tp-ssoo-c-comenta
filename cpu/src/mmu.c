@@ -1,7 +1,4 @@
 #include "main.h"
-#include "utils/sockets.h"
-#include <commons/log.h>
-#include <stdint.h>
 
 // Estructuras locales
 typedef struct {
@@ -22,6 +19,8 @@ static void fifo_remover_victima(t_queue *entries);
 static void lru_remover_victima(t_queue *entries);
 static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio);
 static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
+static bool entra_en_pagina(size_t dir_logica, size_t tamanio);
+static size_t tam_restante_pag(size_t dir_logica);
 
 void inicializar_mmu(void)
 {
@@ -49,18 +48,6 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica)
     return (num_marco * tam_pagina) + offset;
 }
 
-bool entra_en_pagina(size_t dir_logica, size_t tamanio)
-{
-    uint32_t offset = dir_logica % tam_pagina;
-    return offset + tamanio <= tam_pagina;
-}
-
-size_t tam_restante_pag(size_t dir_logica)
-{
-    uint32_t offset = dir_logica % tam_pagina;
-    return tam_pagina - offset;
-}
-
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
 {
     void *buffer_lectura = malloc(tamanio);
@@ -72,7 +59,7 @@ void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
     size_t dir_a_leer = dir_logica;
 
     do {
-        size_t tam_a_leer = (tam_restante > tam_restante_pag(dir_a_leer)) ? tam_restante_pag(dir_a_leer) : tam_restante;
+        size_t tam_a_leer = smin(tam_restante, tam_restante_pag(dir_a_leer));
 
         void *bytes_leidos = leer_una_pagina(pid, dir_a_leer, tam_a_leer);
 
@@ -99,8 +86,7 @@ void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos
     size_t dir_a_leer = dir_logica;
 
     do {
-        size_t tam_a_escribir =
-            (tam_restante > tam_restante_pag(dir_a_leer)) ? tam_restante_pag(dir_a_leer) : tam_restante;
+        size_t tam_a_escribir = smin(tam_restante, tam_restante_pag(dir_a_leer));
 
         escribir_una_pagina(pid, dir_a_leer, puntero_datos, tam_a_escribir);
 
@@ -127,8 +113,7 @@ t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio)
         size_t dir_fisica = obtener_direccion_fisica(pid, dir_actual);
         b->base = dir_fisica;
         // El tamanio del bloque es el minimo entre el restante y el restante en pagina
-        size_t tam_max = tam_restante_pag(dir_actual);
-        b->tamanio = (tam_restante < tam_max) ? tam_restante : tam_max;
+        b->tamanio = smin(tam_restante, tam_restante_pag(dir_actual));
 
         dir_actual += b->tamanio;
         tam_restante -= b->tamanio;
@@ -308,8 +293,8 @@ static void lru_remover_victima(t_queue *entries)
         t_tlb_entry *actual = list_iterator_next(it);
         // Si el ultimo acceso del actual es mas viejo que la victima actual
         if (actual->ultimo_acceso < victima->ultimo_acceso) {
-            indice_victima = list_iterator_index(it);
             victima = actual;
+            indice_victima = list_iterator_index(it);
         }
     }
     list_iterator_destroy(it);
@@ -317,4 +302,16 @@ static void lru_remover_victima(t_queue *entries)
     // Sacar la victima de la lista y liberarla
     list_remove(entries->elements, indice_victima);
     free(victima);
+}
+
+static bool entra_en_pagina(size_t dir_logica, size_t tamanio)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return offset + tamanio <= tam_pagina;
+}
+
+static size_t tam_restante_pag(size_t dir_logica)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return tam_pagina - offset;
 }

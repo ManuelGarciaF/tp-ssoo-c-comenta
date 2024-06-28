@@ -7,22 +7,23 @@
 #include <commons/memory.h>
 #include <commons/string.h>
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utils/bloque.h>
 #include <utils/mensajes.h>
 #include <utils/pcb.h>
 #include <utils/slist.h>
 #include <utils/sockets.h>
 #include <utils/utils.h>
-#include <utils/bloque.h>
 
 // Si imprimir los logs de debug por pantalla
 #define PRINT_DEBUG false
 
-/*
-** Estructuras
-*/
+//
+// Estructuras
+//
 typedef enum {
     SET,
     MOV_IN,
@@ -48,12 +49,12 @@ typedef enum {
 typedef enum { PC, AX, BX, CX, DX, EAX, EBX, ECX, EDX, SI, DI } t_registro;
 
 typedef struct {
-    t_opcode opcode;
+    t_opcode opcode; // El opcode define el numero de parametros y sus tipos.
     union {
         t_registro registro;
         int num;
         char str[255];
-    } parametros[5]; // Las instrucciones pueden tener hasta 5 parametros
+    } parametros[5]; // Las instrucciones pueden tener hasta 5 parametros.
 } t_instruccion;
 
 typedef struct {
@@ -89,10 +90,9 @@ extern char *PUERTO_ESCUCHA_INTERRUPT;
 extern int CANTIDAD_ENTRADAS_TLB;
 extern t_algoritmo_tlb ALGORITMO_TLB;
 
-/*
-** Funciones compartidas
-*/
-void inicializar_mmu(void);
+//
+// Funciones compartidas
+//
 
 // Ciclo de instruccion
 char *fetch(uint32_t pid, uint32_t program_counter);
@@ -102,23 +102,23 @@ void check_interrupt(int conexion_dispatch);
 
 void devolver_pcb(t_motivo_desalojo motivo, int conexion_dispatch);
 
-/*
-** MMU
-*/
+//
+// MMU
+//
+
+void inicializar_mmu(void);
 
 // Devuelve la direccion fisica, consultando la tabla de páginas en memoria si es necesario
 size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica);
-// Devuelve si es posible guardar tamanio pagina a partir de dir_logica.
-bool entra_en_pagina(size_t dir_logica, size_t tamanio);
-// Devuelve el tamanio que queda en la pagina a partir de la direccion lógica
-size_t tam_restante_pag(size_t dir_logica);
-// Lee tamanio bytes y devuelve el buffer.
+
+// Lee tamanio bytes y devuelve el buffer, la lectura puede ocurrir a traves de mas de una pagina.
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio);
-// Escribe tamanio bytes del buffer datos.
+
+// Escribe tamanio bytes del buffer datos, la escritura puede ocurrir a traves de mas de una pagina.
 void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
-// Devuelve una lista de bloques para realizar lecturas en más de una pagina en base a una direccion logica y un tamanio.
+
+// Devuelve una lista de bloques para realizar operaciones en más de una pagina en base a una direccion logica y un
+// tamanio.
 t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio);
-
-
 
 #endif // MAIN_H_

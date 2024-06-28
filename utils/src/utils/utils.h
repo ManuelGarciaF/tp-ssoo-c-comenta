@@ -23,4 +23,7 @@ int floor_div(int dividend, int divisor);
 // Devuelve un string con size bytes de ptr en hexa.
 char *print_hex(void *ptr, size_t size);
 
+// Devuelve el minimo entre dos size_t
+size_t smin(size_t a, size_t b);
+
 #endif // UTILS_H_
