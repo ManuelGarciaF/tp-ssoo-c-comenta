@@ -155,7 +155,7 @@ static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio)
     list_destroy(p_respuesta);
 
     char *hexstring = print_hex(respuesta, tamanio);
-    log_info(debug_logger, "PID: %u Acción: LEER -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
+    log_info(cpu_logger, "PID: %u Acción: LEER -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
     free(hexstring);
 
     return respuesta;
@@ -188,7 +188,7 @@ static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *dat
     }
 
     char *hexstring = print_hex((void *)datos, tamanio);
-    log_info(debug_logger, "PID: %u Acción: ESCRIBIR -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
+    log_info(cpu_logger, "PID: %u Acción: ESCRIBIR -  Dirección Física: %zu - Valor: %s", pid, dir_fisica, hexstring);
     free(hexstring);
 }
 
