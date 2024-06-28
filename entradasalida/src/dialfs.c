@@ -198,10 +198,17 @@ static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nue
         // Si no hay suficientes bloques libres compactar.
         if (bloques_contiguos_disponibles(metadata) < nueva_cantidad_bloques) {
             log_info(entradasalida_logger, "PID: %u - Inicio Compactación.", pid);
+            // La metadata cambia al compactar
             metadata = compactar(nombre_archivo);
-            log_info(entradasalida_logger, "PID: %u - Fin Compactación.", pid);
+
+            // Hay que recalcular, ya que el bloque inicial cambio
+            index_bloque_final_original = metadata.bloque_inicial + actual_cantidad_bloques - 1;
+            index_bloque_final_nuevo = metadata.bloque_inicial + nueva_cantidad_bloques - 1;
+
             usleep(RETRASO_COMPACTACION * 1000); // Retraso en milisegundos
+            log_info(entradasalida_logger, "PID: %u - Fin Compactación.", pid);
         }
+
         // Marcar los bloques ocupados.
         bitarray_set_range(bitmap, index_bloque_final_original + 1, index_bloque_final_nuevo);
     }
