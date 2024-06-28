@@ -16,7 +16,7 @@ typedef struct {
     pthread_mutex_t *mutex;
 } t_squeue;
 
-t_squeue *squeue_create();
+t_squeue *squeue_create(void);
 void squeue_destroy(t_squeue *);
 void squeue_destroy_and_destroy_elements(t_squeue *, void (*element_destroyer)(void *));
 void squeue_push(t_squeue *, void *element);

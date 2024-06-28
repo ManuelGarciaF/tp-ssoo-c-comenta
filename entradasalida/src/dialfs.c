@@ -1,5 +1,6 @@
 #include "main.h"
 #include "utils.h"
+#include "utils/bloque.h"
 
 #include <assert.h>
 #include <commons/bitarray.h>
@@ -42,8 +43,8 @@ static t_bitarray *bitmap = NULL; // 1 = ocupado, 0 = libre
 static void create_file(char *nombre_archivo);
 static void delete_file(char *nombre_archivo);
 static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nuevo);
-static void write_file(t_list *paquete);
-static void read_file(t_list *paquete);
+static void write_file(t_list *paquete, int conexion_memoria);
+static void read_file(t_list *paquete, int conexion_memoria);
 
 static void inicializar_dialfs(void);
 static t_list *cargar_archivos_metadata(void);
@@ -57,6 +58,8 @@ static void *leer_archivo_entero(t_metadata metadata);
 static t_metadata compactar(char *nombre_archivo_a_mover);
 static void sync_files(void);
 static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial);
+
+static void debug_print_archivo(char *nombre_archivo);
 
 static inline size_t tam_bloques(size_t bytes);
 static inline void *puntero_bloque(size_t numero_bloque);
@@ -108,12 +111,12 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
         }
         case FS_WRITE: {
             // Logs dentro de la funcion.
-            write_file(paquete);
+            write_file(paquete, conexion_memoria);
             break;
         }
         case FS_READ: {
             // Logs dentro de la funcion.
-            read_file(paquete);
+            read_file(paquete, conexion_memoria);
             break;
         }
         default: {
@@ -206,6 +209,95 @@ static void truncate_file(uint32_t pid, char *nombre_archivo, size_t tamanio_nue
     // Actualizar el tamanio
     metadata.tam_bytes = tamanio_nuevo;
     actualizar_metadata(metadata);
+    sync_files();
+}
+
+static void write_file(t_list *paquete, int conexion_memoria)
+{
+    t_list_iterator *p_it = list_iterator_create(paquete);
+
+    uint32_t *pid = list_iterator_next(p_it);
+    list_iterator_next(p_it); // Ignorar operacion
+    char *nombre_archivo = list_iterator_next(p_it);
+    size_t *dir_inicio_archivo = list_iterator_next(p_it);
+    size_t *tamanio_total = list_iterator_next(p_it);
+    // Lo que sigue en el paquete son los bloques.
+
+    log_info(entradasalida_logger,
+             "PID: %u - Escribir Archivo: %s - Tamaño a Escribir: %zu - Puntero Archivo: %zu",
+             *pid,
+             nombre_archivo,
+             *tamanio_total,
+             *dir_inicio_archivo);
+
+    t_metadata metadata = leer_metadata(nombre_archivo);
+
+    size_t curr_pos = *dir_inicio_archivo;
+    while (list_iterator_has_next(p_it)) {
+        t_bloque *bloque = list_iterator_next(p_it);
+
+        void *destino_datos = puntero_dir_archivo(metadata, curr_pos);
+        void *datos = leer_bloque_de_memoria(*pid, *bloque, conexion_memoria);
+        memcpy(destino_datos, datos, bloque->tamanio);
+
+        // FIXME borrar despues
+        char *hexstring = print_hex((void *)datos, bloque->tamanio);
+        log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
+        free(hexstring);
+        // FIXME borrar despues
+
+        free(datos);
+
+        curr_pos += bloque->tamanio;
+    }
+    list_iterator_destroy(p_it);
+
+    // FIXME borrar despues
+    debug_print_archivo(nombre_archivo);
+
+    sync_files();
+}
+
+static void read_file(t_list *paquete, int conexion_memoria)
+{
+    t_list_iterator *p_it = list_iterator_create(paquete);
+
+    uint32_t *pid = list_iterator_next(p_it);
+    list_iterator_next(p_it); // Ignorar operacion
+    char *nombre_archivo = list_iterator_next(p_it);
+    size_t *dir_inicio_archivo = list_iterator_next(p_it);
+    size_t *tamanio_total = list_iterator_next(p_it);
+    // Lo que sigue en el paquete son los bloques.
+
+    log_info(entradasalida_logger,
+             "PID: %u - Leer Archivo: %s - Tamaño a Leer: %zu - Puntero Archivo: %zu",
+             *pid,
+             nombre_archivo,
+             *tamanio_total,
+             *dir_inicio_archivo);
+
+    // FIXME borrar despues
+    debug_print_archivo(nombre_archivo);
+
+    t_metadata metadata = leer_metadata(nombre_archivo);
+
+    size_t curr_pos = *dir_inicio_archivo;
+    while (list_iterator_has_next(p_it)) {
+        t_bloque *bloque = list_iterator_next(p_it);
+
+        void *inicio_datos = puntero_dir_archivo(metadata, curr_pos);
+        escribir_bloque_a_memoria(*pid, *bloque, inicio_datos, conexion_memoria);
+
+        // FIXME borrar despues
+        char *hexstring = print_hex((void *)inicio_datos, bloque->tamanio);
+        log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
+        free(hexstring);
+        // FIXME borrar despues
+
+        curr_pos += bloque->tamanio;
+    }
+    list_iterator_destroy(p_it);
+
     sync_files();
 }
 
@@ -458,6 +550,13 @@ static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial)
     // Actualizar la metadata.
     metadata.bloque_inicial = nuevo_bloque_inicial;
     actualizar_metadata(metadata);
+}
+
+static void debug_print_archivo(char *nombre_archivo)
+{
+    char *contenido = leer_archivo_entero(leer_metadata(nombre_archivo));
+    log_debug(debug_logger, "<Contenido de %s>: %s", nombre_archivo, contenido);
+    free(contenido);
 }
 
 // Devuelve el numero de bloques que ocupa una cantidad de bytes

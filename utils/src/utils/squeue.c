@@ -1,13 +1,13 @@
 #include "squeue.h"
 
-t_squeue *squeue_create()
+t_squeue *squeue_create(void)
 {
     t_squeue *sq = malloc(sizeof(t_squeue));
     assert(sq != NULL);
     sq->queue = queue_create();
 
     sq->mutex = malloc(sizeof(pthread_mutex_t));
-    assert(sq != NULL);
+    assert(sq->mutex != NULL);
     pthread_mutex_init(sq->mutex, NULL);
 
     return sq;
@@ -22,7 +22,7 @@ void squeue_destroy(t_squeue *sq)
 
 void squeue_destroy_and_destroy_elements(t_squeue *sq, void (*element_destroyer)(void *))
 {
-    queue_destroy_and_destroy_elements(sq->queue, (void *)(*element_destroyer));
+    queue_destroy_and_destroy_elements(sq->queue, element_destroyer);
     pthread_mutex_destroy(sq->mutex);
     free(sq);
 }
