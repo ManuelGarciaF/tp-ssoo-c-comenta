@@ -65,7 +65,10 @@ static void inicializar_globales(void)
     RETARDO_RESPUESTA = config_get_int_or_exit(config, "RETARDO_RESPUESTA");
 
     // El tamanio de memoria debe ser un multiplo del tamanio de pagina
-    assert(TAM_MEMORIA % TAM_PAGINA == 0);
+    if (TAM_MEMORIA % TAM_PAGINA != 0) {
+        log_error(debug_logger, "TAM_MEMORIA no es multiplo de TAM_PAGINA");
+        exit(1);
+    }
     num_marcos = TAM_MEMORIA / TAM_PAGINA;
 
     // Diccionario con pseudocodigo de procesos
@@ -73,7 +76,10 @@ static void inicializar_globales(void)
 
     // Inicializar memoria de usuario
     memoria_de_usuario = malloc(TAM_MEMORIA);
-    assert(memoria_de_usuario != NULL);
+    if (memoria_de_usuario == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     // Settear la memoria a 0
     memset(memoria_de_usuario, 0, TAM_MEMORIA);
     pthread_mutex_init(&mutex_memoria_de_usuario, NULL);
@@ -81,7 +87,10 @@ static void inicializar_globales(void)
     // Inicializar bitmap
     int num_bytes = ceil_div(num_marcos, 8);
     void *bitarray = malloc(num_bytes);
-    assert(bitarray != NULL);
+    if (bitarray == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     // Settear la memoria a 0
     memset(bitarray, 0, num_bytes);
     bitmap_marcos = bitarray_create_with_mode(bitarray, num_bytes, LSB_FIRST);

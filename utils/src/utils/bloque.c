@@ -9,7 +9,14 @@ void *leer_bloque_de_memoria(uint32_t pid, t_bloque bloque, int conexion_memoria
     agregar_a_paquete(p, &(bloque.base), sizeof(size_t));
     agregar_a_paquete(p, &(bloque.tamanio), sizeof(size_t));
     int bytes = enviar_paquete(p, conexion_memoria);
-    assert(bytes > 0);
+    if (bytes <= 0) {
+        log_error(debug_logger,
+                  "Hubo un error en la conexion con memoria al intentar leer un bloque (PID: %u, base: %zu, tam: %zu)",
+                  pid,
+                  bloque.base,
+                  bloque.tamanio);
+        abort();
+    }
     eliminar_paquete(p);
 
     bool err = false;
@@ -20,7 +27,7 @@ void *leer_bloque_de_memoria(uint32_t pid, t_bloque bloque, int conexion_memoria
                   pid,
                   bloque.base,
                   bloque.tamanio);
-        return NULL;
+        abort();
     }
 
     void *respuesta = list_get(paquete_respuesta, 0);
@@ -39,7 +46,10 @@ void escribir_bloque_a_memoria(uint32_t pid, t_bloque bloque, void *data, int co
     agregar_a_paquete(p, &(bloque.tamanio), sizeof(size_t));
     agregar_a_paquete(p, data, bloque.tamanio);
     int bytes = enviar_paquete(p, conexion_memoria);
-    assert(bytes > 0);
+    if (bytes <= 0) {
+        log_error(debug_logger, "Hubo un error en la conexion con memoria al intentar escribir un bloque");
+        abort();
+    }
     eliminar_paquete(p);
 
     bool err = false;

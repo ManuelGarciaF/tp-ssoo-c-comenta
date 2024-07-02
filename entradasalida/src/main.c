@@ -1,5 +1,4 @@
 #include "./main.h"
-#include <commons/log.h>
 
 /*
 ** Variables globales
@@ -49,8 +48,15 @@ int main(int argc, char *argv[])
         log_error(debug_logger, "No se pudo realizar un handshake con el Kernel");
     }
 
+    t_paquete *paquete = crear_paquete();
+    // Enviar nombre_interfaz y tipo_interfaz
+    agregar_a_paquete(paquete, NOMBRE_INTERFAZ, strlen(NOMBRE_INTERFAZ) + 1);
+    agregar_a_paquete(paquete, &TIPO_INTERFAZ, sizeof(t_tipo_interfaz));
+    enviar_paquete(paquete, conexion_kernel);
+    eliminar_paquete(paquete);
+
     // Conexion con la memoria
-    int conexion_memoria;
+    int conexion_memoria = -1;
     if (TIPO_INTERFAZ != GENERICA) {
         conexion_memoria = crear_conexion(IP_MEMORIA, PUERTO_MEMORIA);
         if (!realizar_handshake(conexion_memoria)) {
@@ -58,13 +64,6 @@ int main(int argc, char *argv[])
         }
         enviar_int(MENSAJE_A_MEMORIA_IO, conexion_memoria);
     }
-
-    t_paquete *paquete = crear_paquete();
-    // Enviar nombre_interfaz y tipo_interfaz
-    agregar_a_paquete(paquete, NOMBRE_INTERFAZ, strlen(NOMBRE_INTERFAZ) + 1);
-    agregar_a_paquete(paquete, &TIPO_INTERFAZ, sizeof(t_tipo_interfaz));
-    enviar_paquete(paquete, conexion_kernel);
-    eliminar_paquete(paquete);
 
     switch (TIPO_INTERFAZ) {
     case GENERICA:

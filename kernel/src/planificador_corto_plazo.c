@@ -44,7 +44,7 @@ void *planificador_corto_plazo(void *vparams)
         // No siempre hay que enviar un proceso nuevo segun el algoritmo de planificacion,
         // a veces devolvemos la ejecucion al proceso devuelto.
         if (planificar_nuevo_proceso) {
-            bool proceso_ready_plus;
+            bool proceso_ready_plus = false;
             // Esperar que haya elementos en ready.
             sem_wait(&sem_elementos_en_ready);
             t_pcb *pcb_inicial = peek_siguiente_pcb(&proceso_ready_plus);

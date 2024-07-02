@@ -3,11 +3,17 @@
 t_slist *slist_create(void)
 {
     t_slist *sl = malloc(sizeof(t_slist));
-    assert(sl != NULL);
+    if (sl == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     sl->list = list_create();
 
     sl->mutex = malloc(sizeof(pthread_mutex_t));
-    assert(sl->mutex != NULL);
+    if (sl->mutex == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     pthread_mutex_init(sl->mutex, NULL);
 
     return sl;

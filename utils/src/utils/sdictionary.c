@@ -3,11 +3,17 @@
 t_sdictionary *sdictionary_create(void)
 {
     t_sdictionary *sd = malloc(sizeof(t_sdictionary));
-    assert(sd != NULL);
+    if (sd == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     sd->dict = dictionary_create();
 
     sd->mutex = malloc(sizeof(pthread_mutex_t));
-    assert(sd != NULL);
+    if (sd->mutex == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     pthread_mutex_init(sd->mutex, NULL);
 
     return sd;

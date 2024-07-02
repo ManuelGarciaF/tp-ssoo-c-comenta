@@ -123,11 +123,9 @@ static uint32_t get_registro(t_registro registro)
 
 static void set_registro(t_registro registro, uint32_t valor, bool *incrementar_pc)
 {
-    if (tam_registro(registro) < sizeof(uint32_t)) {
-        // Ver que no nos pasamos del tamanio maximo
-        // TODO ver si es necesario checkear overflows
-        assert(valor <= UINT8_MAX);
-    }
+    // Ver que no nos pasamos del tamanio maximo
+    // TODO ver si es necesario checkear overflows
+    assert(tam_registro(registro) > sizeof(uint8_t) || valor <= UINT8_MAX);
 
     switch (registro) {
     case PC:

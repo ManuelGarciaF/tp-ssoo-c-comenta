@@ -68,7 +68,10 @@ void liberar_asignaciones_recurso(uint32_t pid)
 static void guardar_asignacion_recurso(uint32_t pid, char *recurso)
 {
     t_asignacion_recurso *ar = malloc(sizeof(t_asignacion_recurso));
-    assert(ar != NULL);
+    if (ar == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     ar->nombre_recurso = string_duplicate(recurso);
     ar->pid = pid;
     slist_add(asignaciones_recursos, ar);

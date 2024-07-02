@@ -196,7 +196,7 @@ static int enviar_operacion(t_bloqueado_io *pb, int conexion_io)
     case FS_READ:
         return enviar_fs_read(pb, conexion_io);
     }
-    assert(false && "Operacion invalida");
+    abort(); // Unreachable
 }
 
 static int enviar_gen_sleep(t_bloqueado_io *pb, int conexion_io)

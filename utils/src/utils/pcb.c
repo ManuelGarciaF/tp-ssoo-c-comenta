@@ -3,7 +3,10 @@
 t_pcb *pcb_create(uint32_t pid)
 {
     t_pcb *pcb = malloc(sizeof(t_pcb));
-    assert(pcb != NULL);
+    if (pcb == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
 
     // Settear todo en 0.
     memset(pcb, 0, sizeof(t_pcb));

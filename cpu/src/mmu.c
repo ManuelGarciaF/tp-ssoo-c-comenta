@@ -19,8 +19,22 @@ static void fifo_remover_victima(t_queue *entries);
 static void lru_remover_victima(t_queue *entries);
 static void *leer_una_pagina(uint32_t pid, size_t dir_logica, size_t tamanio);
 static void escribir_una_pagina(uint32_t pid, size_t dir_logica, const void *datos, size_t tamanio);
-static bool entra_en_pagina(size_t dir_logica, size_t tamanio);
-static size_t tam_restante_pag(size_t dir_logica);
+
+static inline bool entra_en_pagina(size_t dir_logica, size_t tamanio)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return offset + tamanio <= tam_pagina;
+}
+
+static inline size_t tam_restante_pag(size_t dir_logica)
+{
+    uint32_t offset = dir_logica % tam_pagina;
+    return tam_pagina - offset;
+}
+
+//
+// Definiciones
+//
 
 void inicializar_mmu(void)
 {
@@ -51,7 +65,10 @@ size_t obtener_direccion_fisica(uint32_t pid, size_t dir_logica)
 void *leer_espacio_usuario(uint32_t pid, size_t dir_logica, size_t tamanio)
 {
     void *buffer_lectura = malloc(tamanio);
-    assert(buffer_lectura != NULL);
+    if (buffer_lectura == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     void *buffer_next = buffer_lectura;
 
     // Copias que van a ser modificadas
@@ -107,7 +124,10 @@ t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio)
     size_t tam_restante = tamanio;
     while (tam_restante > 0) {
         t_bloque *b = malloc(sizeof(t_bloque));
-        assert(b != NULL);
+        if (b == NULL) {
+            log_error(debug_logger, "No se pudo alojar memoria");
+            abort();
+        }
 
         // TODO testear esto
         size_t dir_fisica = obtener_direccion_fisica(pid, dir_actual);
@@ -245,7 +265,10 @@ static void tlb_save(uint32_t pid, uint32_t num_pagina, uint32_t num_marco)
 
     // Crear la entry nueva.
     t_tlb_entry *entry = malloc(sizeof(t_tlb_entry));
-    assert(entry != NULL);
+    if (entry == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     entry->pid = pid;
     entry->num_pagina = num_pagina;
     entry->num_marco = num_marco;
@@ -302,16 +325,4 @@ static void lru_remover_victima(t_queue *entries)
     // Sacar la victima de la lista y liberarla
     list_remove(entries->elements, indice_victima);
     free(victima);
-}
-
-static bool entra_en_pagina(size_t dir_logica, size_t tamanio)
-{
-    uint32_t offset = dir_logica % tam_pagina;
-    return offset + tamanio <= tam_pagina;
-}
-
-static size_t tam_restante_pag(size_t dir_logica)
-{
-    uint32_t offset = dir_logica % tam_pagina;
-    return tam_pagina - offset;
 }

@@ -40,14 +40,16 @@ static void stdout_write(t_list *paquete, uint32_t pid, size_t tamanio_total, in
     list_iterator_next(it);
 
     char *buffer = malloc(tamanio_total + 1);
-    assert(buffer != NULL);
+    if (buffer == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     size_t buffer_length = 0;
 
     while (list_iterator_has_next(it)) {
         t_bloque *bloque = list_iterator_next(it);
 
         char *respuesta = leer_bloque_de_memoria(pid, *bloque, conexion_memoria);
-        assert(respuesta != NULL);
         memcpy(buffer + buffer_length, respuesta, bloque->tamanio);
         free(respuesta);
         buffer_length += bloque->tamanio;

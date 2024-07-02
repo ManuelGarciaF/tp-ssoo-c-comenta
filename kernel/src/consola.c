@@ -101,7 +101,10 @@ static void iniciar_proceso(const char *path)
 {
     // Guardar tanto el pid como el path, para enviar a memoria
     t_proceso_nuevo *proceso_nuevo = malloc(sizeof(t_proceso_nuevo));
-    assert(proceso_nuevo != NULL);
+    if (proceso_nuevo == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
 
     proceso_nuevo->pid = ultimo_pid++;
     // Hay que duplicarlo para poder liberar el comando despues

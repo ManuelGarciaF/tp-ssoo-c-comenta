@@ -12,6 +12,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <utils/sockets.h>
@@ -167,7 +168,9 @@ static void delete_file(char *nombre_archivo)
     // Eliminar el archivo.
     char *path = obtener_path_archivo(nombre_archivo);
     int ret = remove(path);
-    assert(ret == 0);
+    if (ret != 0) {
+        log_error(debug_logger, "No se pudo eliminar el archivo %s", path);
+    }
     free(path);
 
     // Marcar los bloques como libres en el bitmap
@@ -316,17 +319,25 @@ static void inicializar_dialfs(void)
     string_append(&path_archivo_bloques, "/bloques.dat");
 
     int fd_bloques = open(path_archivo_bloques, O_RDWR | O_CREAT, 0644);
-    assert(fd_bloques != -1);
-
+    if (fd_bloques == -1) {
+        log_error(debug_logger, "No se pudo abrir o crear el archivo de bloques");
+        abort();
+    }
     free(path_archivo_bloques);
 
     // Truncarlo al tamaño correcto (en caso que lo estemos creando).
     int ret = ftruncate(fd_bloques, tam_archivo_bloques);
-    assert(ret != -1);
+    if (ret == -1) {
+        log_error(debug_logger, "No se pudo truncar el archivo de bloques");
+        abort();
+    }
 
     // Mapearlo a memoria.
     bloques = mmap(NULL, tam_archivo_bloques, PROT_READ | PROT_WRITE, MAP_SHARED, fd_bloques, 0);
-    assert(bloques != MAP_FAILED);
+    if (bloques == MAP_FAILED) {
+        log_error(debug_logger, "No se pudo mapear el archivo de bloques");
+        abort();
+    }
 
     // Abrir el archivo de bitmap.
     size_t tam_archivo_bitmap = ceil_div(BLOCK_COUNT, 8); // Un bit por bloque => 8 bloques por byte.
@@ -334,17 +345,25 @@ static void inicializar_dialfs(void)
     string_append(&path_archivo_bitmap, "/bitmap.dat");
 
     int fd_bitmap = open(path_archivo_bitmap, O_RDWR | O_CREAT, 0644);
-    assert(fd_bitmap != -1);
-
+    if (fd_bitmap == -1) {
+        log_error(debug_logger, "No se pudo abrir o crear el archivo del bitmap");
+        abort();
+    }
     free(path_archivo_bitmap);
 
     // Truncarlo al tamaño correcto.
     ret = ftruncate(fd_bitmap, tam_archivo_bitmap);
-    assert(ret != -1);
+    if (ret == -1) {
+        log_error(debug_logger, "No se pudo truncar el archivo del bitmap");
+        abort();
+    }
 
     // Mapearlo a memoria y wrappearlo en un t_bitarray.
     void *memoria_bitmap = mmap(NULL, tam_archivo_bitmap, PROT_READ | PROT_WRITE, MAP_SHARED, fd_bitmap, 0);
-    assert(memoria_bitmap != MAP_FAILED);
+    if (memoria_bitmap == MAP_FAILED) {
+        log_error(debug_logger, "No se pudo mapear el archivo del bitmap");
+        abort();
+    }
     bitmap = bitarray_create_with_mode(memoria_bitmap, BLOCK_COUNT, LSB_FIRST);
 }
 
@@ -354,7 +373,10 @@ static t_list *cargar_archivos_metadata(void)
     t_list *list = list_create();
 
     DIR *dir = opendir(PATH_BASE_DIALFS);
-    assert(dir != NULL);
+    if (dir == NULL) {
+        log_error(debug_logger, "No se pudo abrir el directorio del dialfs");
+        abort();
+    }
 
     // Iterar sobre los archivos en el directorio.
     struct dirent *entrada;
@@ -368,7 +390,10 @@ static t_list *cargar_archivos_metadata(void)
         t_metadata metadata = leer_metadata(entrada->d_name);
         // Necesitamos guardarlo en el heap.
         t_metadata *p = malloc(sizeof(t_metadata));
-        assert(p != NULL);
+        if (p == NULL) {
+            log_error(debug_logger, "No se pudo alojar memoria");
+            abort();
+        }
         memcpy(p, &metadata, sizeof(t_metadata));
 
         list_add(list, p);
@@ -391,7 +416,10 @@ static t_metadata leer_metadata(char *nombre_archivo)
 {
     char *path = obtener_path_archivo(nombre_archivo);
     t_config *config = config_create(path);
-    assert(config != NULL);
+    if (config == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     free(path);
 
     size_t bloque_inicial = config_get_int_value(config, "BLOQUE_INICIAL");
@@ -461,7 +489,10 @@ static size_t bloques_contiguos_disponibles(t_metadata metadata)
 static void *leer_archivo_entero(t_metadata metadata)
 {
     void *contenido = malloc(metadata.tam_bytes);
-    assert(contenido != NULL);
+    if (contenido == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     void *inicio_archivo = puntero_bloque(metadata.bloque_inicial);
 
     return memcpy(contenido, inicio_archivo, metadata.tam_bytes);
@@ -470,8 +501,8 @@ static void *leer_archivo_entero(t_metadata metadata)
 // Mueve el archivo pasado por parametro al final. Retorna la metadata actualizada del archivo movido.
 static t_metadata compactar(char *nombre_archivo_a_mover)
 {
-    void *contenidos_archivo_a_mover;
-    t_metadata m_archivo_a_mover;
+    void *contenidos_archivo_a_mover = NULL;
+    t_metadata m_archivo_a_mover = {0};
 
     // Recorremos el archivo de bloques con un puntero, para saber el proximo lugar vacio.
     size_t bloque_actual = 0;

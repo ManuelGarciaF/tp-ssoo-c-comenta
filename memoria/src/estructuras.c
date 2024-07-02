@@ -3,7 +3,10 @@
 t_proceso *proceso_create(t_list *lineas_codigo)
 {
     t_proceso *proceso = malloc(sizeof(t_proceso));
-    assert(proceso != NULL);
+    if (proceso == NULL) {
+        log_error(debug_logger, "No se pudo alojar memoria");
+        abort();
+    }
     proceso->codigo = lineas_codigo;
     proceso->paginas = slist_create();
 
