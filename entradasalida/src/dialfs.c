@@ -88,26 +88,26 @@ void manejar_dialfs(int conexion_kernel, int conexion_memoria)
 
         switch (*instruccion) {
         case FS_CREATE: {
-            create_file(nombre_archivo);
             log_info(entradasalida_logger, "PID: %u - Operacion: FS_CREATE", *pid);
             log_info(entradasalida_logger, "PID: %u - Crear Archivo: %s", *pid, nombre_archivo);
+            create_file(nombre_archivo);
             break;
         }
         case FS_DELETE: {
-            delete_file(nombre_archivo);
             log_info(entradasalida_logger, "PID: %u - Operacion: FS_DELETE", *pid);
             log_info(entradasalida_logger, "PID: %u - Eliminar Archivo: %s", *pid, nombre_archivo);
+            delete_file(nombre_archivo);
             break;
         }
         case FS_TRUNCATE: {
             size_t *tamanio_nuevo = list_get(paquete, 3);
-            truncate_file(*pid, nombre_archivo, *tamanio_nuevo);
             log_info(entradasalida_logger, "PID: %u - Operacion: FS_TRUNCATE", *pid);
             log_info(entradasalida_logger,
                      "PID: %u - Truncar Archivo: %s - Tamaño: %zu",
                      *pid,
                      nombre_archivo,
                      *tamanio_nuevo);
+            truncate_file(*pid, nombre_archivo, *tamanio_nuevo);
             break;
         }
         case FS_WRITE: {
