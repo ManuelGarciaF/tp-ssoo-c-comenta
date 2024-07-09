@@ -249,6 +249,8 @@ static void exec_resize(t_instruccion instruccion, bool *incrementar_pc, int con
 {
     uint32_t tamanio = (uint32_t)instruccion.parametros[0].num;
 
+    remover_entradas_tlb_invalidas(pcb->pid, tamanio);
+
     // Enviar opcode
     enviar_int(OPCODE_AJUSTAR_TAMANIO_PROCESO, conexion_memoria);
 

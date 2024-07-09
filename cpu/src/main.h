@@ -121,4 +121,7 @@ void escribir_espacio_usuario(uint32_t pid, size_t dir_logica, const void *datos
 // tamanio.
 t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio);
 
+// Saca las entradas invalidadas por cambiar el tamanio de trabajo.
+void remover_entradas_tlb_invalidas(uint32_t pid, size_t tamanio);
+
 #endif // MAIN_H_

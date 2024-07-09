@@ -1,4 +1,7 @@
 #include "main.h"
+#include "utils/sockets.h"
+#include <commons/log.h>
+#include <stdio.h>
 
 static bool direccion_asignada_a_proceso(char *pid, size_t dir_inicio);
 
@@ -17,7 +20,7 @@ void responder_lectura_espacio_usuario(int socket_conexion)
     size_t *tam_leer = list_get(params, 2);
 
     if (!direccion_asignada_a_proceso(pid, *dir_inicio)) {
-        log_error(debug_logger, "El proceso %u intento acceder una dirección que no tiene asignada", *pid);
+        log_error(debug_logger, "El proceso %u intento acceder una dirección que no tiene asignada", *pid_int);
         abort();
     }
 
@@ -27,7 +30,7 @@ void responder_lectura_espacio_usuario(int socket_conexion)
     if (offset_fin > TAM_PAGINA) {
         log_error(debug_logger,
                   "El proceso %u intento leer afuera de la pagina, DF: %zu, tam: %zu",
-                  *pid,
+                  *pid_int,
                   *dir_inicio,
                   *tam_leer);
         abort();
@@ -72,7 +75,7 @@ void responder_escritura_espacio_usuario(int socket_conexion)
     void *datos_a_escribir = list_get(params, 3);
 
     if (!direccion_asignada_a_proceso(pid, *dir_inicio)) {
-        log_error(debug_logger, "El proceso %u intento acceder una dirección que no tiene asignada", *pid);
+        log_error(debug_logger, "El proceso %u intento acceder una dirección que no tiene asignada", *pid_int);
         abort();
     }
 
@@ -82,7 +85,7 @@ void responder_escritura_espacio_usuario(int socket_conexion)
     if (offset_fin > TAM_PAGINA) {
         log_error(debug_logger,
                   "El proceso %u intento escribir afuera de la pagina, DF: %zu, tam: %zu",
-                  *pid,
+                  *pid_int,
                   *dir_inicio,
                   *tam_a_escribir);
         abort();

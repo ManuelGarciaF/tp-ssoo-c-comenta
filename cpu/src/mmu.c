@@ -143,6 +143,24 @@ t_list *obtener_bloques(uint32_t pid, size_t dir_logica, size_t tamanio)
     return bloques;
 }
 
+void remover_entradas_tlb_invalidas(uint32_t pid, size_t tamanio)
+{
+    // Buscar las entradas de la TLB que correspondan a paginas mayores al tamanio
+    size_t num_paginas = ceil_div(tamanio, tam_pagina);
+    log_debug(debug_logger, "Intentando limpiar entradas para %u, np: %zu, tam: %zu", pid, num_paginas, tamanio);
+
+    t_list_iterator *it = list_iterator_create(tlb_entries->elements);
+    while (list_iterator_has_next(it)) {
+        t_tlb_entry *actual = list_iterator_next(it);
+        if (actual->pid == pid && actual->num_pagina >= num_paginas) {
+            log_debug(debug_logger, "Sacando la entrada (%u, %u) del pid %u", actual->num_pagina, actual->num_marco, pid);
+            list_iterator_remove(it);
+            free(actual);
+        }
+    }
+    list_iterator_destroy(it);
+}
+
 /*
 ** Funciones privadas
 */

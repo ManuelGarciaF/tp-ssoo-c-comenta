@@ -1,4 +1,5 @@
 #include "main.h"
+#include <pthread.h>
 
 // Estructuras
 typedef struct {
@@ -99,6 +100,7 @@ void *planificador_corto_plazo(void *vparams)
                 en_ejecucion_ultimo_reloj = true;
 
                 int iret = pthread_create(&hilo_reloj_rr, NULL, reloj_rr, params_reloj);
+                pthread_detach(hilo_reloj_rr);
                 if (iret != 0) {
                     log_error(debug_logger, "No se pudo crear un hilo para el planificador de largo plazo");
                 }

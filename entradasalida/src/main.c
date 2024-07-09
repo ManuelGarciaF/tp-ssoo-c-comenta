@@ -32,7 +32,10 @@ int main(int argc, char *argv[])
     NOMBRE_INTERFAZ = argv[1];
     char *archivo_config = argv[2];
     debug_logger = log_create("entradasalida_debug.log", "debug", false, LOG_LEVEL_DEBUG);
-    entradasalida_logger = log_create("entradasalida.log", "entradasalida", true, LOG_LEVEL_INFO);
+
+    char *archivo_logger = string_duplicate(NOMBRE_INTERFAZ);
+    string_append(&archivo_logger, ".log");
+    entradasalida_logger = log_create(archivo_logger, "entradasalida", true, LOG_LEVEL_INFO);
 
     t_config *config = config_create(archivo_config);
     if (config == NULL) {
@@ -123,15 +126,6 @@ void cargar_config(t_config *config)
         RETRASO_COMPACTACION = config_get_int_or_exit(config, "RETRASO_COMPACTACION");
     }
 }
-
-/*
-    Esta funcion es creada para evitar un if anidado para el tipo_interfaz
-   cuando se carga el config Ya que, como depende del tipo_interfaz y no se
-   puede hacer un switch con strings de forma sencilla, la otra opcion seria ese
-   if anidado Esto se da porque, suponemos que los distintos tipos de interfaz
-   van a tener distintos datos en el archivo del config, por lo que si leo todos
-   para todos va a tirar error
-*/
 
 t_tipo_interfaz parsear_a_t_tipo_interfaz(char *str)
 {
