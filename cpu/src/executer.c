@@ -1,5 +1,4 @@
 #include "main.h"
-#include "utils/sockets.h"
 
 static uint32_t get_registro(t_registro registro);
 static void set_registro(t_registro registro, uint32_t valor, bool *incrementar_pc);
@@ -205,7 +204,9 @@ static void exec_mov_in(t_instruccion instruccion, bool *incrementar_pc, int con
 
     void *buffer_lectura = leer_espacio_usuario(pcb->pid, dir_logica, tam_registro(reg_datos));
 
-    set_registro(reg_datos, *(uint32_t *)buffer_lectura, incrementar_pc);
+    uint32_t valor_leido =
+        (tam_registro(reg_datos) == sizeof(uint32_t)) ? *(uint32_t *)buffer_lectura : *(uint8_t *)buffer_lectura;
+    set_registro(reg_datos, valor_leido, incrementar_pc);
 
     free(buffer_lectura);
 }
