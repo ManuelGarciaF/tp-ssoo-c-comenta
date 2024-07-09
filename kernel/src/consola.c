@@ -1,6 +1,6 @@
 #include "main.h"
 
-static uint32_t ultimo_pid = 0;
+static uint32_t ultimo_pid = 1;
 
 // Definiciones locales
 static void ejecutar_comando(const char *linea);

@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 static void inicializar_globales(void)
 {
-    debug_logger = log_create("cpu_debug.log", "debug", true, LOG_LEVEL_DEBUG);
+    debug_logger = log_create("cpu_debug.log", "debug", false, LOG_LEVEL_DEBUG);
     cpu_logger = log_create("cpu.log", "cpu", true, LOG_LEVEL_INFO);
 
     config = config_create("cpu.config");
@@ -240,6 +240,7 @@ void check_interrupt(int conexion_dispatch)
             // Si hay un pid en la lista que coincida con el proceso en ejecucion
             if (interrupcion->pid == pcb->pid) {
                 devolver_pcb(interrupcion->motivo, conexion_dispatch);
+                break;
             }
         }
         list_iterator_destroy(it);

@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
 static void inicializar_globales(void)
 {
-    debug_logger = log_create("kernel_debug.log", "debug", true, LOG_LEVEL_DEBUG);
+    debug_logger = log_create("kernel_debug.log", "debug", false, LOG_LEVEL_DEBUG);
     kernel_logger = log_create("kernel.log", "kernel", true, LOG_LEVEL_INFO);
 
     config = config_create("kernel.config");
