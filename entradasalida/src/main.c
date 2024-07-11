@@ -31,7 +31,9 @@ int main(int argc, char *argv[])
 
     NOMBRE_INTERFAZ = argv[1];
     char *archivo_config = argv[2];
-    debug_logger = log_create("entradasalida_debug.log", "debug", false, LOG_LEVEL_DEBUG);
+    char *archivo_logger_debug = string_duplicate(NOMBRE_INTERFAZ);
+    string_append(&archivo_logger_debug, "_debug.log");
+    debug_logger = log_create(archivo_logger_debug, "debug", false, LOG_LEVEL_DEBUG);
 
     char *archivo_logger = string_duplicate(NOMBRE_INTERFAZ);
     string_append(&archivo_logger, ".log");
