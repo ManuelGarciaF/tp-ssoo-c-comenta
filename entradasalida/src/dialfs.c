@@ -60,7 +60,7 @@ static t_metadata compactar(char *nombre_archivo_a_mover);
 static void sync_files(void);
 static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial);
 
-static void debug_print_archivo(char *nombre_archivo);
+/* static void debug_print_archivo(char *nombre_archivo); */
 
 static inline size_t tam_bloques(size_t bytes);
 static inline void *puntero_bloque(size_t numero_bloque);
@@ -251,9 +251,9 @@ static void write_file(t_list *paquete, int conexion_memoria)
         memcpy(destino_datos, datos, bloque->tamanio);
 
         // FIXME borrar despues
-        char *hexstring = print_hex((void *)datos, bloque->tamanio);
-        log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
-        free(hexstring);
+        // char *hexstring = print_hex((void *)datos, bloque->tamanio);
+        // log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
+        // free(hexstring);
         // FIXME borrar despues
 
         free(datos);
@@ -263,7 +263,7 @@ static void write_file(t_list *paquete, int conexion_memoria)
     list_iterator_destroy(p_it);
 
     // FIXME borrar despues
-    debug_print_archivo(nombre_archivo);
+    // debug_print_archivo(nombre_archivo);
 
     sync_files();
 }
@@ -287,7 +287,7 @@ static void read_file(t_list *paquete, int conexion_memoria)
              *dir_inicio_archivo);
 
     // FIXME borrar despues
-    debug_print_archivo(nombre_archivo);
+    // debug_print_archivo(nombre_archivo);
 
     t_metadata metadata = leer_metadata(nombre_archivo);
 
@@ -299,9 +299,9 @@ static void read_file(t_list *paquete, int conexion_memoria)
         escribir_bloque_a_memoria(*pid, *bloque, inicio_datos, conexion_memoria);
 
         // FIXME borrar despues
-        char *hexstring = print_hex((void *)inicio_datos, bloque->tamanio);
-        log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
-        free(hexstring);
+        // char *hexstring = print_hex((void *)inicio_datos, bloque->tamanio);
+        // log_debug(debug_logger, "Bloque (%zu; %zu), datos: %s", bloque->base, bloque->tamanio, hexstring);
+        // free(hexstring);
         // FIXME borrar despues
 
         curr_pos += bloque->tamanio;
@@ -590,12 +590,14 @@ static void mover_archivo(t_metadata metadata, size_t nuevo_bloque_inicial)
     actualizar_metadata(metadata);
 }
 
+/*
 static void debug_print_archivo(char *nombre_archivo)
 {
     char *contenido = leer_archivo_entero(leer_metadata(nombre_archivo));
     log_debug(debug_logger, "<Contenido de %s>: %s", nombre_archivo, contenido);
     free(contenido);
 }
+*/
 
 // Devuelve el numero de bloques que ocupa una cantidad de bytes
 static inline size_t tam_bloques(size_t bytes)
