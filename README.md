@@ -20,6 +20,8 @@ Incluye los siguientes módulos:
 
 Enunciado: [C - Comenta](docs/enunciado.pdf)
 
+Pruebas realizadas: [Pruebas](https://github.com/sisoputnfrba/c-comenta-pruebas)
+
 ## Instalación
 
 ### Dependencias
