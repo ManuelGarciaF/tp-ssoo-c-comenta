@@ -48,6 +48,7 @@ El ejecutable resultante se guardará en la carpeta `bin` del módulo.
 
 1. Configurar las rutas a las carpetas de scripts en los archivos `.config` de kernel y memoria.
 2. Modificar las IPs de los módulos en caso de ser ejecutado en múltiples computadoras.
-3. Ejecutar los módulos en el orden: Memoria -> CPU -> Kernel -> Interfaces 
+3. Ejecutar los módulos en el orden: Memoria -> CPU -> Kernel -> Interfaces.
+   Alternativamente, se provee un script, `run_tmux.sh`, que ejecuta los módulos, en orden, en distintas ventanas de tmux.
 
 [so-commons-library]: https://github.com/sisoputnfrba/so-commons-library
