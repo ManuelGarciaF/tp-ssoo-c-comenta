@@ -1,6 +1,6 @@
 # TP Sistemas Operativos 1er Cuatrimestre 2024 - C-Comenta
 
-Este proyecto es un trabajo práctico que simula un sistema distribuido, implementando conceptos clave de sistemas operativos como planificación de procesos, administración de memoria y sistema de archivos.
+Trabajo práctico que implementa un sistema distribuido para simular conceptos clave de sistemas operativos como planificación de procesos, gestión de memoria y sistema de archivos.
 
 Incluye los siguientes módulos:
 - Kernel:
